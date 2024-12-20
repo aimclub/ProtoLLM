@@ -6,18 +6,18 @@ from langchain_core.document_loaders import BaseLoader
 from langchain_core.documents import Document
 from langchain_core.load import load as ln_load
 
-# from protollm.docs_processing.splitting import ListHierarchySplitter, HierarchicalMerger, RecursiveSplitter
-# from protollm.docs_processing.splitting.metadata_sentence_splitter import DivMetadataSentencesSplitter
-# from protollm.docs_processing.splitting.key_words_splitter import MultiMetadataAppender
+from protollm.docs_processing.splitting import ListHierarchySplitter, HierarchicalMerger, RecursiveSplitter
+from protollm.docs_processing.splitting.metadata_sentence_splitter import DivMetadataSentencesSplitter
+from protollm.docs_processing.splitting.key_words_splitter import MultiMetadataAppender
 
 
-# transformer_object_dict = {
-#     'recursive_character': RecursiveSplitter,
-#     'list_hierarchy': ListHierarchySplitter,
-#     'hierarchical_merger': HierarchicalMerger,
-#     'div_sentence_splitter': DivMetadataSentencesSplitter,
-#     'keyword_appender': MultiMetadataAppender
-# }
+transformer_object_dict = {
+    'recursive_character': RecursiveSplitter,
+    'list_hierarchy': ListHierarchySplitter,
+    'hierarchical_merger': HierarchicalMerger,
+    'div_sentence_splitter': DivMetadataSentencesSplitter,
+    'keyword_appender': MultiMetadataAppender
+}
 
 
 class LoaderType(str, Enum):
