@@ -9,7 +9,7 @@ from langchain_core.documents import BaseDocumentTransformer
 from langchain_text_splitters import TextSplitter
 from transformers import AutoTokenizer, logging
 
-from protollm.rags.pipeline.docs_processing.entities import transformer_object_dict
+# from protollm.rags.pipeline.docs_processing.entities import transformer_object_dict
 from protollm.rags.pipeline.docs_processing.exceptions import TransformerNameError
 from protollm.rags.pipeline.docs_processing.models import ConfigFile
 
