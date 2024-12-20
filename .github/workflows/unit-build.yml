@@ -5,9 +5,9 @@ name: Unit Build
 
 on:
   push:
-    branches: [ master, release ]
+    branches: [ main, release ]
   pull_request:
-    branches: [ master, release ]
+    branches: [ main, release ]
   workflow_dispatch:  # manually launch from GitHub actions
 
 jobs:
@@ -33,3 +33,11 @@ jobs:
     - name: Test with pytest
       run: |
         pytest -s tests
+    - name: Install extra dependencies
+      run: |
+        pip install pytest-asyncio
+        pip install -r ./protollm_tools/llm-api/requirements.txt
+    - name: Extra test with pytest
+      run: |
+        pytest -s ./protollm_tools/llm-api/tests/unit
+      
