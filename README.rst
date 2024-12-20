@@ -19,46 +19,35 @@
 Intro
 #####
 
-**Proto-LLM** is an open-source framework for fast protyping of LLM-based applications.
+**Proto-LLM** - это фреймворк с открытым исходным кодом для быстрого протипирования приложений,
+основанных на больших языковых моделях (БЯМ).
 
 
 Proto LLM features
 ==================
-- Rapid prototyping of information retrieval systems based on LLM using RAG:
-Implementations of architectural patterns for interacting with different databases and web service interfaces;
-Methods for optimising RAG pipelines to eliminate redundancy.
 
-- Development and integration of applications with LLM with connection of external services and models through plugin system:
-Integration with AutoML solutions for predictive tasks;
-Providing structured output generation and validation;
-
-- Implementation of ensemble methods and multi-agent approaches to improve the efficiency of LLMs:
-Possibility of combining arbitrary LLMs into ensembles to improve generation quality, automatic selection of ensemble composition;
-Work with model-agents and ensemble pipelines;
-
-- Generation of complex synthetic data for further training and improvement of LLM:
-Generating examples from existing models and data sets;
-Evolutionary optimisation to increase the diversity of examples; Integration with Label Studio;
-
-- Providing interoperability with various LLM providers:
-Support for native models (GigaChat, YandexGPT, vsegpt, etc.).
-Interaction with open-source models deployed locally.
+- Быстрое создание прототипов информационно-поисковых систем на основе больших языковых моделей (БЯМ) с использованием технологии retrieval-augmented generation (RAG).
+- Разработка и интеграция многофункциональных приложений с БЯМ, включая возможность подключения внешних сервисов и моделей через систему плагинов.
+- Оптимизация производительности БЯМ путем реализации ансамблевых методов и мультиагентных подходов.
+- Генерация сложных синтетических данных для дальнейшего обучения и улучшения БЯМ.
+- Ускорение процесса разработки и внедрения систем, основанных на БЯМ, в различных прикладных областях.
 
 
-Installation
-============
 
-- Package installer for Python **pip**
+Установка
+=========
 
-The simplest way to install ProtoLLM is using ``pip``:
+- Установщик пакетов для Python **pip**
 
-.. code-block::
+Самый простой способ установить ProtoLLM - это использовать ``pip``:
+
+... code-block::
 
   $ pip install protollm
 
-Modules with tools can be installed separately:
+Модули с инструментами могут быть установлены отдельно:
 
-.. code-block::
+... code-block::
 
   $ pip install protollm-worker
 
@@ -67,46 +56,49 @@ Modules with tools can be installed separately:
   $ pip install protollm-sdk
 
 
-Project Structure
+Структура проекта
 =================
 
-The latest stable release of ProtoLLM is in the `master branch <https://github.com/ITMO-NSS-team/ProtoLLM/tree/master>`__.
+Последний стабильный релиз ProtoLLM находится в ветке `master <https://github.com/ITMO-NSS-team/ProtoLLM/tree/master>`__.
 
-The repository includes the following directories:
+Репозиторий включает следующие директории:
 
-* Package `protollm <https://github.com/ITMO-NSS-team/ProtoLLM/tree/master/protollm>`__  contains the main modules. It is the *core* of the ProtoLLM framework;
-* Package `protollm_tools <https://github.com/ITMO-NSS-team/ProtoLLM/tree/master/protollm_tools>`__  contains side tools with specific dependensied;
-* Package `examples <https://github.com/ITMO-NSS-team/ProtoLLM/tree/master/examples>`__ includes several *how-to-use-cases* where you can start to discover how ProtoLLM works;
-* All *unit and integration tests* can be observed in the `test <https://github.com/ITMO-NSS-team/ProtoLLM/tree/master/test>`__ directory;
-* The sources of the documentation are in the `docs <https://github.com/ITMO-NSS-team/ProtoLLM/tree/master/docs>`__ directory.
+* Пакет `protollm <https://github.com/ITMO-NSS-team/ProtoLLM/tree/master/protollm>`__ содержит основные модули. Это *ядро* фреймворка ProtoLLM;
+* Пакет `protollm_tools <https://github.com/ITMO-NSS-team/ProtoLLM/tree/master/protollm_tools>`__ содержит дополнительные *инструменты* с тдельными зависимостями;
+* Пакет `examples <https://github.com/ITMO-NSS-team/ProtoLLM/tree/master/examples>`__ содержит несколько *примеров*, с помощью которых вы можете начать знакомство с работой ProtoLLM;
+* Все *модульные и интеграционные тесты* можно посмотреть в директории `test <https://github.com/ITMO-NSS-team/ProtoLLM/tree/master/test>`__;
+* Исходники документации находятся в директории `docs <https://github.com/ITMO-NSS-team/ProtoLLM/tree/master/docs>`__.
 
-Contribution Guide
-==================
+Руководство по участию
+======================
 
-- The contribution guide is available in this `repository <https://github.com/ITMO-NSS-team/ProtoLLM/blob/master/docs/source/contribution.rst>`__.
+- Руководство по внесению вклада доступно в этом `репозитории <https://github.com/ITMO-NSS-team/ProtoLLM/blob/master/docs/source/contribution.rst>`__.
 
-Acknowledgments
-===============
+Благодарности
+=============
 
-We acknowledge the contributors for their important impact and the participants of the numerous scientific conferences and
-workshops for their valuable advice and suggestions.
+Мы выражаем благодарность разработчикам фреймворка, а также участникам  научных конференций и
+семинаров за ценные советы и предложения.
 
 Supported by
 ============
 
-The study is supported by the Research `Center Strong Artificial Intelligence in Industry <https://sai.itmo.ru/>`_
-of `ITMO University <https://itmo.ru/>`_ as part of the plan of the center's program
-"Framework for rapid application prototyping based on large language models".
 
+Поддержка
+=========
 
-Contacts
+Исследование проводится при поддержке `Исследовательского центра сильного искусственного интеллекта в промышленности <https://sai.itmo.ru/>`_
+`Университета ИТМО <https://itmo.ru/>`_ в рамках мероприятия программы центра:
+"Разработка фреймворка быстрого прототипирования приложений на основе больших языковых моделей "
+
+Контакты
 ========
-- `AI Institute, ITMO <https://aim.club/>`_
-- `Anna Kalyuzhnaya <https://scholar.google.com/citations?user=bjiILqcAAAAJ&hl=ru>`_ (anna.kalyuzhnaya@itmo.ru)
-- `Helpdesk chat <https://t.me/protollm_helpdesk>`_
+- `Институт ИИ, ИТМО <https://aim.club/>`_
+- `Анна Калюжная <https://scholar.google.com/citations?user=bjiILqcAAAAJ&hl=ru>`_ (anna.kalyuzhnaya@itmo.ru)
+- `Чат поддержки <https://t.me/protollm_helpdesk>`_
 
-Papers about ProtoLLM-based solutions:
-========
+Статьи о решения, основанных на ProtoLLM:
+========================================
 - Zakharov K. et al. Forecasting Population Migration in Small Settlements Using Generative Models under Conditions of Data Scarcity //Smart Cities. – 2024. – Т. 7. – №. 5. – С. 2495-2513.
 - Kovalchuk M. A. et al. SemConvTree: Semantic Convolutional Quadtrees for Multi-Scale Event Detection in Smart City //Smart Cities. – 2024. – Т. 7. – №. 5. – С. 2763-2780.
 - Kalyuzhnaya A. et al. LLM Agents for Smart City Management: Enhancing Decision Support through Multi-Agent AI Systems - 2024 - Under Review

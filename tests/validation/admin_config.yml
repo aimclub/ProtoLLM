@@ -1,0 +1,86 @@
+app_port: 8000
+app_host: 0.0.0.0
+agents:
+- name: agent0
+description: Описание агента
+class_path: pipelines.rag_agent.RAGAgent
+default_params:
+max_input_tokens: 6144
+max_chat_history_token_length: 24576
+retrieving_top_k: 3
+generator_context_top_k: 3
+include_original_question_in_queries: True
+planner_model_name: planner_llm
+generator_model_name: generator_llm
+tokenizer_name: qwen_2.5
+store_name: specific1_vector_store
+- name: agent1
+description: Описание агента
+class_path: pipelines.rag_agent.RAGAgent
+default_params:
+max_input_tokens: 6144
+max_chat_history_token_length: 24576
+retrieving_top_k: 3
+generator_context_top_k: 5
+include_original_question_in_queries: False
+generator_model_name: generator_llm
+tokenizer_name: qwen_2.5
+store_name: specific2_vector_store
+
+models:
+- type: completion
+params:
+model: /model
+temperature: 0.01
+top_p: 0.95
+streaming: false
+name: planner_llm
+url: http://0.0.0.0:8001/v1
+api_key: token-api-key
+- type: completion
+params:
+model: /model
+temperature: 0.01
+top_p: 0.95
+streaming: true
+name: generator_llm
+url: http://0.0.0.0:8001/v1
+api_key: token-api-key
+- type: chat
+params:
+model: /model
+temperature: 0.01
+top_p: 0.95
+streaming: true
+name: router_llm
+url: http://0.0.0.0:8001/v1
+api_key: token-api-key
+- type: embedding
+params:
+name: e5-mistral-7b-instruct
+url: http://0.0.0.0:58891/v1
+api_key: token-api-key
+model: /models/e5-mistral-7b-instruct
+check_embedding_ctx_length: false
+tiktoken_enabled: false
+- type: tokenizer
+params:
+name: qwen_2.5
+path_or_repo_id: Qwen/Qwen2.5-7B-Instruct
+vector_stores:
+- type: chroma
+params:
+name: specific1_vector_store
+description: vector store description
+host: 0.0.0.0
+port: 57777
+collection_name: domain1_specific_collection
+embeddings_model_name: e5-mistral-7b-instruct
+- type: chroma
+params:
+name: specific2_vector_store
+description: vector store description
+host: 0.0.0.0
+port: 57777
+collection_name: domain2_specific_collection
+embeddings_model_name: e5-mistral-7b-instruct
