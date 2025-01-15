@@ -48,4 +48,4 @@ jobs:
       - name: Test sdk with pytest
         run: |
           cd ./protollm_tools/sdk
-          pytest -s ./tests
+          pytest -s ./tests -m ci
