@@ -6,6 +6,7 @@ from fastapi import FastAPI
 from httpx import AsyncClient, ASGITransport
 from protollm_sdk.models.job_context_models import ResponseModel, PromptTransactionModel, PromptModel, \
     PromptTypes, ChatCompletionModel, ChatCompletionTransactionModel
+from protollm_sdk.object_interface import RabbitMQWrapper
 
 from protollm_api.backend.endpoints import get_router
 
@@ -47,7 +48,7 @@ async def test_generate_endpoint(test_app, test_local_config):
                 prompt=ChatCompletionModel.from_prompt_model(prompt_data),
                 prompt_type=PromptTypes.CHAT_COMPLETION.value
             )
-            send_task_mock.assert_called_once_with(test_local_config, "llm-api-queue", transaction_model)
+            send_task_mock.assert_called_once_with(test_local_config, "llm-api-queue", transaction_model, ANY)
 
             get_result_mock.assert_called_once_with(test_local_config, "test-job-id", ANY)
 
@@ -85,7 +86,7 @@ async def test_chat_completion_endpoint(test_app, test_local_config):
                 prompt=prompt_data,
                 prompt_type=PromptTypes.CHAT_COMPLETION.value
             )
-            send_task_mock.assert_called_once_with(test_local_config, "llm-api-queue", transaction_model)
+            send_task_mock.assert_called_once_with(test_local_config, "llm-api-queue", transaction_model, ANY)
 
             get_result_mock.assert_called_once_with(test_local_config, "test-job-id", ANY)
 

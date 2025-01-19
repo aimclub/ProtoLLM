@@ -1,6 +1,6 @@
-import pika
 import logging
-import json
+
+from protollm_sdk.object_interface import RabbitMQWrapper
 
 from protollm_api.config import Config
 from protollm_sdk.models.job_context_models import (
@@ -10,7 +10,11 @@ from protollm_sdk.utils.reddis import RedisWrapper
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-async def send_task(config: Config, queue_name: str, transaction: PromptTransactionModel | ChatCompletionTransactionModel, task_type='generate'):
+async def send_task(config: Config,
+                    queue_name: str,
+                    transaction: PromptTransactionModel | ChatCompletionTransactionModel,
+                    rabbitmq: RabbitMQWrapper,
+                    task_type='generate'):
     """
     Sends a task to the RabbitMQ queue.
 
@@ -18,27 +22,12 @@ async def send_task(config: Config, queue_name: str, transaction: PromptTransact
         config (Config): Configuration object containing RabbitMQ connection details.
         queue_name (str): Name of the RabbitMQ queue where the task will be published.
         transaction (PromptTransactionModel | ChatCompletionTransactionModel): Transaction data to be sent.
+        rabbitmq (RabbitMQWrapper): Rabbit wrapper object to interact with the Rabbit queue.
         task_type (str, optional): The type of task to be executed (default is 'generate').
 
     Raises:
         Exception: If there is an error during the connection or message publishing process.
     """
-    connection = pika.BlockingConnection(
-        pika.ConnectionParameters(
-            host=config.rabbit_host,
-            port=config.rabbit_port,
-            virtual_host='/',
-            credentials=pika.PlainCredentials(
-                username=config.rabbit_login,
-                password=config.rabbit_password
-            )
-        )
-    )
-    channel = connection.channel()
-
-    # Declare the queue if it does not exist
-    channel.queue_declare(queue=queue_name)
-
     task = {
         "type": "task",
         "task": task_type,
@@ -49,18 +38,8 @@ async def send_task(config: Config, queue_name: str, transaction: PromptTransact
         "eta": None
     }
 
-    message = json.dumps(task)
+    rabbitmq.publish_message(queue_name, task)
 
-    # Publish the message to the RabbitMQ queue
-    channel.basic_publish(
-        exchange='',
-        routing_key=queue_name,
-        body=message,
-        properties=pika.BasicProperties(
-            delivery_mode=2,  # Make message persistent
-        )
-    )
-    connection.close()
 
 
 async def get_result(config: Config, task_id: str, redis_db: RedisWrapper) -> ResponseModel:
