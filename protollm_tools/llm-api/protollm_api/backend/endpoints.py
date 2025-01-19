@@ -10,8 +10,6 @@ from protollm_sdk.models.job_context_models import (
 from protollm_sdk.object_interface.redis_wrapper import RedisWrapper
 from protollm_sdk.object_interface.rabbit_mq_wrapper import RabbitMQWrapper
 
-from tests.integration.test_local_RMQ import rabbitmq_connection
-
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
