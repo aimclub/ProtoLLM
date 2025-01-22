@@ -45,6 +45,24 @@ def test_publish_message(rabbit_wrapper):
         assert json.loads(body) == message, "Message in the queue does not match the sent message"
 
 @pytest.mark.local
+def test_publish_message_with_priority(rabbit_wrapper):
+    """
+    Tests successful message publishing to a queue with priority.
+    """
+    queue_name = "test_priority_queue"
+    message = {"key": "value"}
+    priority = 5
+
+    rabbit_wrapper.publish_message(queue_name, message, priority=priority)
+
+    with rabbit_wrapper.get_channel() as channel:
+        method_frame, header_frame, body = channel.basic_get(queue_name, auto_ack=True)
+        assert method_frame is not None, "Message not found in the queue"
+        assert json.loads(body) == message, "Message in the queue does not match the sent message"
+        assert header_frame.priority == priority, f"Expected priority {priority}, but got {header_frame.priority}"
+
+
+@pytest.mark.local
 def test_consume_message(rabbit_wrapper):
     """
     Tests successful message consumption from a queue and stopping consuming.

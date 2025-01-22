@@ -39,26 +39,37 @@ class RabbitMQWrapper:
             channel.close()
             connection.close()
 
-    def publish_message(self, queue_name: str, message: dict):
+    def publish_message(self, queue_name: str, message: dict, priority: int = None):
         """
-        Publish a message to a specified queue.
+        Publish a message to a specified queue with an optional priority.
 
         :param queue_name: Name of the queue to publish to
         :param message: Message to publish (dictionary will be serialized to JSON)
+        :param priority: Optional priority of the message (0-255)
         """
         try:
             with self.get_channel() as channel:
-                channel.queue_declare(queue=queue_name, durable=True)
+                # Declare the queue with priority if specified
+                arguments = {}
+                if priority is not None:
+                    arguments['x-max-priority'] = 10  # Set the maximum priority level
+
+                channel.queue_declare(queue=queue_name, durable=True, arguments=arguments)
+
+                # Publish the message with the specified priority
+                properties = pika.BasicProperties(
+                    delivery_mode=2,  # Make message persistent
+                    priority=priority if priority is not None else 0  # Default to 0 if no priority
+                )
 
                 channel.basic_publish(
                     exchange='',
                     routing_key=queue_name,
                     body=json.dumps(message),
-                    properties=pika.BasicProperties(
-                        delivery_mode=2  # Make message persistent
-                    )
+                    properties=properties
                 )
-                logger.info(f"Message published to queue '{queue_name}'")
+                logger.info(
+                    f"Message published to queue '{queue_name}' with priority {priority if priority is not None else 'None'}")
         except Exception as ex:
             logger.error(f"Failed to publish message to queue '{queue_name}'. Error: {ex}")
             raise Exception(f"Failed to publish message to queue '{queue_name}'. Error: {ex}") from ex
