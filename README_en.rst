@@ -25,24 +25,24 @@ Intro
 Proto LLM features
 ==================
 - Rapid prototyping of information retrieval systems based on LLM using RAG:
-Implementations of architectural patterns for interacting with different databases and web service interfaces;
-Methods for optimising RAG pipelines to eliminate redundancy.
+   Implementations of architectural patterns for interacting with different databases and web service interfaces;
+   Methods for optimising RAG pipelines to eliminate redundancy.
 
 - Development and integration of applications with LLM with connection of external services and models through plugin system:
-Integration with AutoML solutions for predictive tasks;
-Providing structured output generation and validation;
+   Integration with AutoML solutions for predictive tasks;
+   Providing structured output generation and validation;
 
 - Implementation of ensemble methods and multi-agent approaches to improve the efficiency of LLMs:
-Possibility of combining arbitrary LLMs into ensembles to improve generation quality, automatic selection of ensemble composition;
-Work with model-agents and ensemble pipelines;
+   Possibility of combining arbitrary LLMs into ensembles to improve generation quality, automatic selection of ensemble composition;
+   Work with model-agents and ensemble pipelines;
 
 - Generation of complex synthetic data for further training and improvement of LLM:
-Generating examples from existing models and data sets;
-Evolutionary optimisation to increase the diversity of examples; Integration with Label Studio;
+   Generating examples from existing models and data sets;
+   Evolutionary optimisation to increase the diversity of examples; Integration with Label Studio;
 
 - Providing interoperability with various LLM providers:
-Support for native models (GigaChat, YandexGPT, vsegpt, etc.).
-Interaction with open-source models deployed locally.
+   Support for native models (GigaChat, YandexGPT, vsegpt, etc.).
+   Interaction with open-source models deployed locally.
 
 
 Installation
@@ -106,7 +106,7 @@ Contacts
 - `Helpdesk chat <https://t.me/protollm_helpdesk>`_
 
 Papers about ProtoLLM-based solutions:
-=====================================
+======================================
 - Zakharov K. et al. Forecasting Population Migration in Small Settlements Using Generative Models under Conditions of Data Scarcity //Smart Cities. – 2024. – Т. 7. – №. 5. – С. 2495-2513.
 - Kovalchuk M. A. et al. SemConvTree: Semantic Convolutional Quadtrees for Multi-Scale Event Detection in Smart City //Smart Cities. – 2024. – Т. 7. – №. 5. – С. 2763-2780.
 - Kalyuzhnaya A. et al. LLM Agents for Smart City Management: Enhancing Decision Support through Multi-Agent AI Systems - 2024 - Under Review

@@ -49,19 +49,16 @@ class RabbitMQWrapper:
         """
         try:
             with self.get_channel() as channel:
-                # Declare the queue with priority if specified
                 arguments = {}
                 if priority is not None:
-                    arguments['x-max-priority'] = 10  # Set the maximum priority level
+                    arguments['x-max-priority'] = 10
 
                 channel.queue_declare(queue=queue_name, durable=True, arguments=arguments)
 
-                # Publish the message with the specified priority
                 properties = pika.BasicProperties(
-                    delivery_mode=2,  # Make message persistent
-                    priority=priority if priority is not None else 0  # Default to 0 if no priority
+                    delivery_mode=2,
+                    priority=priority if priority is not None else 0
                 )
-
                 channel.basic_publish(
                     exchange='',
                     routing_key=queue_name,

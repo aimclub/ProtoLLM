@@ -46,20 +46,18 @@ def test_publish_message_with_priority(rabbit_wrapper, mock_pika):
 
     rabbit_wrapper.publish_message(queue_name, message, priority=priority)
 
-    # Проверяем, что очередь была объявлена с аргументом 'x-max-priority'
     mock_pika.queue_declare.assert_called_once_with(
         queue=queue_name,
         durable=True,
-        arguments={"x-max-priority": 10}  # Убедитесь, что максимальный приоритет соответствует вашему коду
+        arguments={"x-max-priority": 10}
     )
 
-    # Проверяем, что сообщение было опубликовано с заданным приоритетом
     mock_pika.basic_publish.assert_called_once_with(
         exchange="",
         routing_key=queue_name,
         body=json.dumps(message),
         properties=pika.BasicProperties(
-            delivery_mode=2,  # Сделать сообщение постоянным
+            delivery_mode=2,
             priority=priority
         ),
     )

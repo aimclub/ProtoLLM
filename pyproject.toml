@@ -1,9 +1,9 @@
 [tool.poetry]
+readme = "README_en.rst"
 name = "ProtoLLM"
 version = "0.1.0"
 description = ""
 authors = ["aimclub"]
-readme = "README.rst"
 
 
 [tool.poetry.dependencies]
