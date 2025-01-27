@@ -2,6 +2,24 @@ import os
 
 
 class Config:
+    """
+       Configuration class for setting up Redis, RabbitMQ, and model-specific parameters.
+
+       Attributes:
+           redis_host (str): The hostname of the Redis server. Defaults to "localhost".
+           redis_port (int): The port number of the Redis server. Defaults to 6379.
+           redis_prefix (str): Prefix for keys used in Redis. Defaults to "llm-api".
+           rabbit_host (str): The hostname of the RabbitMQ server. Defaults to "localhost".
+           rabbit_port (int): The port number of the RabbitMQ server. Defaults to 5672.
+           rabbit_login (str): The username for RabbitMQ authentication. Defaults to "admin".
+           rabbit_password (str): The password for RabbitMQ authentication. Defaults to "admin".
+           queue_name (str): The name of the RabbitMQ queue to use. Defaults to "llm-api-queue".
+           model_path (str): Path to the model being used. Defaults to None.
+           token_len (int): The maximum length of tokens for processing by the model. Defaults to None.
+           tensor_parallel_size (int): The size of tensor parallelism for distributed processing. Defaults to None.
+           gpu_memory_utilisation (float): The percentage of GPU memory utilization for the model. Defaults to None.
+    """
+
     def __init__(
             self,
             redis_host: str = "localhost",
