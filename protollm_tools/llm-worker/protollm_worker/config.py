@@ -42,9 +42,9 @@ class Config:
             os.environ.get("RABBIT_MQ_PASSWORD", "admin"),
             os.environ.get("QUEUE_NAME", "llm-api-queue"),
             os.environ.get("MODEL_PATH"),
-            int(os.environ.get("TOKENS_LEN")),
-            int(os.environ.get("TENSOR_PARALLEL_SIZE")),
-            float(os.environ.get("GPU_MEMORY_UTILISATION")),
+            int(os.environ.get("TOKENS_LEN", "16384")),
+            int(os.environ.get("TENSOR_PARALLEL_SIZE", "2")),
+            float(os.environ.get("GPU_MEMORY_UTILISATION", "0.9")),
         )
 
     @classmethod
@@ -65,7 +65,7 @@ class Config:
             env_vars.get("RABBIT_MQ_PASSWORD", "admin"),
             env_vars.get("QUEUE_NAME", "llm-api-queue"),
             env_vars.get("MODEL_PATH"),
-            int(env_vars.get("TOKENS_LEN")),
-            int(env_vars.get("TENSOR_PARALLEL_SIZE")),
-            float(env_vars.get("GPU_MEMORY_UTILISATION")),
+            int(env_vars.get("TOKENS_LEN", "16384")),
+            int(env_vars.get("TENSOR_PARALLEL_SIZE", "2")),
+            float(env_vars.get("GPU_MEMORY_UTILISATION", "0.9")),
         )
