@@ -1,11 +1,18 @@
 import os
+import os
 import json
 import logging
 from protollm_synthetic.synthetic_pipelines.chains import RAGChain
 from protollm_synthetic.utils import Dataset, VLLMChatOpenAI
 import asyncio
 
+import logging
+from protollm_synthetic.synthetic_pipelines.chains import RAGChain
+from protollm_synthetic.utils import Dataset, VLLMChatOpenAI
+import asyncio
 
+
+# Сохраняем набор данных 
 # Сохраняем набор данных 
 texts = [
     """Формирование Стратегии 2030 осуществлялось на основе анализа устойчивых тенденций социально-экономического развития Санкт-Петербурга, а также с учетом результатов социально-экономического развития Санкт-Петербурга в 2012-2013 годах.
@@ -130,4 +137,5 @@ df = df[['content', 'question', 'answer']]
 logger.info(f"Writing result to {path}")
 df.to_json(path, orient="records")
 
+logger.info("Generation successfully finished")
 logger.info("Generation successfully finished")
