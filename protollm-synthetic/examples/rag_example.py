@@ -1,15 +1,12 @@
-import pandas as pd
-
-# создаем игрушечный датасет из вырезок случайных статей википедии
-# texts = [
-#     """Фэрфилд (англ. Fairfield) — город в США, расположенный в восточной части штата Техас, административный центр округа Фристон. По данным переписи за 2010 год число жителей составляло 2951 человек, по оценке Бюро переписи США в 2018 году в городе проживало 2922 человек. Изначально место называлось Маунд-Прейри, однако, когда поселение выбрали административным центром округа, оно было переименовано в Фэрфилд. Плодородные земли, лесные запасы, запасы пресной воды и близость к реке Тринити привлекли поселенцев из восточных штатов. В 1851 году открылось городское почтовое отделение, спустя год в городе работали три магазина, два отеля и тюрьма. В 1853 году была основана масонская ложа. В 1854 году открылась школа для девочек, школа для мальчиков открылась в 1856 году. Первая еженедельная газета Texas Pioneer издавалась с 1857 года.""",
-#     """Филип Джеймс Плейсер Янгхазбанд (англ. Philip James Placer Younghusband; 4 августа 1987, Ашфорд) — английский и филиппинский футболист, нападающий. Рекордсмен по числу игр и голов за сборную Филиппин. Братья Янгхазбанды являются воспитанниками футбольной академии "Челси". Фил начинал играть на позиции нападающего. В сезоне 2003/04 он стал лучшим бомбардиром юношеской команды "Челси", а в 2004/05 лучшим бомбардиром молодёжной команды. В сезоне 2005/06 сыграл 21 матч и забил 5 голов за резерв "Челси". В августе 2007 года был отдан в аренду в клуб датской Суперлиги "Эсбьерг", однако ни одного матча за эту команду так и не провёл. Летом 2008 года контракт Янгхазбанда с "Челси" истёк, и он уехал на Филиппины.""",
-#     """Модель вложенного множества (англ. Nested set model) — это способ представления вложенных множеств[англ.] (известных как деревья или иерархии) в реляционных базах данных. Стандартная реляционная алгебра и реляционное исчисление, а также операции SQL, основанные на них, не могут напрямую выразить все желаемые операции над иерархиями. Вложенная модель множества является решением этой проблемы. Альтернативным решением является выражение иерархии как отношения родитель-потомок. Селко назвал это списком смежности. Если иерархия может иметь произвольную глубину, то список смежности не допускает выражения операций, как сравнение содержимого иерархий двух элементов или определение того, находится ли элемент где-то в подиерархии другого элемента. Когда иерархия имеет фиксированную или ограниченную глубину, операции возможны, но дорогостоящие, из-за необходимости выполнения на каждом уровне одного реляционного соединения. Это часто называют проблемой спецификации материалов."""
-# ]
-
-
+import os
 import json
+import logging
+from protollm_synthetic.synthetic_pipelines.chains import RAGChain
+from protollm_synthetic.utils import Dataset, VLLMChatOpenAI
+import asyncio
 
+
+# Сохраняем набор данных 
 texts = [
     """Формирование Стратегии 2030 осуществлялось на основе анализа устойчивых тенденций социально-экономического развития Санкт-Петербурга, а также с учетом результатов социально-экономического развития Санкт-Петербурга в 2012-2013 годах.
 Представленная в Стратегии 2030 система целей социально-экономического развития Санкт-Петербурга структурирована по четырем уровням: генеральная цель определяет 4 стратегических направления, в рамках которых сформированы 17 стратегических целей, исходя из содержания которых сформулированы программно-целевые установки. Всего в Стратегии 2030 сформулированы 114 целей социально-экономического развития Санкт-Петербурга различных уровней, каждой из которых, кроме генеральной, соответствуют целевые показатели, характеризующие степень их достижения.
@@ -94,45 +91,43 @@ with open('tmp_data/sample_data_rag_spb.json', 'w', encoding='utf-8') as file:
     json.dump(data_dict, file, ensure_ascii=False)
 
 
-# import os
-# import pickle
-#
-# from samplefactory.synthetic_pipelines.chains import RAGChain
-# from samplefactory.utils import Dataset, VLLMChatOpenAI
-# import json
-# import asyncio
-#
-# # with open("sample_data_city_rag.json", "r") as f:
-# #     texts = json.load(f)
-#
-# data_dict = {'content': texts}
-#
-# with open('tmp_data/sample_data_rag.json', 'w', encoding='utf-8') as file:
-#     json.dump(data_dict, file, ensure_ascii=False)
-#
-# dataset = Dataset(data_col='content', path='tmp_data/sample_data_rag.json')
-#
-# qwen2vl_api_key = os.environ.get("QWEN2VL_OPENAI_API_KEY")
-# qwen2vl_api_base = os.environ.get("QWEN2VL_OPENAI_API_BASE")
-#
-# llm=VLLMChatOpenAI(
-#         api_key=qwen2vl_api_key,
-#         base_url=qwen2vl_api_base,
-#         model="/model",
-#         max_tokens=2048,
-#         # max_concurrency=10
-#     )
-#
-# rag_chain = RAGChain(llm=llm)
-# asyncio.run(rag_chain.run(dataset, n_examples=3))
-#
-# with open("tmp_data/rag_generated.pickle", "wb") as f:
-#     pickle.dump(rag_chain.generated, f)
-#
-# df = rag_chain.generated.explode('generated')
-# df['question'] = df['generated'].apply(lambda x: x['question'])
-# df['answer'] = df['generated'].apply(lambda x: x['answer'])
-#
-# path = "tmp_data/rag_synth_output.json"
-# print(f"Writing result to {path}")
-# df.to_json(path, orient="records")
+logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
+logger = logging.getLogger(__name__)
+
+
+path = 'tmp_data/sample_data_rag_spb.json'
+dataset = Dataset(data_col='content', path=path)
+
+qwen_large_api_key = os.environ.get("QWEN_OPENAI_API_KEY")
+qwen_large_api_base = os.environ.get("QWEN_OPENAI_API_BASE")
+
+logger.info("Initializing LLM connection")
+
+llm=VLLMChatOpenAI(
+        api_key=qwen_large_api_key,
+        base_url=qwen_large_api_base,
+        model="/model",
+        max_tokens=2048,
+    )
+
+rag_chain = RAGChain(llm=llm)
+
+logger.info("Starting generating")
+asyncio.run(rag_chain.run(dataset, 
+                          n_examples=5))
+
+logger.info("Saving results")
+path = 'tmp_data/sample_data_city_rag_generated.json'
+
+# An alternative way to save data
+# rag_chain.save_chain_output('tmp_data/sample_data_city_rag_generated.json')
+
+df = rag_chain.data.explode('generated')
+df['question'] = df['generated'].apply(lambda x: x['question'])
+df['answer'] = df['generated'].apply(lambda x: x['answer'])
+df = df[['content', 'question', 'answer']]
+
+logger.info(f"Writing result to {path}")
+df.to_json(path, orient="records")
+
+logger.info("Generation successfully finished")

@@ -1,5 +1,5 @@
-from samplefactory.synthetic_pipelines.chains import SummarisationChain
-from samplefactory.utils import Dataset, VLLMChatOpenAI
+from protollm_synthetic.synthetic_pipelines.chains import SummarisationChain
+from protollm_synthetic.utils import Dataset, VLLMChatOpenAI
 import pandas as pd
 import os
 import asyncio
@@ -21,16 +21,8 @@ expected_summaries = [
     "Python is a popular language."
 ]
 
-# proxy_url = os.environ.get("PROXY_URL")
-# openai_api_key = os.environ.get("CHATGPT_OPENAI_API_KEY")
-# llm=ChatOpenAI(
-#         api_key=openai_api_key,
-#         http_client=httpx.AsyncClient(proxy=proxy_url) if proxy_url else None,
-#         timeout=60.0
-#     )
-
-qwen_large_api_key = os.environ.get("QWEN2VL_OPENAI_API_KEY")
-qwen_large_api_base = os.environ.get("QWEN2VL_OPENAI_API_BASE")
+qwen_large_api_key = os.environ.get("OPENAI_API_KEY")
+qwen_large_api_base = os.environ.get("OPENAI_API_BASE")
 
 llm=VLLMChatOpenAI(
         api_key=qwen_large_api_key,
