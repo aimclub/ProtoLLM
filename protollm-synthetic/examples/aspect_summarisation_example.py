@@ -1,5 +1,5 @@
-from samplefactory.synthetic_pipelines.chains import AspectSummarisationChain
-from samplefactory.utils import Dataset, VLLMChatOpenAI
+from protollm_synthetic.synthetic_pipelines.chains import AspectSummarisationChain
+from protollm_synthetic.utils import Dataset, VLLMChatOpenAI
 import pandas as pd
 import os
 import asyncio

@@ -12,6 +12,9 @@ Available pipelines:
 
 ## Installation
 
+```bash
+poetry install
+```
 
 ## Usage
 

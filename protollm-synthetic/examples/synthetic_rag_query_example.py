@@ -1,7 +1,7 @@
 import logging
 import os
-from samplefactory.synthetic_pipelines.chains import RAGChain
-from samplefactory.utils import Dataset, VLLMChatOpenAI
+from protollm_synthetic.synthetic_pipelines.chains import RAGChain
+from protollm_synthetic.utils import Dataset, VLLMChatOpenAI
 import asyncio
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
