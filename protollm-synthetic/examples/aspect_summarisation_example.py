@@ -23,8 +23,8 @@ expected_summaries = [
 
 aspect = "politics"
 
-qwen_large_api_key = os.environ.get("QWEN2VL_OPENAI_API_KEY")
-qwen_large_api_base = os.environ.get("QWEN2VL_OPENAI_API_BASE")
+qwen_large_api_key = os.environ.get("OPENAI_API_KEY")
+qwen_large_api_base = os.environ.get("OPENAI_API_BASE")
 
 llm=VLLMChatOpenAI(
         api_key=qwen_large_api_key,

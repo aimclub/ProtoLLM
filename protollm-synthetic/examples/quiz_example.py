@@ -1,6 +1,6 @@
 import os
-from samplefactory.synthetic_pipelines.chains import QuizChain
-from samplefactory.utils import Dataset, VLLMChatOpenAI
+from protollm_synthetic.synthetic_pipelines.chains import QuizChain
+from protollm_synthetic.utils import Dataset, VLLMChatOpenAI
 import json
 import asyncio
 

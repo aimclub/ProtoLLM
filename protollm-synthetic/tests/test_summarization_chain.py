@@ -1,7 +1,7 @@
 import unittest
 import os
-from samplefactory.synthetic_pipelines.chains import SummarisationChain
-from samplefactory.utils import VLLMChatOpenAI, Dataset
+from protollm_synthetic.synthetic_pipelines.chains import SummarisationChain
+from protollm_synthetic.utils import VLLMChatOpenAI, Dataset
 import pandas as pd
 import asyncio
 

@@ -98,8 +98,8 @@ logger = logging.getLogger(__name__)
 path = 'tmp_data/sample_data_rag_spb.json'
 dataset = Dataset(data_col='content', path=path)
 
-qwen_large_api_key = os.environ.get("QWEN_OPENAI_API_KEY")
-qwen_large_api_base = os.environ.get("QWEN_OPENAI_API_BASE")
+qwen_large_api_key = os.environ.get("OPENAI_API_KEY")
+qwen_large_api_base = os.environ.get("OPENAI_API_BASE")
 
 logger.info("Initializing LLM connection")
 
