@@ -74,7 +74,7 @@ def text_embedder_request():
     """
     data = {
         "job_id": str(uuid.uuid4()),
-        "inputs": "Ехал грека через реку видит грека в реке рак.",
+        "inputs": "A Greek was crossing the river when he saw a crab in the water.",
         "truncate": False
     }
     return TextEmbedderRequest(**data)

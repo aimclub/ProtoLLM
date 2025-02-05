@@ -1,3 +1,4 @@
+import pika
 import pytest
 import json
 from time import sleep
@@ -27,7 +28,11 @@ def cleanup_queues(rabbit_wrapper):
     Fixture to clean up all queues before each test.
     """
     with rabbit_wrapper.get_channel() as channel:
+        channel.queue_declare(queue="test_queue", durable=True)
         channel.queue_purge("test_queue")
+
+        channel.queue_declare(queue="test_priority_queue", durable=True, arguments={"x-max-priority": 10})
+        channel.queue_purge("test_priority_queue")
 
 @pytest.mark.local
 def test_publish_message(rabbit_wrapper):
