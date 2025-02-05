@@ -6,18 +6,18 @@ class Config:
        Configuration class for setting up Redis, RabbitMQ, and model-specific parameters.
 
        Attributes:
-           redis_host (str): The hostname of the Redis server. Defaults to "localhost".
-           redis_port (int): The port number of the Redis server. Defaults to 6379.
-           redis_prefix (str): Prefix for keys used in Redis. Defaults to "llm-api".
-           rabbit_host (str): The hostname of the RabbitMQ server. Defaults to "localhost".
-           rabbit_port (int): The port number of the RabbitMQ server. Defaults to 5672.
-           rabbit_login (str): The username for RabbitMQ authentication. Defaults to "admin".
-           rabbit_password (str): The password for RabbitMQ authentication. Defaults to "admin".
-           queue_name (str): The name of the RabbitMQ queue to use. Defaults to "llm-api-queue".
-           model_path (str): Path to the model being used. Defaults to None.
-           token_len (int): The maximum length of tokens for processing by the model. Defaults to None.
-           tensor_parallel_size (int): The size of tensor parallelism for distributed processing. Defaults to None.
-           gpu_memory_utilisation (float): The percentage of GPU memory utilization for the model. Defaults to None.
+           redis_host: The hostname of the Redis server. Defaults to "localhost".
+           redis_port: The port number of the Redis server. Defaults to 6379.
+           redis_prefix: Prefix for keys used in Redis. Defaults to "llm-api".
+           rabbit_host: The hostname of the RabbitMQ server. Defaults to "localhost".
+           rabbit_port: The port number of the RabbitMQ server. Defaults to 5672.
+           rabbit_login: The username for RabbitMQ authentication. Defaults to "admin".
+           rabbit_password: The password for RabbitMQ authentication. Defaults to "admin".
+           queue_name: The name of the RabbitMQ queue to use. Defaults to "llm-api-queue".
+           model_path: Path to the model being used. Defaults to None.
+           token_len: The maximum length of tokens for processing by the model. Defaults to None.
+           tensor_parallel_size: The size of tensor parallelism for distributed processing. Defaults to None.
+           gpu_memory_utilisation: The percentage of GPU memory utilization for the model. Defaults to None.
     """
 
     def __init__(
@@ -51,18 +51,18 @@ class Config:
     @classmethod
     def read_from_env(cls) -> 'Config':
         return Config(
-            os.environ.get("REDIS_HOST", "localhost"),
-            os.environ.get("REDIS_PORT", "6379"),
-            os.environ.get("REDIS_PREFIX", "llm-api"),
-            os.environ.get("RABBIT_MQ_HOST", "localhost"),
-            os.environ.get("RABBIT_MQ_PORT", "5672"),
-            os.environ.get("RABBIT_MQ_LOGIN", "admin"),
-            os.environ.get("RABBIT_MQ_PASSWORD", "admin"),
-            os.environ.get("QUEUE_NAME", "llm-api-queue"),
+            os.environ.get("REDIS_HOST"),
+            int(os.environ.get("REDIS_PORT")),
+            os.environ.get("REDIS_PREFIX"),
+            os.environ.get("RABBIT_MQ_HOST"),
+            int(os.environ.get("RABBIT_MQ_PORT")),
+            os.environ.get("RABBIT_MQ_LOGIN"),
+            os.environ.get("RABBIT_MQ_PASSWORD"),
+            os.environ.get("QUEUE_NAME"),
             os.environ.get("MODEL_PATH"),
-            int(os.environ.get("TOKENS_LEN", "16384")),
-            int(os.environ.get("TENSOR_PARALLEL_SIZE", "2")),
-            float(os.environ.get("GPU_MEMORY_UTILISATION", "0.9")),
+            int(os.environ.get("TOKENS_LEN")),
+            int(os.environ.get("TENSOR_PARALLEL_SIZE")),
+            float(os.environ.get("GPU_MEMORY_UTILISATION")),
         )
 
     @classmethod
@@ -74,16 +74,16 @@ class Config:
             key, value = line.split("=")
             env_vars[key] = value
         return Config(
-            env_vars.get("REDIS_HOST", "localhost"),
-            int(env_vars.get("REDIS_PORT", "6379")),
-            env_vars.get("REDIS_PREFIX", "llm-api"),
-            env_vars.get("RABBIT_MQ_HOST", "localhost"),
-            int(env_vars.get("RABBIT_MQ_PORT", "5672")),
-            env_vars.get("RABBIT_MQ_LOGIN", "admin"),
-            env_vars.get("RABBIT_MQ_PASSWORD", "admin"),
-            env_vars.get("QUEUE_NAME", "llm-api-queue"),
+            env_vars.get("REDIS_HOST"),
+            int(env_vars.get("REDIS_PORT")),
+            env_vars.get("REDIS_PREFIX"),
+            env_vars.get("RABBIT_MQ_HOST"),
+            int(env_vars.get("RABBIT_MQ_PORT")),
+            env_vars.get("RABBIT_MQ_LOGIN"),
+            env_vars.get("RABBIT_MQ_PASSWORD"),
+            env_vars.get("QUEUE_NAME"),
             env_vars.get("MODEL_PATH"),
-            int(env_vars.get("TOKENS_LEN", "16384")),
-            int(env_vars.get("TENSOR_PARALLEL_SIZE", "2")),
-            float(env_vars.get("GPU_MEMORY_UTILISATION", "0.9")),
+            int(env_vars.get("TOKENS_LEN")),
+            int(env_vars.get("TENSOR_PARALLEL_SIZE")),
+            float(env_vars.get("GPU_MEMORY_UTILISATION")),
         )

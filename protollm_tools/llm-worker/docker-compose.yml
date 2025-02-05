@@ -11,19 +11,13 @@ services:
           # cpus: 5
           memory: 100G
     build:
-      context: ..
+      context: deployment
       dockerfile: Dockerfile
     env_file: .env
-    environment:
-      TOKENS_LEN: 16384
-      GPU_MEMORY_UTILISATION: 0.9
-      TENSOR_PARALLEL_SIZE: 2
-      MODEL_PATH: /data/<your_path_to_model>
-      NVIDIA_VISIBLE_DEVICES: <your_GPUs>
     volumes:
       - <your_path_to_data_in_docker>:/data
     ports:
-      - "8677:8672"
+      - ${LLM_WORKER_PORT}:8672
     networks:
       - llm_wrap_network
     restart: unless-stopped

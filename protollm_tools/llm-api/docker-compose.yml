@@ -8,16 +8,9 @@ services:
       context: .
       dockerfile: Dockerfile
     ports:
-      - "6672:6672"
-    environment:
-      CELERY_BROKER_URL: amqp://admin:admin@10.32.15.21:5672/
-      CELERY_RESULT_BACKEND: redis://10.32.15.21:6379/0
-      REDIS_HOST: redis
-      REDIS_PORT: 6379
-      RABBIT_MQ_HOST: rabbitmq
-      RABBIT_MQ_PORT: 5672
-      RABBIT_MQ_LOGIN: admin
-      RABBIT_MQ_PASSWORD: admin
+      - ${API_PORT}:6672
+    env_file:
+      - .env
     volumes:
       - ./unit_config.json:/docker-entrypoint.d/unit_config.json
     networks:
@@ -26,11 +19,10 @@ services:
   rabbitmq:
     image: "rabbitmq:3-management"
     ports:
-      - "5672:5672"   # RabbitMQ broker port
-      - "15672:15672" # RabbitMQ management interface
-    environment:
-      - RABBITMQ_DEFAULT_USER=admin
-      - RABBITMQ_DEFAULT_PASS=admin
+      - ${RABBIT_MQ_PORT}:5672
+      - ${WEB_RABBIT_MQ}:15672
+    env_file:
+      - .env
     volumes:
       - rabbitmq_data:/var/lib/rabbitmq
     networks:
@@ -39,7 +31,7 @@ services:
   redis:
     image: "redis:alpine"
     ports:
-      - "6379:6379"
+      - ${REDIS_PORT}:6379
     volumes:
       - redis_data:/var/lib/data
     networks:

@@ -31,6 +31,7 @@ class ChatCompletionUnit(BaseModel):
 class ChatCompletionModel(BaseModel):
     """A model for chat completion order"""
     job_id: str
+    source: str = "local"
     meta: PromptMeta
     messages: list[ChatCompletionUnit]
 

@@ -27,15 +27,15 @@ class Config:
     @classmethod
     def read_from_env(cls) -> 'Config':
         return Config(
-            os.environ.get("INNER_LLM_URL", "localhost:8670"),
-            os.environ.get("REDIS_HOST", "localhost"),
-            os.environ.get("REDIS_PORT", "6379"),
-            os.environ.get("REDIS_PREFIX", "llm-api"),
-            os.environ.get("RABBIT_MQ_HOST", "localhost"),
-            os.environ.get("RABBIT_MQ_PORT", "5672"),
-            os.environ.get("RABBIT_MQ_LOGIN", "admin"),
-            os.environ.get("RABBIT_MQ_PASSWORD", "admin"),
-            os.environ.get("QUEUE_NAME", "llm-api-queue")
+            os.environ.get("INNER_LLM_URL"),
+            os.environ.get("REDIS_HOST"),
+            int(os.environ.get("REDIS_PORT")),
+            os.environ.get("REDIS_PREFIX"),
+            os.environ.get("RABBIT_MQ_HOST"),
+            int(os.environ.get("RABBIT_MQ_PORT")),
+            os.environ.get("RABBIT_MQ_LOGIN"),
+            os.environ.get("RABBIT_MQ_PASSWORD"),
+            os.environ.get("QUEUE_NAME")
         )
 
     @classmethod
@@ -47,13 +47,13 @@ class Config:
             key, value = line.split("=")
             env_vars[key] = value
         return Config(
-            env_vars.get("INNER_LLM_URL", "localhost:8670"),
-            env_vars.get("REDIS_HOST", "localhost"),
-            int(env_vars.get("REDIS_PORT", "6379")),
-            env_vars.get("REDIS_PREFIX", "llm-api"),
-            env_vars.get("RABBIT_MQ_HOST", "localhost"),
-            int(env_vars.get("RABBIT_MQ_PORT", "5672")),
-            env_vars.get("RABBIT_MQ_LOGIN", "admin"),
-            env_vars.get("RABBIT_MQ_PASSWORD", "admin"),
-            env_vars.get("QUEUE_NAME", "llm-api-queue")
+            env_vars.get("INNER_LLM_URL"),
+            env_vars.get("REDIS_HOST"),
+            int(env_vars.get("REDIS_PORT")),
+            env_vars.get("REDIS_PREFIX"),
+            env_vars.get("RABBIT_MQ_HOST"),
+            int(env_vars.get("RABBIT_MQ_PORT")),
+            env_vars.get("RABBIT_MQ_LOGIN"),
+            env_vars.get("RABBIT_MQ_PASSWORD"),
+            env_vars.get("QUEUE_NAME")
         )
