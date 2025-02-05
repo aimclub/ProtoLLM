@@ -41,13 +41,6 @@ services:
       dockerfile: Dockerfile
     env_file: .env
     environment:
-      TOKENS_LEN: 16384
-      GPU_MEMORY_UTILISATION: 0.9
-      TENSOR_PARALLEL_SIZE: 2
-      MODEL_PATH: /data/<your_path_to_model>
-      NVIDIA_VISIBLE_DEVICES: <your_GPUs>
-      REDIS_HOST: localhost
-      REDIS_PORT: 6379
       FORCE_CMAKE: 1
     volumes:
       - <your_path_to_data_in_docker>:/data
