@@ -167,18 +167,30 @@ Below is the architecture diagram for the interaction between API, RabbitMQ, LLM
 ### Running the API
 1. Configure environment variables in the `.env` file.
 2. Start the API using:
-   ```python
-    app = FastAPI()
+```python
+app = FastAPI()
 
-    config = Config.read_from_env()
+config = Config.read_from_env()
 
-    app.include_router(get_router(config))
-   ```
+app.include_router(get_router(config))
+```
 ### Running the API Locally (without Docker)
 To run the API locally using Uvicorn, use the following command:
 
 ```sh
-    uvicorn protollm_api.backend.main:app --host 127.0.0.1 --port 8000 --reload
+uvicorn protollm_api.backend.main:app --host 127.0.0.1 --port 8000 --reload
+```
+
+Or use this main file:
+```python
+app = FastAPI()
+
+config = Config.read_from_env()
+
+app.include_router(get_router(config))
+    
+if __name__ == "__main__":
+    uvicorn.run("protollm_api.backend.main:app", host="127.0.0.1", port=8000, reload=True)
 ```
 ### Example Request
 #### Generate

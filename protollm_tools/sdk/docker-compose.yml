@@ -4,8 +4,8 @@ services:
   rabbitmq:
     image: "rabbitmq:3-management"
     ports:
-      - "5672:5672"
-      - "15672:15672"
+      - ${RABBIT_PORT}:5672
+      - ${WEB_RABBIT_MQ}:15672
     env_file:
       - .env
     volumes:
@@ -16,7 +16,7 @@ services:
   redis:
     image: "redis:alpine"
     ports:
-      - "6379:6379"
+      - ${REDIS_PORT}:6379
     volumes:
       - redis_data:/var/lib/data
     networks:
@@ -36,7 +36,7 @@ services:
   flower:
     build: .
     ports:
-      - "7672:7672"
+      - ${FLOWER_PORT}:7672
     depends_on:
       - rabbitmq
       - celery_worker
@@ -53,7 +53,7 @@ services:
     environment:
       - IS_PERSISTENT=TRUE
     ports:
-      - 9941:8000
+      - ${VECTOR_PORT}:8000
     networks:
       - llm_wrap_network
 
@@ -61,7 +61,7 @@ services:
     image: ${EMBEDDING_IMAGE}
     command: --model-id ${ST_MODEL} --revision ${ST_MODEL_REVISION}
     ports:
-      - 9942:80
+      - ${EMBEDER_PORT}:80
     networks:
       - llm_wrap_network
 
