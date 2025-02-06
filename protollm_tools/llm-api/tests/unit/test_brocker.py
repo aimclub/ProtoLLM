@@ -24,7 +24,7 @@ async def test_send_task(test_local_config):
     await send_task(test_local_config, test_local_config.queue_name, transaction, mock_rabbit)
 
     #mock_connection.assert_called_once()
-    mock_rabbit.publish_message.assert_called_once_with(test_local_config.queue_name, ANY)
+    mock_rabbit.publish_message.assert_called_once_with(test_local_config.queue_name, ANY, durable=True)
     #mock_channel.basic_publish.assert_called_once()
 
 

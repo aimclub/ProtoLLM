@@ -38,7 +38,7 @@ async def send_task(config: Config,
         "eta": None
     }
 
-    rabbitmq.publish_message(queue_name, task)
+    rabbitmq.publish_message(queue_name, task, durable=config.queue_durable)
 
 
 
