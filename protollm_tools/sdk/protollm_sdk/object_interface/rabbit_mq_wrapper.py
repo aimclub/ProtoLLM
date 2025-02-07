@@ -40,7 +40,7 @@ class RabbitMQWrapper:
             channel.close()
             connection.close()
 
-    def publish_message(self, queue_name: str, message: dict, priority: int = None, durable: bool=True):
+    def publish_message(self, queue_name: str, message: dict, durable: bool=True):
         """
         Publish a message to a specified queue with an optional priority.
 
@@ -51,15 +51,14 @@ class RabbitMQWrapper:
         """
         try:
             with self.get_channel() as channel:
-                arguments = {}
-                if priority is not None:
-                    arguments['x-max-priority'] = 10
+                arguments = {'x-max-priority': 5}
+                priority = message.get("kwargs").get("prompt").get("priority")
 
                 channel.queue_declare(queue=queue_name, durable=durable, arguments=arguments)
 
                 properties = pika.BasicProperties(
                     delivery_mode=2,
-                    priority=priority if priority is not None else 0
+                    priority=priority
                 )
                 channel.basic_publish(
                     exchange='',
@@ -85,7 +84,7 @@ class RabbitMQWrapper:
             connection = pika.BlockingConnection(self.connection_params)
             channel = connection.channel()
 
-            channel.queue_declare(queue=queue_name, durable=durable)
+            channel.queue_declare(queue=queue_name, durable=durable, arguments={"x-max-priority": 5})
 
             channel.basic_consume(
                 queue=queue_name,

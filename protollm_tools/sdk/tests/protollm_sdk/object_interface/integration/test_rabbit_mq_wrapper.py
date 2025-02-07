@@ -28,26 +28,8 @@ def cleanup_queues(rabbit_wrapper):
     Fixture to clean up all queues before each test.
     """
     with rabbit_wrapper.get_channel() as channel:
-        channel.queue_declare(queue="test_queue", durable=True)
-        channel.queue_purge("test_queue")
-
-        channel.queue_declare(queue="test_priority_queue", durable=True, arguments={"x-max-priority": 10})
+        channel.queue_declare(queue="test_priority_queue", durable=True, arguments={"x-max-priority": 5})
         channel.queue_purge("test_priority_queue")
-
-@pytest.mark.local
-def test_publish_message(rabbit_wrapper):
-    """
-    Tests successful message publishing to a queue.
-    """
-    queue_name = "test_queue"
-    message = {"key": "value"}
-
-    rabbit_wrapper.publish_message(queue_name, message)
-
-    with rabbit_wrapper.get_channel() as channel:
-        method_frame, header_frame, body = channel.basic_get(queue_name, auto_ack=True)
-        assert method_frame is not None, "Message not found in the queue"
-        assert json.loads(body) == message, "Message in the queue does not match the sent message"
 
 @pytest.mark.local
 def test_publish_message_with_priority(rabbit_wrapper):
@@ -55,10 +37,10 @@ def test_publish_message_with_priority(rabbit_wrapper):
     Tests successful message publishing to a queue with priority.
     """
     queue_name = "test_priority_queue"
-    message = {"key": "value"}
-    priority = 5
+    priority = 3
+    message = {"kwargs": {"prompt": {"priority": 3}}}
 
-    rabbit_wrapper.publish_message(queue_name, message, priority=priority)
+    rabbit_wrapper.publish_message(queue_name, message)
 
     with rabbit_wrapper.get_channel() as channel:
         method_frame, header_frame, body = channel.basic_get(queue_name, auto_ack=True)
@@ -72,10 +54,9 @@ def test_consume_message(rabbit_wrapper):
     """
     Tests successful message consumption from a queue and stopping consuming.
     """
-    queue_name = "test_queue"
-    message = {"key": "value"}
-
-    rabbit_wrapper.publish_message(queue_name, message)
+    queue_name = "test_priority_queue"
+    priority = 3
+    message = {"kwargs": {"prompt": {"priority": 3}}}
 
     consumed_messages = []
 
@@ -87,6 +68,8 @@ def test_consume_message(rabbit_wrapper):
     )
     consuming_thread.daemon = True
     consuming_thread.start()
+
+    rabbit_wrapper.publish_message(queue_name, message)
 
     sleep(2)
 

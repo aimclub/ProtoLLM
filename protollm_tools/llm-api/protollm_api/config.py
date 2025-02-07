@@ -13,7 +13,8 @@ class Config:
             rabbit_login: str = "admin",
             rabbit_password: str = "admin",
             queue_name: str = "llm-api-queue",
-            queue_durable: bool=True
+            queue_durable: bool=True,
+            base_priority: int=1
     ):
         self.inner_lln_url = inner_llm_url
         self.redis_host = redis_host
@@ -25,6 +26,7 @@ class Config:
         self.rabbit_password = rabbit_password
         self.queue_name = queue_name
         self.queue_durable = queue_durable
+        self.base_priority = base_priority
 
     @classmethod
     def read_from_env(cls) -> 'Config':
@@ -38,7 +40,8 @@ class Config:
             os.environ.get("RABBIT_MQ_LOGIN"),
             os.environ.get("RABBIT_MQ_PASSWORD"),
             os.environ.get("QUEUE_NAME"),
-            bool(os.environ.get("QUEUE_DURABLE"))
+            bool(os.environ.get("QUEUE_DURABLE")),
+            int(os.getenv("BASE_PRIORITY"))
         )
 
     @classmethod
@@ -59,5 +62,6 @@ class Config:
             env_vars.get("RABBIT_MQ_LOGIN"),
             env_vars.get("RABBIT_MQ_PASSWORD"),
             env_vars.get("QUEUE_NAME"),
-            bool(env_vars.get("QUEUE_DURABLE"))
+            bool(env_vars.get("QUEUE_DURABLE")),
+            int(env_vars.get("BASE_PRIORITY"))
         )

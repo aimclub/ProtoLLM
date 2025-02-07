@@ -42,9 +42,10 @@ def rabbitmq_connection(test_local_config):
 
 @pytest.mark.asyncio
 async def test_task_in_queue(test_local_config, rabbitmq_connection, rabbit_client):
-    queue_name = "test_queue"
+    queue_name = "test_priority_queue"
     prompt = ChatCompletionModel(
         job_id=str(uuid.uuid4()),
+        priority=None,
         meta=PromptMeta(),
         messages=[ChatCompletionUnit(role="user", content="test request")]
     )
@@ -78,4 +79,4 @@ async def test_task_in_queue(test_local_config, rabbitmq_connection, rabbit_clie
     assert message[0]["role"] == prompt.messages[0].role
 
     method_frame, header_frame, body = rabbitmq_connection.basic_get(queue=queue_name, auto_ack=True)
-    assert method_frame is None, "В очереди больше одной задачи"
+    assert method_frame is None, "There is more then one task in queue"
