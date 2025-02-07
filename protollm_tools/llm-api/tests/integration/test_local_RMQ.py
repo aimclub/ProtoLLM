@@ -45,7 +45,7 @@ async def test_task_in_queue(test_local_config, rabbitmq_connection, rabbit_clie
     queue_name = "test_priority_queue"
     prompt = ChatCompletionModel(
         job_id=str(uuid.uuid4()),
-        priority=None,
+        priority=3,
         meta=PromptMeta(),
         messages=[ChatCompletionUnit(role="user", content="test request")]
     )
@@ -66,6 +66,7 @@ async def test_task_in_queue(test_local_config, rabbitmq_connection, rabbit_clie
 
     resp_prompt = kwargs["prompt"]
     assert resp_prompt["job_id"] == prompt.job_id
+    assert resp_prompt["priority"] == prompt.priority
 
     meta = resp_prompt["meta"]
     assert meta["temperature"] == prompt.meta.temperature

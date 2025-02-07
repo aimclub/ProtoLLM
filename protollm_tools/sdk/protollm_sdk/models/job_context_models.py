@@ -47,6 +47,7 @@ class ChatCompletionModel(BaseModel):
         # Возвращаем новый экземпляр ChatCompletionModel
         return cls(
             job_id=prompt_model.job_id,
+            priority=prompt_model.priority,
             meta=prompt_model.meta,
             messages=[initial_message]
         )

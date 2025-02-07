@@ -1924,14 +1924,14 @@ files = [
 
 [[package]]
 name = "protollm-sdk"
-version = "1.1.5"
+version = "1.1.6"
 description = ""
 optional = false
 python-versions = "<4.0,>=3.10"
 groups = ["main"]
 files = [
-    {file = "protollm_sdk-1.1.5-py3-none-any.whl", hash = "sha256:c3f1867e07c17048a705bcc65b17fa26781aa0317599d59b242f56cacbc14359"},
-    {file = "protollm_sdk-1.1.5.tar.gz", hash = "sha256:0522ba937bb59d40df95ef4b2a245dfdf04c7ee08fa021d59364370a5cb2f972"},
+    {file = "protollm_sdk-1.1.6-py3-none-any.whl", hash = "sha256:f756a458e3f3fed58069bad8e79da705ad26560883aa2bce2cf41b8c1fd821f9"},
+    {file = "protollm_sdk-1.1.6.tar.gz", hash = "sha256:de13b61ba211befda89c71264c5f48bdd51b038f0fc3c68e3bc0e363e8182c15"},
 ]
 
 [package.dependencies]
@@ -3161,4 +3161,4 @@ cffi = ["cffi (>=1.11)"]
 [metadata]
 lock-version = "2.1"
 python-versions = "^3.10"
-content-hash = "1f27f9ff4d7562cfd5dcf5110e99601c61c45bc9e8777c541bfb9a6fb28a1d39"
+content-hash = "26134678158578442037c24fad4964a34d8d9ee456769dfcdcd961a2b66d6313"
