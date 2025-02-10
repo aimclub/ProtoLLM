@@ -125,8 +125,8 @@ if __name__ == "__main__":
     from langchain_core.messages import HumanMessage, SystemMessage
     from langchain_core.tools import tool
     
-    # model = LanguageModelCreator.create_llm_connector(os.getenv("LLAMA_URL"))
-    # model = LanguageModelCreator.create_llm_connector(os.getenv("GIGACHAT_URL"))
+    # model = create_llm_connector(os.getenv("LLAMA_URL"))
+    # model = create_llm_connector(os.getenv("GIGACHAT_URL"))
     model = create_llm_connector(os.getenv("GPT4_URL"))
     
     # Tool calling
