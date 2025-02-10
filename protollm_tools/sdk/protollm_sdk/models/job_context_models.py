@@ -18,6 +18,7 @@ class PromptMeta(BaseModel):
 
 class PromptModel(BaseModel):
     job_id: str
+    priority: int | None = Field(default=None, examples=[None])
     meta: PromptMeta
     content: str
 
@@ -31,6 +32,7 @@ class ChatCompletionUnit(BaseModel):
 class ChatCompletionModel(BaseModel):
     """A model for chat completion order"""
     job_id: str
+    priority: int | None = Field(default=None, examples=[None])
     source: str = "local"
     meta: PromptMeta
     messages: list[ChatCompletionUnit]
@@ -45,6 +47,7 @@ class ChatCompletionModel(BaseModel):
         # Возвращаем новый экземпляр ChatCompletionModel
         return cls(
             job_id=prompt_model.job_id,
+            priority=prompt_model.priority,
             meta=prompt_model.meta,
             messages=[initial_message]
         )

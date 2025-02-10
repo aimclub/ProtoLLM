@@ -2,6 +2,7 @@ import json
 import logging
 from contextlib import contextmanager
 import pika
+from sqlalchemy import Boolean
 
 logger = logging.getLogger(__name__)
 
@@ -39,25 +40,25 @@ class RabbitMQWrapper:
             channel.close()
             connection.close()
 
-    def publish_message(self, queue_name: str, message: dict, priority: int = None):
+    def publish_message(self, queue_name: str, message: dict, durable: bool=True):
         """
         Publish a message to a specified queue with an optional priority.
 
         :param queue_name: Name of the queue to publish to
         :param message: Message to publish (dictionary will be serialized to JSON)
         :param priority: Optional priority of the message (0-255)
+        :param durable: Optional type of durability of queue
         """
         try:
             with self.get_channel() as channel:
-                arguments = {}
-                if priority is not None:
-                    arguments['x-max-priority'] = 10
+                arguments = {'x-max-priority': 5}
+                priority = message.get("kwargs").get("prompt").get("priority")
 
-                channel.queue_declare(queue=queue_name, durable=True, arguments=arguments)
+                channel.queue_declare(queue=queue_name, durable=durable, arguments=arguments)
 
                 properties = pika.BasicProperties(
                     delivery_mode=2,
-                    priority=priority if priority is not None else 0
+                    priority=priority
                 )
                 channel.basic_publish(
                     exchange='',
@@ -71,18 +72,19 @@ class RabbitMQWrapper:
             logger.error(f"Failed to publish message to queue '{queue_name}'. Error: {ex}")
             raise Exception(f"Failed to publish message to queue '{queue_name}'. Error: {ex}") from ex
 
-    def consume_messages(self, queue_name: str, callback):
+    def consume_messages(self, queue_name: str, callback, durable: bool=True):
         """
         Start consuming messages from a specified queue.
 
         :param queue_name: Name of the queue to consume from
         :param callback: Callback function to process messages
+        :param durable: Optional type of durability of queue
         """
         try:
             connection = pika.BlockingConnection(self.connection_params)
             channel = connection.channel()
 
-            channel.queue_declare(queue=queue_name, durable=True)
+            channel.queue_declare(queue=queue_name, durable=durable, arguments={"x-max-priority": 5})
 
             channel.basic_consume(
                 queue=queue_name,

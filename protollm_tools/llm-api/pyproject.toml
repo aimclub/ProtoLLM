@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "protollm-api"
-version = "1.0.1"
+version = "1.0.5"
 description = ""
 authors = ["aimclub"]
 readme = "README.md"
@@ -12,7 +12,7 @@ pika = "^1.3.2"
 pydantic = "^2.7.4"
 flower = "2.0.1"
 
-protollm_sdk = "^1.1.0"
+protollm_sdk = "^1.1.6"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^8.2.2"

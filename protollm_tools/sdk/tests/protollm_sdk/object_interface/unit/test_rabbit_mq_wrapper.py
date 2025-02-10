@@ -21,35 +21,20 @@ def rabbit_wrapper(mock_pika):
     )
 
 @pytest.mark.ci
-def test_publish_message(rabbit_wrapper, mock_pika):
-    queue_name = "test_queue"
-    message = {"key": "value"}
-
-    rabbit_wrapper.publish_message(queue_name, message)
-
-    mock_pika.queue_declare.assert_called_once_with(queue=queue_name, durable=True, arguments={})
-    mock_pika.basic_publish.assert_called_once_with(
-        exchange="",
-        routing_key=queue_name,
-        body=json.dumps(message),
-        properties=pika.BasicProperties(delivery_mode=2, priority=0),
-    )
-
-@pytest.mark.ci
 def test_publish_message_with_priority(rabbit_wrapper, mock_pika):
     """
     Tests successful message publishing to a queue with priority.
     """
     queue_name = "test_queue"
-    message = {"key": "value"}
-    priority = 5
+    message = {"kwargs": {"prompt": {"priority": 3}}}
 
-    rabbit_wrapper.publish_message(queue_name, message, priority=priority)
+
+    rabbit_wrapper.publish_message(queue_name, message)
 
     mock_pika.queue_declare.assert_called_once_with(
         queue=queue_name,
         durable=True,
-        arguments={"x-max-priority": 10}
+        arguments={"x-max-priority": 5}
     )
 
     mock_pika.basic_publish.assert_called_once_with(
@@ -58,7 +43,7 @@ def test_publish_message_with_priority(rabbit_wrapper, mock_pika):
         body=json.dumps(message),
         properties=pika.BasicProperties(
             delivery_mode=2,
-            priority=priority
+            priority=3
         ),
     )
 
@@ -69,7 +54,7 @@ def test_consume_message(rabbit_wrapper, mock_pika):
 
     rabbit_wrapper.consume_messages(queue_name, callback)
 
-    mock_pika.queue_declare.assert_called_once_with(queue=queue_name, durable=True)
+    mock_pika.queue_declare.assert_called_once_with(queue=queue_name, durable=True, arguments={'x-max-priority': 5})
     mock_pika.basic_consume.assert_called_once_with(
         queue=queue_name,
         on_message_callback=callback,

@@ -21,7 +21,7 @@ def get_router(config: Config) -> APIRouter:
     )
 
     redis_db = RedisWrapper(config.redis_host, config.redis_port)
-    rabbitmq = RabbitMQWrapper(config.redis_host, config.redis_port, config.rabbit_login, config.rabbit_password)
+    rabbitmq = RabbitMQWrapper(config.rabbit_host, config.rabbit_port, config.rabbit_login, config.rabbit_password)
 
     @router.post('/generate', response_model=ResponseModel)
     async def generate(prompt_data: PromptModel, queue_name: str = config.queue_name):

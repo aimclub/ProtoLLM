@@ -13,19 +13,17 @@ from protollm_api.backend.broker import send_task, get_result
 async def test_send_task(test_local_config):
     prompt = ChatCompletionModel(
         job_id=str(uuid.uuid4()),
+        priority=None,
         meta=PromptMeta(),
         messages=[ChatCompletionUnit(role="user", content="test request")]
     )
     transaction = ChatCompletionTransactionModel(prompt=prompt, prompt_type=PromptTypes.CHAT_COMPLETION.value)
 
     mock_rabbit = MagicMock()
-    #mock_connection.return_value.channel.return_value = mock_channel
 
     await send_task(test_local_config, test_local_config.queue_name, transaction, mock_rabbit)
 
-    #mock_connection.assert_called_once()
-    mock_rabbit.publish_message.assert_called_once_with(test_local_config.queue_name, ANY)
-    #mock_channel.basic_publish.assert_called_once()
+    mock_rabbit.publish_message.assert_called_once_with(test_local_config.queue_name, ANY, True)
 
 
 @pytest.mark.asyncio

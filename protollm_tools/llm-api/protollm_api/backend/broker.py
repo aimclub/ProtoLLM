@@ -28,6 +28,9 @@ async def send_task(config: Config,
     Raises:
         Exception: If there is an error during the connection or message publishing process.
     """
+    if transaction.prompt.priority is None:
+        transaction.prompt.priority = config.base_priority
+
     task = {
         "type": "task",
         "task": task_type,
@@ -38,7 +41,7 @@ async def send_task(config: Config,
         "eta": None
     }
 
-    rabbitmq.publish_message(queue_name, task)
+    rabbitmq.publish_message(queue_name, task, config.queue_durable)
 
 
 

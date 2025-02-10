@@ -27,6 +27,7 @@ async def test_generate_endpoint(test_app, test_local_config):
 
             prompt = {
                 "job_id": "test-job-id",
+                "priority": 3,
                 "meta": {
                     "temperature": 0.2,
                     "tokens_limit": 0,
