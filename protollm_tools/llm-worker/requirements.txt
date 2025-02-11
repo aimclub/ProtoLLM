@@ -99,7 +99,7 @@ prometheus-fastapi-instrumentator==7.0.0 ; python_version >= "3.10" and python_v
 prompt-toolkit==3.0.48 ; python_version >= "3.10" and python_version < "4.0"
 propcache==0.2.0 ; python_version >= "3.10" and python_version < "4.0"
 protobuf==5.28.3 ; python_version >= "3.10" and python_version < "4.0"
-protollm-sdk==1.0.0 ; python_version >= "3.10" and python_version < "4.0"
+protollm-sdk==1.1.6 ; python_version >= "3.10" and python_version < "4.0"
 psutil==6.1.0 ; python_version >= "3.10" and python_version < "4.0"
 py-cpuinfo==9.0.0 ; python_version >= "3.10" and python_version < "4.0"
 pyairports==2.1.1 ; python_version >= "3.10" and python_version < "4.0"

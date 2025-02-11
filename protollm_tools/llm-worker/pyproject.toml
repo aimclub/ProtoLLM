@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "protollm-worker"
-version = "1.0.1"
+version = "1.0.2"
 description = ""
 authors = ["aimclub"]
 readme = "README.md"
@@ -10,7 +10,7 @@ python = "^3.10"
 redis = "^5.0.5"
 pika = "^1.3.2"
 pydantic = "^2.7.4"
-protollm_sdk = "^1.1.0"
+protollm_sdk = "^1.1.6"
 vllm = "^0.6.4.post1"
 
 [toll.poetry.llama-cpp]
