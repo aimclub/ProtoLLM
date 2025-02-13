@@ -4,18 +4,18 @@ services:
   llm:
     container_name: llm-worker
     image: llm-core:latest
-    runtime: nvidia
-    deploy:
-      resources:
-        limits:
-          # cpus: 5
-          memory: 100G
+#    runtime: nvidia
+#    deploy:
+#      resources:
+#        limits:
+#          # cpus: 5
+#          memory: 100G
     build:
-      context: deployment
+      context: .
       dockerfile: Dockerfile
     env_file: .env
-    volumes:
-      - <your_path_to_data_in_docker>:/data
+#    volumes:
+#      - <your_path_to_data_in_docker>:/data
     ports:
       - ${LLM_WORKER_PORT}:8672
     networks:

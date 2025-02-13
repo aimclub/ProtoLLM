@@ -43,10 +43,10 @@ class Config:
         self.rabbit_login = rabbit_login
         self.rabbit_password = rabbit_password
         self.queue_name = queue_name
-        self.model_path = model_path,
-        self.token_len = token_len,
-        self.tensor_parallel_size = tensor_parallel_size,
-        self.gpu_memory_utilisation = gpu_memory_utilisation,
+        self.model_path = model_path
+        self.token_len = token_len
+        self.tensor_parallel_size = tensor_parallel_size
+        self.gpu_memory_utilisation = gpu_memory_utilisation
 
     @classmethod
     def read_from_env(cls) -> 'Config':

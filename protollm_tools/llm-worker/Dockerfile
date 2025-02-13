@@ -1,4 +1,4 @@
-FROM nvidia/cuda:12.1.0-devel-ubuntu22.04
+FROM ubuntu:22.04
 
 RUN apt update && apt upgrade -y
 RUN apt install pip -y
@@ -12,7 +12,6 @@ COPY requirements.txt ./requirements.txt
 
 RUN pip install -r requirements.txt
 
-COPY protollm_worker .
-
+COPY . .
 
 CMD python3 main.py
