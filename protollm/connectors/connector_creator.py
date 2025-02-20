@@ -67,9 +67,9 @@ class CustomChatOpenAI(ChatOpenAI):
                         break
                 messages[idx].content += "\n\n" + system_prompt
 
-        response = super().invoke(messages, *args, **kwargs)
+        response = self._super_invoke(messages, *args, **kwargs)
 
-        if isinstance(response, AIMessage) and response.content.startswith("<function="):
+        if isinstance(response, AIMessage) and ("<function=" in response.content):
             tool_calls = self._parse_function_calls(response.content)
             if tool_calls:
                 response.tool_calls = tool_calls
@@ -79,6 +79,9 @@ class CustomChatOpenAI(ChatOpenAI):
             response = self._parse_custom_structure(response)
 
         return response
+    
+    def _super_invoke(self, messages, *args, **kwargs):
+        return super().invoke(messages, *args, **kwargs)
 
     def bind_tools(self, *args, **kwargs: Any) -> Runnable:
         if self._requires_custom_handling_for_tools():
@@ -100,6 +103,10 @@ class CustomChatOpenAI(ChatOpenAI):
         Generates a system prompt with function descriptions and instructions for the model.
         """
         tool_descriptions = []
+        if self._tool_choice_mode not in ["auto", None, "any", "required", True]:
+            tool_choice_mode = f"<<{self._tool_choice_mode}>>"
+        else:
+            tool_choice_mode = str(self._tool_choice_mode)
         for tool in self._tools:
             if isinstance(tool, dict):
                 tool_descriptions.append(
@@ -118,6 +125,12 @@ class CustomChatOpenAI(ChatOpenAI):
                 )
         tool_prefix = "You have access to the following functions:\n\n"
         tool_instructions = (
+            "There are the following 4 function call options:\n"
+            "- str of the form <<tool_name>>: call <<tool_name>> tool.\n"
+            "- 'auto': automatically select a tool (including no tool).\n"
+            "- 'none': don't call a tool.\n"
+            "- 'any' or 'required' or 'True': at least one tool have to be called.\n\n"
+            f"User-selected option - {tool_choice_mode}\n\n"
             "If you choose to call a function ONLY reply in the following format with no prefix or suffix:\n"
             '<function=example_function_name>{"example_name": "example_value"}</function>'
         )
@@ -234,8 +247,12 @@ def create_llm_connector(model_url: str, *args: Any, **kwargs: Any) -> CustomCha
         base_url, model_name = model_data[0], model_data[1]
         api_key = os.getenv("VSE_GPT_KEY")
         return CustomChatOpenAI(model_name=model_name, base_url=base_url, api_key=api_key, *args, **kwargs)
-    elif "gigachat":
+    elif "gigachat" in model_url:
         model_name = model_url.split(";")[1]
         access_token = get_access_token()
         return GigaChat(model=model_name, access_token=access_token, *args, **kwargs)
+    elif model_url == "test_model":
+        return CustomChatOpenAI(model_name=model_url, api_key="test")
+    else:
+        raise ValueError("Unsupported provider URL")
     # Possible to add another LangChain compatible connector

@@ -31,7 +31,7 @@ def get_access_token() -> str:
 
 
 # List of models that do NOT support calling functions out-of-the-box yet
-models_without_function_calling = ["r1", "deepseek-chat-alt"]
+models_without_function_calling = ["r1", "deepseek-chat-alt", "test_model"]
 
 # List of models that do NOT support structured outputs out-of-the-box yet
-models_without_structured_output = ["deepseek-chat", "deepseek-chat-alt", "llama-3.3-70b-instruct"]
+models_without_structured_output = ["deepseek-chat", "deepseek-chat-alt", "llama-3.3-70b-instruct", "test_model"]
