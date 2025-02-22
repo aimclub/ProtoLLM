@@ -10,9 +10,18 @@ class Config:
             redis_prefix: str = "llm-api",
             rabbit_host: str = "localhost",
             rabbit_port: int = 5672,
+            rabbit_web_port: int = 15672,
             rabbit_login: str = "admin",
             rabbit_password: str = "admin",
-            queue_name: str = "llm-api-queue"
+            queue_name: str = "llm-api-queue",
+            mongodb_host: str = "localhost",
+            mongodb_port: int = 27017,
+            mongodb_user: str = "admin",
+            mongodb_password: str = "admin",
+            mongodb_database_name: str = "llm-api-database",
+            mongodb_collection_name: str = "llm-api-collection",
+            mongoexpress_user: str = "admin",
+            mongoexpress_password: str = "admin",
     ):
         self.inner_lln_url = inner_llm_url
         self.redis_host = redis_host
@@ -20,9 +29,18 @@ class Config:
         self.redis_prefix = redis_prefix
         self.rabbit_host = rabbit_host
         self.rabbit_port = rabbit_port
+        self.rabbit_web_port = rabbit_web_port
         self.rabbit_login = rabbit_login
         self.rabbit_password = rabbit_password
         self.queue_name = queue_name
+        self.mongodb_host = mongodb_host
+        self.mongodb_port = mongodb_port
+        self.mongodb_user = mongodb_user
+        self.mongodb_password = mongodb_password
+        self.mongodb_database_name = mongodb_database_name
+        self.mongodb_collection_name = mongodb_collection_name
+        self.mongoexpress_user = mongoexpress_user
+        self.mongoexpress_password = mongoexpress_password
 
     @classmethod
     def read_from_env(cls) -> 'Config':
@@ -33,9 +51,17 @@ class Config:
             os.environ.get("REDIS_PREFIX"),
             os.environ.get("RABBIT_MQ_HOST"),
             int(os.environ.get("RABBIT_MQ_PORT")),
+            int(os.environ.get("WEB_RABBIT_MQ")),
             os.environ.get("RABBIT_MQ_LOGIN"),
             os.environ.get("RABBIT_MQ_PASSWORD"),
-            os.environ.get("QUEUE_NAME")
+            os.environ.get("QUEUE_NAME"),
+            int(os.environ.get("MONGO_DB_PORT")),
+            os.environ.get("MONGO_DB_HOST"),
+            os.environ.get("MONGODB_USER"),
+            os.environ.get("MONGODB_PASS"),
+            int(os.environ.get("WEB_MONGO_DB_PORT")),
+            os.environ.get("MONGOEXPRESS_USER"),
+            os.environ.get("MONGOEXPRESS_PASS")
         )
 
     @classmethod
@@ -53,7 +79,15 @@ class Config:
             env_vars.get("REDIS_PREFIX"),
             env_vars.get("RABBIT_MQ_HOST"),
             int(env_vars.get("RABBIT_MQ_PORT")),
+            int(env_vars.get("WEB_RABBIT_MQ")),
             env_vars.get("RABBIT_MQ_LOGIN"),
             env_vars.get("RABBIT_MQ_PASSWORD"),
-            env_vars.get("QUEUE_NAME")
+            env_vars.get("QUEUE_NAME"),
+            int(env_vars.get("MONGO_DB_PORT")),
+            env_vars.get("MONGO_DB_HOST"),
+            env_vars.get("MONGODB_USER"),
+            env_vars.get("MONGODB_PASS"),
+            int(env_vars.get("WEB_MONGO_DB_PORT")),
+            env_vars.get("MONGOEXPRESS_USER"),
+            env_vars.get("MONGOEXPRESS_PASS")
         )

@@ -8,11 +8,20 @@ class BaseLLM(ABC):
     and handling prompt-based and chat-based transactions.
     """
 
-    def __init__(self, model_path_or_url: str):
+    def __init__(
+            self,
+            model_path_or_url: str,
+            name: str = None,
+            description: str = None,
+            ip_address: str = None,
+    ):
         """
         Initialize the language model.
 
         :param model_path_or_url: Path or URL to the model.
+        :param name: name of the model
+        :param description: description of the model
+        :param ip_address: ip address of the model
         """
         ...
 
@@ -61,6 +70,11 @@ class BaseLLM(ABC):
         """
         ...
 
+    def get_meta(self) -> str:
+        """
+        Returns models metadata such as name, description, etc.
+        """
+        return f"{self.name}, {self.description}, {self.ip_address}"
 
 class LocalLLM(BaseLLM, ABC):
     """
