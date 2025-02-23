@@ -20,6 +20,7 @@ class Config:
             mongodb_password: str = "admin",
             mongodb_database_name: str = "llm-api-database",
             mongodb_collection_name: str = "llm-api-collection",
+            web_mongodb_port: int = 8081,
             mongoexpress_user: str = "admin",
             mongoexpress_password: str = "admin",
     ):
@@ -39,6 +40,7 @@ class Config:
         self.mongodb_password = mongodb_password
         self.mongodb_database_name = mongodb_database_name
         self.mongodb_collection_name = mongodb_collection_name
+        self.web_mongodb_port = web_mongodb_port
         self.mongoexpress_user = mongoexpress_user
         self.mongoexpress_password = mongoexpress_password
 

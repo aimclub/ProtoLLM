@@ -1,3 +1,4 @@
+import json
 import logging
 import httpx
 
@@ -5,11 +6,10 @@ from typing import List
 from fastapi import HTTPException
 
 from protollm_api.config import Config
-from protollm_api.backend.database import MongoDBWrapper
 from protollm_api.backend.models.queue_management import (
     QueueDeclarationModel, QueueManagementModel, QueuesFetchModel, ActiveWorkersFetchModel, QueueUpdateModel
 )
-from protollm_sdk.object_interface.redis_wrapper import RedisWrapper
+from protollm_sdk.object_interface.mongo_db_wrapper import MongoDBWrapper
 from protollm_sdk.object_interface.rabbit_mq_wrapper import RabbitMQWrapper
 from protollm_sdk.models.job_context_models import (
     ResponseModel, ChatCompletionTransactionModel, PromptTransactionModel
@@ -48,14 +48,14 @@ async def send_task(config: Config,
 
     rabbitmq.publish_message(queue_name, task)
 
-async def get_result(config: Config, task_id: str, redis_db: RedisWrapper) -> ResponseModel:
+async def get_result(config: Config, task_id: str, mongo_db: MongoDBWrapper) -> ResponseModel:
     """
-    Retrieves the result of a task from Redis.
+    Retrieves the result of a task from MongoDB.
 
     Args:
         config (Config): Configuration object containing Redis connection details.
         task_id (str): ID of the task whose result is to be retrieved.
-        redis_db (RedisWrapper): Redis wrapper object to interact with the Redis database.
+        mongo_db (MongoDBWrapper):  MongoDB wrapper object to interact with MongoDB database.
 
     Returns:
         ResponseModel: Parsed response model containing the result.
@@ -63,21 +63,22 @@ async def get_result(config: Config, task_id: str, redis_db: RedisWrapper) -> Re
     Raises:
         Exception: If the result is not found within the timeout period or other errors occur.
     """
-    logger.info(f"Trying to get data from Redis")
-    logger.info(f"Redis key: {config.redis_prefix}:{task_id}")
+    logger.info(f"Trying to get data from MongoDB")
+    logger.info(f"MongoDB key: {config.mongodb_database_name}:{config.mongodb_collection_name}:{task_id}")
     while True:
         try:
-            # Wait for the result to be available in Redis
-            p = await redis_db.wait_item(f"{config.redis_prefix}:{task_id}", timeout=90)
+
+            # Wait for the result to be available in MongoDB
+            result = await mongo_db.get_single_document(
+                pattern={"_id": f"{config.mongodb_database_name}:{config.mongodb_collection_name}:{task_id}"}
+            )
+            result["_id"] = str(result["_id"])
+
             break
         except Exception as ex:
-            logger.info(f"Retrying to get data from Redis: {ex}")
+            logger.info(f"Retrying to get data from MongoDB: {ex}")
 
-    # Decode and validate the result
-    model_text = p.decode()
-    response = ResponseModel.model_validate_json(model_text)
-
-    return response
+    return ResponseModel(content=result["content"])
 
 async def add_queue(
         model: QueueDeclarationModel,
@@ -188,6 +189,7 @@ async def fetch_queues_meta(
         if response.status_code != 200:
             raise HTTPException(status_code=response.status_code)
 
+        # iterating over requested queues
         for q in response.json():
 
             meta = await mongodb.get_single_document(pattern={"queue_name": q["name"]})
@@ -198,6 +200,7 @@ async def fetch_queues_meta(
 
                 with rabbitmq.get_channel() as channel:
 
+                    # getting the count of consumers and messages
                     queue = channel.queue_declare(queue=meta["queue_name"], passive=True)
                     consumers, messages = queue.method.consumer_count, queue.method.message_count
 
@@ -234,7 +237,6 @@ async def get_active_workers(config: Config):
 
         return ActiveWorkersFetchModel(content=[w for w in response.json() if w["active"]])
 
-
 async def purge_queue(model: QueueManagementModel, rabbitmq: RabbitMQWrapper) -> None:
     """
     Purges all messages from a specified RabbitMQ queue
@@ -252,22 +254,79 @@ async def purge_queue(model: QueueManagementModel, rabbitmq: RabbitMQWrapper) ->
         channel.queue_purge(queue)
         logger.info(f"Queue {queue} was successfully purged.")
 
-async def get_all_messages() -> None:
-    ...
+async def get_all_messages(model: QueueManagementModel, rabbitmq: RabbitMQWrapper) -> list:
+    """
+    Collects and returns all messages for specified RabbitMQ queue.
 
-async def delete_message() -> None:
-    ...
+    Args:
+        model (QueueManagementModel): Pydantic model specified for a queue management
+        rabbitmq (RabbitMQWrapper): Rabbit wrapper object to interact with the Rabbit queue.
+
+    Returns:
+        A list of messages from transmitted RabbitMQ queue.
+    """
+    messages_list = []
+
+    with rabbitmq.get_channel() as channel:
+
+        # iterating over consumption generator without acknowledgement
+        for method, properties, body in channel.consume(queue=model.queue_name, auto_ack=False, inactivity_timeout=1):
+
+            # canceling the consumption
+            if not method:
+                channel.cancel()
+                break
+
+            # collecting messages
+            messages_list.append(json.loads(bytes.decode(body)))
+
+    return messages_list
 
 
+async def delete_message(queue_name: str, message_id: str, rabbitmq: RabbitMQWrapper) -> None:
+    """
+    Deletes a message from a transmitted RabbitMQ queue and requeue remaining messages.
 
-#import asyncio
+    Args:
+        queue_name: The name of RabbitMQ queue where needs to delete a message.
+        message_id: id of the message that need to be deleted from transmitted queue.
+        rabbitmq (RabbitMQWrapper): Rabbit wrapper object to interact with the Rabbit queue.
 
-#c = Config()
-# r = RedisWrapper(c.redis_host, c.redis_port)
-# mq = RabbitMQWrapper(c.rabbit_host, c.rabbit_port, c.rabbit_login, c.rabbit_password)
+    Returns:
+        None
+    """
+    to_requeue = []
 
-# print(asyncio.run(fetch_queues_meta(config=c, redis=r, rabbitmq=mq)))
-# print(asyncio.run(purge_queue(model="1234", rabbitmq=mq)))
+    def _callback(ch, method, properties, body, delete_id) -> None:
+        msg = json.loads(bytes.decode(body))
 
-#print(asyncio.run(get_active_workers(c)))
+        if msg.get("id") != delete_id:
+            to_requeue.append((properties, msg))
 
+        # message acknowledgement
+        ch.basic_ack(delivery_tag=method.delivery_tag)
+
+    try:
+        with rabbitmq.get_channel() as channel:
+
+            # iterating over consumption generator without acknowledgement
+            for method, properties, body in channel.consume(queue=queue_name, auto_ack=False, inactivity_timeout=1):
+
+                if method:
+                    _callback(channel, method, properties, body, delete_id=message_id)
+                else:
+                    channel.cancel()
+                    break
+
+            # requeue the remaining messages
+            for properties, message in to_requeue:
+
+                channel.basic_publish(
+                    exchange='',
+                    routing_key=queue_name,
+                    body=json.dumps(message),
+                    properties=properties
+                )
+    except Exception as ex:
+        logger.info(f"Error occurs during the message deletion: Exception -> {ex}")
+        raise ex

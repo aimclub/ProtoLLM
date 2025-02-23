@@ -22,6 +22,41 @@ services:
     networks:
       - llm_wrap_network
 
+  mongo:
+    image: "mongo:latest"
+    ports:
+      - ${MONGO_DB_PORT}:27017
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=${MONGODB_USER}
+      - MONGO_INITDB_ROOT_PASSWORD=${MONGODB_PASS}
+    env_file:
+      - .env
+    volumes:
+      - mongodb_data:/data/db
+    networks:
+      - llm_wrap_network
+
+  mongo-express:
+    image: "mongo-express:latest"
+    ports:
+      - ${WEB_MONGO_DB_PORT}:8081
+    environment:
+      - ME_CONFIG_MONGODB_SERVER=mongo
+      - ME_CONFIG_MONGODB_PORT=${MONGO_DB_PORT}
+      - ME_CONFIG_MONGODB_ENABLE_ADMIN=true
+      - ME_CONFIG_MONGODB_ADMINUSERNAME=${MONGOEXPRESS_USER}
+      - ME_CONFIG_MONGODB_ADMINPASSWORD=${MONGOEXPRESS_PASS}
+      - ME_CONFIG_MONGODB_AUTH_USERNAME=${MONGODB_USER}
+      - ME_CONFIG_MONGODB_AUTH_PASSWORD=${MONGODB_PASS}
+      - ME_CONFIG_BASICAUTH_USERNAME=${MONGOEXPRESS_USER}
+      - ME_CONFIG_BASICAUTH_PASSWORD=${MONGOEXPRESS_PASS}
+    env_file:
+      - .env
+    volumes:
+      - mongodb_data:/data/db
+    networks:
+      - llm_wrap_network
+
   celery_worker:
     build: .
     depends_on:

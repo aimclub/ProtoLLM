@@ -17,6 +17,14 @@ class Config:
     rabbit_mq_login = os.environ.get("RABBIT_MQ_LOGIN", "admin")
     rabbit_mq_password = os.environ.get("RABBIT_MQ_PASSWORD", "admin")
 
+    mongodb_port = int(os.environ.get("MONGO_DB_PORT", "27017"))
+    mongodb_host = os.environ.get("MONGO_DB_HOST", "localhost")
+    mongodb_user = os.environ.get("MONGODB_USER", "admin")
+    mongodb_password = os.environ.get("MONGODB_PASS", "admin")
+    web_mongodb_port = int(os.environ.get("WEB_MONGO_DB_PORT", "8081"))
+    mongoexpress_user = os.environ.get("MONGOEXPRESS_USER", "admin")
+    mongoexpress_password = os.environ.get("MONGOEXPRESS_PASS", "admin")
+
     text_embedder_host = os.environ.get("TEXT_EMB_HOST", "localhost")
     text_embedder_port = os.environ.get("TEXT_EMB_PORT", "9942")
 

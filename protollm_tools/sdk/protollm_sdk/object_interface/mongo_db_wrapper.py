@@ -25,7 +25,9 @@ class MongoDBWrapper:
         self.database = database
         self.collection = collection
 
+        # you could try defaults like this: {"zlibCompressionLevel": 7, "compressors": "zlib"}
         self.connection_args = connection_args
+
 
     @asynccontextmanager
     async def get_mongo_client(self) -> AsyncIOMotorClient:

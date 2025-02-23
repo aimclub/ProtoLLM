@@ -3,7 +3,16 @@ from typing import Any, List
 from fastapi import APIRouter
 
 from protollm_api.backend.broker import (
-    send_task, get_result, add_queue, delete_queue, fetch_queues_meta, purge_queue, get_active_workers, update_queue
+    send_task,
+    get_result,
+    add_queue,
+    delete_queue,
+    fetch_queues_meta,
+    purge_queue,
+    get_active_workers,
+    update_queue,
+    get_all_messages,
+    delete_message
 )
 from protollm_api.backend.models.queue_management import (
     QueueDeclarationModel,
@@ -14,7 +23,6 @@ from protollm_api.backend.models.queue_management import (
     ActiveWorkersFetchModel
 )
 from protollm_api.config import Config
-from protollm_api.backend.database import MongoDBWrapper
 from protollm_sdk.models.job_context_models import (
     PromptModel,
     ResponseModel,
@@ -23,6 +31,7 @@ from protollm_sdk.models.job_context_models import (
     PromptTypes
 )
 from protollm_sdk.object_interface.redis_wrapper import RedisWrapper
+from protollm_sdk.object_interface.mongo_db_wrapper import MongoDBWrapper
 from protollm_sdk.object_interface.rabbit_mq_wrapper import RabbitMQWrapper
 
 logging.basicConfig(level=logging.INFO)
@@ -59,7 +68,7 @@ def get_router(config: Config) -> APIRouter:
         )
         await send_task(config, queue_name, transaction_model, rabbitmq)
         logger.info(f"Task {prompt_data.job_id} was sent to LLM.")
-        return await get_result(config, prompt_data.job_id, redis_db)
+        return await get_result(config, prompt_data.job_id, mongo_db)
 
     @router.post('/chat_completion', response_model=ResponseModel)
     async def chat_completion(prompt_data: ChatCompletionModel, queue_name: str = config.queue_name):
@@ -69,7 +78,7 @@ def get_router(config: Config) -> APIRouter:
         )
         await send_task(config, queue_name, transaction_model, rabbitmq)
         logger.info(f"Task {prompt_data.job_id} was sent to LLM.")
-        return await get_result(config, prompt_data.job_id, redis_db)
+        return await get_result(config, prompt_data.job_id, mongo_db)
 
     @router.post("/queues/declare/{queue_name}")
     async def declare_rabbit_queue(queue_name: str, model: str, durable: bool, description: str, arguments: dict[str, Any]):
@@ -119,6 +128,19 @@ def get_router(config: Config) -> APIRouter:
         )
         logger.info(f"Attempting to purge queue {queue_name}")
         return await purge_queue(purge_model, rabbitmq=rabbitmq)
+
+    @router.post("/queues/{queue_name}/remove_message/{message_id}")
+    async def remove_message_rabbit_queue(queue_name: str, message_id: str):
+        logger.info(f"Attempting to delete message {message_id} from queue {queue_name}")
+        return await delete_message(queue_name, message_id, rabbitmq=rabbitmq)
+
+    @router.post("/queue/{queue_name}/messages")
+    async def get_messages_from_rabbit_queue(queue_name: str):
+        model = QueueManagementModel(
+            queue_name=queue_name
+        )
+        logger.info(f"Attempting to get messages from queue {queue_name}")
+        return await get_all_messages(model, rabbitmq=rabbitmq)
 
     @router.get("/queues/active_workers", response_model=ActiveWorkersFetchModel)
     async def fetch_rabbit_active_workers():

@@ -6,6 +6,7 @@ from protollm_sdk.models.job_context_models import PromptModel, ChatCompletionMo
     PromptWrapper, ChatCompletionTransactionModel
 from protollm_sdk.object_interface import RabbitMQWrapper
 from protollm_sdk.object_interface.redis_wrapper import RedisWrapper
+from protollm_sdk.object_interface.mongo_db_wrapper import MongoDBWrapper
 
 from protollm_worker.config import Config
 from protollm_worker.models.base import BaseLLM
@@ -22,9 +23,11 @@ class LLMWrap:
     and storing the results in Redis.
     """
 
-    def __init__(self,
-                 llm_model: BaseLLM,
-                 config: Config):
+    def __init__(
+            self,
+            llm_model: BaseLLM,
+            config: Config
+    ) -> None:
         """
         Initialize the LLMWrap class with the necessary configurations.
 
@@ -36,9 +39,26 @@ class LLMWrap:
         self.llm = llm_model
         logger.info('Loaded model')
 
-        self.redis_bd = RedisWrapper(config.redis_host, config.redis_port)
-        self.rabbitMQ = RabbitMQWrapper(config.rabbit_host, config.rabbit_port, config.rabbit_login, config.rabbit_password)
+        self.redis_bd = RedisWrapper(
+            redis_host=config.redis_host,
+            redis_port=config.redis_port
+        )
+        self.rabbitMQ = RabbitMQWrapper(
+            rabbit_host=config.rabbit_host,
+            rabbit_port=config.rabbit_port,
+            rabbit_user=config.rabbit_login,
+            rabbit_password=config.rabbit_password
+        )
+        self.mongo_db = MongoDBWrapper(
+            mongodb_host=config.mongodb_host,
+            mongodb_port=config.mongodb_port,
+            mongodb_user=config.mongodb_user,
+            mongodb_password=config.mongodb_password,
+            database=config.mongodb_database_name,
+            collection=config.mongodb_collection_name,
+        )
         self.redis_prefix = config.redis_prefix
+        self.mongo_db_prefix = f"{config.mongodb_database_name}:{config.mongodb_collection_name}"
         logger.info('Connected to Redis')
 
         self.models = {
@@ -87,6 +107,14 @@ class LLMWrap:
         func_result = self.llm(transaction)
 
         logger.info(f'The LLM response for task {transaction.prompt.job_id} has been generated')
-        logger.info(f'{self.redis_prefix}:{transaction.prompt.job_id}\n{func_result}')
-        self.redis_bd.save_item(f'{self.redis_prefix}:{transaction.prompt.job_id}', {"content": func_result})
-        logger.info(f'The response for task {transaction.prompt.job_id} was written to Redis')
+        logger.info(f'{self.mongo_db_prefix}:{transaction.prompt.job_id}\n{func_result}')
+
+        document = {
+            "_id": f"{self.mongo_db_prefix}:{transaction.prompt.job_id}",
+            "content": func_result
+        }
+        self.mongo_db.insert_single_document(document=document)
+        logger.info(f'The response for task {transaction.prompt.job_id} was written to MongoDB')
+
+        self.redis_bd.save_item(f'{self.redis_prefix}:{transaction.prompt.job_id}', {"status": "completed"})
+        logger.info(f'Task {transaction.prompt.job_id} was marked as "completed" in Redis')
