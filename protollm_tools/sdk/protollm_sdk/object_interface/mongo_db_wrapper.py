@@ -32,7 +32,7 @@ class MongoDBWrapper:
 
 
     @asynccontextmanager
-    async def get_mongo_client(self) -> AsyncIOMotorClient:
+    async def async_get_mongo_client(self) -> AsyncIOMotorClient:
         """Async context manager for providing access to the async MongoDB client."""
         client = AsyncIOMotorClient(self.conn, **self.connection_args)
 
