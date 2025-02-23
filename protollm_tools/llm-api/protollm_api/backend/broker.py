@@ -106,7 +106,7 @@ async def add_queue(
     data = model.model_dump()
     data["_id"] = data.pop("id")
     logger.info(f"{data}")
-    result = await mongodb.insert_single_document(document=data)
+    result = await mongodb.async_insert_single_document(document=data)
 
     logger.info(f"Queue metadata {data} was successfully saved into MongoDB")
     return str(result.inserted_id)

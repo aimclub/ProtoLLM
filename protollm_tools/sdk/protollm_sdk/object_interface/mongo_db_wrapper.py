@@ -1,8 +1,10 @@
 import logging
-from contextlib import asynccontextmanager
+from contextlib import asynccontextmanager, contextmanager
 from typing import Any
 
 from motor.motor_asyncio import AsyncIOMotorClient, AsyncIOMotorCollection
+
+from pymongo import MongoClient
 from pymongo.results import InsertOneResult, InsertManyResult, DeleteResult, UpdateResult
 
 logger = logging.getLogger(__name__)
@@ -39,7 +41,40 @@ class MongoDBWrapper:
         finally:
             client.close()
 
-    async def insert_single_document(self, document: dict[Any, Any]) -> InsertOneResult:
+    @contextmanager
+    def get_mongo_client(self) -> MongoClient:
+        """Context manager for providing access to the MongoDB client."""
+        client = MongoClient(self.conn, **self.connection_args)
+
+        try:
+            yield client
+        finally:
+            client.close()
+
+    def insert_single_document(self, document: dict[Any, Any]) -> InsertOneResult:
+        """
+        Inserts a single transmitted document into MongoDB collection.
+        Async version ot this method is available.
+
+        Args:
+            document (dict[Any, Any]): content to insert in MongoDB format.
+
+        Returns:
+            Inserted document identifier according to InsertOneResult class.
+        """
+        try:
+            with self.get_mongo_client() as client:
+
+                # _cursor might be called as collection
+                _cursor: MongoClient = client[self.database][self.collection]
+
+                return _cursor.insert_one(document)
+
+        except Exception as ex:
+            logger.info(f"{ex}")
+            raise ex
+
+    async def async_insert_single_document(self, document: dict[Any, Any]) -> InsertOneResult:
         """
         Inserts a single transmitted document into MongoDB collection.
 
