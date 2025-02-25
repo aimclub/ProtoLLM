@@ -1,10 +1,11 @@
 import os
+from typing import Optional
 
 from dotenv import load_dotenv
 from langchain_core.messages import HumanMessage, SystemMessage
 from langchain_core.tools import tool
+from pydantic import BaseModel, Field
 
-from protollm.definitions import CONFIG_PATH
 from protollm.connectors.connector_creator import create_llm_connector
 
 
@@ -20,147 +21,152 @@ def basic_call_example(url_with_name: str):
     print(res.content)
     
 
-def function_call_example(url_with_name: str):
+# Some models do not support explicit function calls, so the system prompt will be used for this. If it is not
+# specified, it will be generated from the tool description and response format. If specified, it will be
+# supplemented.
+def function_call_example_with_functions(url_with_name: str):
     """
-    Example of using a function to create a connector for function calls. Tools can be defined as functions with the
-    @tool decorator from LangChain or as dictionaries.
-    Some models do not support explicit function calls, so the system prompt will be used for this. If it is not
-    specified, it will be generated from the tool description and response format. If specified, it will be
-    supplemented.
-    
+    Example of using a function to create a connector for function calls. Tools are defined as functions with the
+    @tool decorator from LangChain.
+
     Args:
         url_with_name: Model URL combined with the model name
     """
     model = create_llm_connector(url_with_name)
     mssgs = [
-        SystemMessage(
-            content=""
-        ),
-        HumanMessage(content="Построй мне план размещения новых школ с бюджетом на 5000000000 рублей"),
+        SystemMessage(content=""),
+        HumanMessage(content="Build a plan for placing new schools with a budget of 5 billion rubles."),
     ]
-    
+
     @tool
     def territory_by_budget(is_best_one: bool, budget: int | None, service_type: str) -> str:
         """
-        Получить потенциальные территории для строительства нового сервиса заданного типа, с учетом бюджета.
+        Get potential territories for building a new service of a given type, considering the budget (amount in
+        rubles).  This function should be used if the discussion involves placement, creation, construction, or erection
+        of new services, including parks. Possible service types are strictly in the following list: ['school',
+        'clinic', 'kindergarten', 'park']. The budget is optional. If the user does not specify a budget, the parameter
+        will remain empty (None). Do not set default values yourself.
+        Required arguments: ["service_type"]
 
         Args:
-            is_best_one (bool): Флаг, указывающий, нужно ли выбрать лучшую территорию
-            budget (int | None): Размер бюджета в рублях
-            service_type (str): Тип сервиса ('школа', 'поликлиника', 'детский сад', 'парк')
+            is_best_one (bool): Flag indicating whether to select the best territory.
+            budget (int | None): Budget amount in rubles.
+            service_type (str): The new service being planned for construction. Possible service types are strictly in
+                the following list: ['school', 'clinic', 'kindergarten', 'park']. Select the type that the user is
+                interested in constructing.
 
         Returns:
-            str: Результат анализа.
+            str: Analysis result.
         """
-        return f"Лучшая территория для {service_type} с бюджетом {budget} найдена."
-    
+        return f"The best territory for {service_type} with a budget of {budget} has been found."
+
     @tool
     def parks_by_budget(budget: int | None) -> str:
         """
-        Получить парки, подходящие для благоустройства, с учетом заданного бюджета.
+        Get parks suitable for improvement, considering the specified budget (amount in rubles). This function is used
+        only if the discussion involves improving existing parks, not creating new ones. The budget is optional. If the
+        user does not specify a budget, the parameter will remain empty (None). Do not set default values yourself.
+        Required arguments: []
 
         Args:
-            budget (int | None): Размер бюджета в рублях.
+            budget (int | None): Budget amount in rubles.
 
         Returns:
-            str: Результат анализа.
+            str: Analysis result.
         """
-        return f"Парки для благоустройства с бюджетом {budget} найдены."
+        return f"Parks for improvement with a budget of {budget} have been found."
 
     tools_as_functions = [territory_by_budget, parks_by_budget]
-    
-    # tools_as_dicts = [
-    #     {
-    #         "name": "territory_by_budget",
-    #         "description": (
-    #             "Получить потенциальные территории для строительства нового сервиса заданного типа, с учетом бюджета"
-    #             " (сумма в рублях). Эта функция должна использоваться, если речь идет о размещении, создании,"
-    #             " строительстве или возведении новых сервисов, включая парки. Возможные значения типов сервисов строго"
-    #             " в следующем списке: ['школа', 'поликлиника', 'детский сад', 'парк']."
-    #             " Бюджет - опциональный параметр. Если пользователь не укажет бюджет, параметр останется пустым (None)."
-    #             " Не задавайте значения по умолчанию сами."
-    #             " Примеры: 1. Можно ли построить поликлиники в районе озера Долгого, если на строительство выделен"
-    #             " бюджет 5496000000 рублей? -> budget=5496000000, service_type='поликлиника'; 2. Хватит ли выделенного"
-    #             " бюджета в 4456567234 рублей на возведение парков в Пушкинский район СПБ? -> budget=45646217234,"
-    #             " service_type='парк'; 3. На строительство парка на Пискаревке выделен бюджет 2563560030 рублей. Хватит"
-    #             " ли этих денег? -> budget=45646217234, service_type='парк'; 4. Где мне разместить школу? ->"
-    #             " is_best_one=True, service_type='школа'."
-    #         ),
-    #         "parameters": {
-    #             "type": "object",
-    #             "properties": {
-    #                 "is_best_one": {
-    #                     "type": "string",
-    #                     "description": (
-    #                         "Флаг, в котором необходимо установить True, если пользователь просит лучшую территорию для"
-    #                         " размещения сервиса или просит подобрать только один квартал для сервиса. В остальных"
-    #                         " случаях - False."
-    #                     ),
-    #                 },
-    #                 "budget": {
-    #                     "type": "integer",
-    #                     "description": "Размер бюджета. Может быть указан в запросе. Значение по умолчанию - None.",
-    #                 },
-    #                 "service_type": {
-    #                     "type": "string",
-    #                     "description": "Новый сервис, который собираются строить. Возможные значения типов сервисов"
-    #                                    " строго в следующем списке: ['школа', 'поликлиника', 'детский сад', 'парк']."
-    #                                    " Нужно подобрать тип, строительство которого интересует пользователя.",
-    #                 },
-    #             },
-    #             "required": ["service_type"],
-    #         },
-    #     },
-    #     {
-    #         "name": "parks_by_budget",
-    #         "description": (
-    #             "Получить парки, подходящие для благоустройства, с учетом заданного бюджета (сумма в рублях)."
-    #             " Эта функция используется только если речь идет о благоустройстве существующих парков, а не о создании"
-    #             " новых."
-    #             " Бюджет - опциональный параметр. Если пользователь не укажет бюджет, параметр останется пустым (None)."
-    #             " Не задавайте значения по умолчанию сами."
-    #             " Примеры: 1. На благоустройство парков в Академическом выделен бюджет 12345517000 рублей. Хватит ли"
-    #             " этих денег? -> budget=12345517000: 2. Хватит ли мне 2846621000 рублей, чтобы благоустроить парк в"
-    #             " Петергофе? -> budget=2846621000."
-    #         ),
-    #         "parameters": {
-    #             "type": "object",
-    #             "properties": {
-    #                 "budget": {
-    #                     "type": "integer",
-    #                     "description": "Размер бюджета. Может быть указан в запросе. Значение по умолчанию - None.",
-    #                 },
-    #             },
-    #             "required": [],
-    #         },
-    #     },
-    # ]
-    
     model_with_tools = model.bind_tools(tools=tools_as_functions, tool_choice="auto")
     res = model_with_tools.invoke(mssgs)
     print(res.content)
     print(res.tool_calls)
 
 
-def structured_output_example(url_with_name: str):
+def function_call_example_with_dicts(url_with_name: str):
     """
-    An example of using a model to produce a structured response.
-    
+    Example of using a function to create a connector for function calls. Tools are defined as dictionaries.
+
+    Args:
+        url_with_name: Model URL combined with the model name
+    """
+    model = create_llm_connector(url_with_name)
+    mssgs = [
+        SystemMessage(content=""),
+        HumanMessage(content="Build a plan for placing new schools with a budget of 5 billion rubles."),
+    ]
+
+    tools_as_dicts = [
+        {
+            "name": "territory_by_budget",
+            "description": (
+                "Get potential territories for building a new service of a given type, considering the budget "
+                "(amount in rubles). This function should be used if the discussion involves placement, creation, "
+                "construction, or erection of new services, including parks. Possible service types are strictly in "
+                "the following list: ['school', 'clinic', 'kindergarten', 'park']. The budget is optional. If the user "
+                "does not specify a budget, the parameter will remain empty (None). Do not set default values yourself."
+            ),
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "is_best_one": {
+                        "type": "boolean",
+                        "description": (
+                            "Flag indicating whether to select the best territory."
+                        ),
+                    },
+                    "budget": {
+                        "type": "integer",
+                        "description": "Budget amount in rubles.",
+                    },
+                    "service_type": {
+                        "type": "string",
+                        "description": (
+                            "The new service being planned for construction. Possible service types are strictly in "
+                            "the following list: ['school', 'clinic', 'kindergarten', 'park']. Select the type that "
+                            "the user is interested in constructing."
+                        ),
+                    },
+                },
+                "required": ["service_type"],
+            },
+        },
+        {
+            "name": "parks_by_budget",
+            "description": (
+                "Get parks suitable for improvement, considering the specified budget (amount in rubles). "
+                "This function is used only if the discussion involves improving existing parks, not creating new ones. "
+                "The budget is optional. If the user does not specify a budget, the parameter will remain empty (None). "
+                "Do not set default values yourself."
+            ),
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "budget": {
+                        "type": "integer",
+                        "description": "Budget amount. May be specified in the request. Default value is None.",
+                    },
+                },
+                "required": [],
+            },
+        },
+    ]
+
+    model_with_tools = model.bind_tools(tools=tools_as_dicts, tool_choice="auto")
+    res = model_with_tools.invoke(mssgs)
+    print(res.content)
+    print(res.tool_calls)
+
+
+def structured_output_example_with_dict(url_with_name: str):
+    """
+    Example of using a model to produce a structured response with a dictionary schema.
+
     Args:
         url_with_name: Model URL combined with the model name
     """
     model = create_llm_connector(url_with_name)
 
-    # from pydantic import BaseModel, Field
-    # from typing import Optional
-    # class Joke(BaseModel):
-    #     """Joke to tell user."""
-    #     setup: str = Field(description="The setup of the joke")
-    #     punchline: str = Field(description="The punchline to the joke")
-    #     rating: Optional[int] = Field(
-    #         default=None, description="How funny the joke is, from 1 to 10"
-    #     )
-    
     Joke = {
         "title": "joke",
         "description": "Joke to tell user.",
@@ -188,8 +194,30 @@ def structured_output_example(url_with_name: str):
     print(res)
 
 
+def structured_output_example_with_pydantic(url_with_name: str):
+    """
+    Example of using a model to produce a structured response with a Pydantic class schema.
+
+    Args:
+        url_with_name: Model URL combined with the model name
+    """
+    model = create_llm_connector(url_with_name)
+
+    class Joke(BaseModel):
+        """Joke to tell user."""
+        setup: str = Field(description="The setup of the joke")
+        punchline: str = Field(description="The punchline to the joke")
+        rating: Optional[int] = Field(
+            default=None, description="How funny the joke is, from 1 to 10"
+        )
+
+    structured_model = model.with_structured_output(schema=Joke)
+    res = structured_model.invoke("Tell me a joke about cats")
+    print(res)
+
+
 if __name__ == "__main__":
-    load_dotenv(CONFIG_PATH) # Change path to your config file if needed or pass URL with name directly
+    load_dotenv("../config.env") # Change path to your config file if needed or pass URL with name directly
     
     # model_url_and_name = os.getenv("LLAMA_URL")
     # model_url_and_name = os.getenv("GIGACHAT_URL")
@@ -197,7 +225,10 @@ if __name__ == "__main__":
     # model_url_and_name = os.getenv("DEEPSEEK_R1_URL")
     # model_url_and_name = os.getenv("GPT4_URL")
     
+    # Uncomment the example you want to run
     basic_call_example(model_url_and_name)
-    # function_call_example(model_url_and_name)
-    # structured_output_example(model_url_and_name)
+    function_call_example_with_functions(model_url_and_name)
+    function_call_example_with_dicts(model_url_and_name)
+    structured_output_example_with_dict(model_url_and_name)
+    structured_output_example_with_pydantic(model_url_and_name)
     

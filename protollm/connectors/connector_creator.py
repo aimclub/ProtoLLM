@@ -22,8 +22,17 @@ load_dotenv(CONFIG_PATH)
 
 class CustomChatOpenAI(ChatOpenAI):
     """
-    A class that extends the ChatOpenAI base class to allow use with the LLama family of models, as they do not return
-    tool calls in the tool_calls field of the response, but instead write them as an HTML string in the content field.
+    A class that extends ChatOpenAI class from LangChain to support LLama and other models that do not support
+    function calls or structured output by default. This is implemented through custom processing of tool calls and JSON
+    schemas for a known list of models.
+    
+    Methods:
+        __init__(*args: Any, **kwargs: Any): Initializes the instance with parent configuration and custom handlers
+        invoke(messages: str | list, *args, **kwargs) -> AIMessage | dict | BaseModel: Processes input messages with
+            custom tool call handling and structured output parsing
+        bind_tools(*args, **kwargs: Any) -> Runnable: Enables function calling capability by binding tool definitions
+        with_structured_output(*args, **kwargs: Any) -> Runnable: Configures structured output format using JSON schemas
+            or Pydantic models
     """
 
     def __init__(self, *args: Any, **kwargs: Any):
@@ -36,10 +45,9 @@ class CustomChatOpenAI(ChatOpenAI):
         if self._requires_custom_handling_for_tools() and self._tools:
             system_prompt = self._generate_system_prompt_with_tools()
             # Add a system prompt with function description if it's not presented
-            if self._tools and isinstance(messages, str):
-                tmp = messages
-                messages = [SystemMessage(content=system_prompt), HumanMessage(content=tmp)]
-            elif self._tools and not any(isinstance(msg, SystemMessage) for msg in messages):
+            if isinstance(messages, str):
+                messages = [SystemMessage(content=system_prompt), HumanMessage(content=messages)]
+            elif not any(isinstance(msg, SystemMessage) for msg in messages):
                 messages.insert(0, SystemMessage(content=system_prompt))
             # If the system prompt is already in the list of messages, expand it with a description of the tools
             else:
@@ -53,10 +61,10 @@ class CustomChatOpenAI(ChatOpenAI):
         if self._requires_custom_handling_for_structured_output() and self._response_format:
             system_prompt = self._generate_system_prompt_with_schema()
             # Add a system prompt with function description if it's not presented
-            if self._response_format and isinstance(messages, str):
+            if isinstance(messages, str):
                 tmp = messages
                 messages = [SystemMessage(content=system_prompt), HumanMessage(content=tmp)]
-            elif self._response_format and not any(isinstance(msg, SystemMessage) for msg in messages):
+            elif not any(isinstance(msg, SystemMessage) for msg in messages):
                 messages.insert(0, SystemMessage(content=system_prompt))
             # If the system prompt is already in the list of messages, expand it with a description of the tools
             else:
@@ -101,6 +109,12 @@ class CustomChatOpenAI(ChatOpenAI):
     def _generate_system_prompt_with_tools(self) -> str:
         """
         Generates a system prompt with function descriptions and instructions for the model.
+        
+        Returns:
+            System prompt with instructions for calling functions and descriptions of the functions themselves.
+        
+        Raises:
+            ValueError: If tools in an unsupported format have been passed.
         """
         tool_descriptions = []
         if self._tool_choice_mode not in ["auto", None, "any", "required", True]:
@@ -139,9 +153,16 @@ class CustomChatOpenAI(ChatOpenAI):
     def _generate_system_prompt_with_schema(self) -> str:
         """
         Generates a system prompt with response format descriptions and instructions for the model.
+        
+        Returns:
+            A system prompt with instructions for structured output and descriptions of the response formats themselves.
+            
+        Raises:
+            ValueError: If the structure descriptions for the response were passed in an unsupported format.
         """
         schema_descriptions = []
-        for schema in [self._response_format]:
+        schemas = [self._response_format] if not isinstance(self._response_format, list) else self._response_format
+        for schema in schemas:
             if isinstance(schema, dict):
                 schema_descriptions.append(str(schema))
             elif issubclass(schema, BaseModel):
@@ -178,14 +199,16 @@ class CustomChatOpenAI(ChatOpenAI):
             response_from_model: response of a model that does not support structured output by default
         
         Raises:
-            Error if a structured response is not obtained
+            ValueError: If a structured response is not obtained
         """
         if isinstance([self._response_format][0], dict):
             try:
-                resp = json.loads(response_from_model.content)
-                return resp
-            except Exception as e:
-                print(e)
+                return json.loads(response_from_model.content)
+            except json.JSONDecodeError as e:
+                raise ValueError(
+                    f"Failed to return structured output. There may have been a problem with loading JSON from the"
+                    " model."
+                )
         elif issubclass([self._response_format][0], BaseModel):
             for schema in [self._response_format]:
                 try:
@@ -193,7 +216,9 @@ class CustomChatOpenAI(ChatOpenAI):
                     return resp
                 except ValidationError:
                     continue
-            raise Exception("Failed to return structured output.")
+            raise ValueError(
+                "Failed to return structured output. There may have been a problem with validating JSON from the model."
+            )
         
     @staticmethod
     def _parse_function_calls(content: str) -> List[Dict[str, Any]]:
@@ -204,7 +229,10 @@ class CustomChatOpenAI(ChatOpenAI):
             content: model response as an HTML string
 
         Returns:
-            A list of dictionaries in tool_calls format/
+            A list of dictionaries in tool_calls format
+            
+        Raises:
+            ValueError: If the arguments for a function call are returned in an incorrect format
         """
         tool_calls = []
         pattern = r"<function=(.*?)>(.*?)</function>"
@@ -243,8 +271,7 @@ def create_llm_connector(model_url: str, *args: Any, **kwargs: Any) -> CustomCha
         use tools, get structured output.
     """
     if "vsegpt" in model_url:
-        model_data = model_url.split(";")
-        base_url, model_name = model_data[0], model_data[1]
+        base_url, model_name = model_url.split(";")
         api_key = os.getenv("VSE_GPT_KEY")
         return CustomChatOpenAI(model_name=model_name, base_url=base_url, api_key=api_key, *args, **kwargs)
     elif "gigachat" in model_url:
