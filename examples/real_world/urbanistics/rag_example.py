@@ -8,7 +8,7 @@ from protollm_sdk.models.job_context_models import PromptModel
 from protollm_sdk.jobs.outer_llm_api import OuterLLMAPI
 from protollm.rags.rag_core.retriever import DocRetriever, DocsSearcherModels
 
-from definitions import CONFIG_PATH
+from protollm.definitions import CONFIG_PATH
 
 
 def init_chroma_client():
