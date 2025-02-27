@@ -3,7 +3,7 @@ import json
 from pathlib import Path
 
 
-CONFIG_PATH = Path(Path(__file__).parent, 'configs')
+CONFIG_PATH = Path(__file__).parent / 'configs'
 
 
 class ElasticsearchSettings:

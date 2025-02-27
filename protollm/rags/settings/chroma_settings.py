@@ -1,11 +1,12 @@
 from os.path import dirname
 from pathlib import Path
-from pydantic_settings import BaseSettings, SettingsConfigDict
+from typing import Optional
+from pydantic_settings import BaseSettings
 
 
 class ChromaSettings(BaseSettings):
     # Chroma DB settings
-    chroma_host: str = 'any'
+    chroma_host: str = '127.0.0.1'
     chroma_port: int = 8888
     allow_reset: bool = False
 
@@ -17,14 +18,8 @@ class ChromaSettings(BaseSettings):
     distance_fn: str = 'cosine'
 
     # Documents' processing settings
-    docs_processing_config: str = str(Path(dirname(dirname(__file__)), '/config_files/', 'docs_processing_config.yaml'))
-    docs_collection_path: str = str(Path(dirname(dirname(dirname(__file__))), '/docs/', 'example.docx'))
-
-    model_config = SettingsConfigDict(
-        env_file=Path(dirname(dirname(__file__)), '/config_files/', 'chroma.env'),
-        env_file_encoding='utf-8',
-        extra='ignore',
-    )
+    docs_processing_config: Optional[str] = None
+    docs_collection_path: str = str(Path(dirname(dirname(__file__))) / 'docs' / 'example.docx')
 
 
 settings = ChromaSettings()

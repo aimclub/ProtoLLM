@@ -1,6 +1,6 @@
 import warnings
 from copy import deepcopy
-from typing import TextIO, Optional, Any, Type
+from typing import Optional, Any, Type
 
 import inspect
 
@@ -18,7 +18,7 @@ def _get_params_for_transformer(params: dict[str, Any],
                                 transformer_class: Type[BaseDocumentTransformer]) -> dict[str, Any]:
     text_splitter_params = inspect.signature(TextSplitter.__init__).parameters.keys()
     transformer_params = {key: value for key, value in params.items()
-                          if key in inspect.signature(transformer_class.__init__).parameters.keys()
+                          if key in inspect.signature(transformer_class.__init__).parameters
                           or key in text_splitter_params}
     return transformer_params
 
@@ -54,6 +54,8 @@ class PipelineSettings:
 
     @loader_params.setter
     def loader_params(self, config: Optional[ConfigFile]):
+        if config is None:
+            return
         loader_params = deepcopy(config.loader.parsing_params)
         loader_params['file_path'] = config.loader.file_path
         self._loader_params = loader_params

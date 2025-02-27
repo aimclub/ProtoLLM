@@ -4,6 +4,11 @@ name = "ProtoLLM"
 version = "0.1.0"
 description = ""
 authors = ["aimclub"]
+include = [
+    "protollm/rags/configs/*.yaml",
+    "protollm/rags/configs/*.env",
+    "protollm/rags/docs/*.docx"
+]
 
 
 [tool.poetry.dependencies]
