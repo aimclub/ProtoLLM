@@ -6,7 +6,7 @@ from langchain_core.messages import HumanMessage, SystemMessage
 from langchain_core.tools import tool
 from pydantic import BaseModel, Field
 
-from protollm.connectors.connector_creator import create_llm_connector
+from protollm.connectors import create_llm_connector
 
 
 def basic_call_example(url_with_name: str):

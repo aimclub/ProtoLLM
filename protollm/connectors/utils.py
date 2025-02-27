@@ -1,3 +1,4 @@
+import json
 import os
 import uuid
 
@@ -27,7 +28,7 @@ def get_access_token() -> str:
     }
     
     response = requests.request("POST", url, headers=headers, data=payload)
-    return eval(response.text)['access_token']
+    return json.loads(response.text)['access_token']
 
 
 # List of models that do NOT support calling functions out-of-the-box yet

@@ -62,8 +62,7 @@ class CustomChatOpenAI(ChatOpenAI):
             system_prompt = self._generate_system_prompt_with_schema()
             # Add a system prompt with function description if it's not presented
             if isinstance(messages, str):
-                tmp = messages
-                messages = [SystemMessage(content=system_prompt), HumanMessage(content=tmp)]
+                messages = [SystemMessage(content=system_prompt), HumanMessage(content=messages)]
             elif not any(isinstance(msg, SystemMessage) for msg in messages):
                 messages.insert(0, SystemMessage(content=system_prompt))
             # If the system prompt is already in the list of messages, expand it with a description of the tools
@@ -206,14 +205,13 @@ class CustomChatOpenAI(ChatOpenAI):
                 return json.loads(response_from_model.content)
             except json.JSONDecodeError as e:
                 raise ValueError(
-                    f"Failed to return structured output. There may have been a problem with loading JSON from the"
-                    " model."
+                    "Failed to return structured output. There may have been a problem with loading JSON from the"
+                    f" model.\n{e}"
                 )
         elif issubclass([self._response_format][0], BaseModel):
             for schema in [self._response_format]:
                 try:
-                    resp = schema.model_validate_json(response_from_model.content)
-                    return resp
+                    return schema.model_validate_json(response_from_model.content)
                 except ValidationError:
                     continue
             raise ValueError(
