@@ -1,17 +1,17 @@
 from pathlib import Path
-from typing import Iterator, Union, Any, Optional, Sequence
+from typing import Any, Iterator, Optional, Sequence, Union
 
 from langchain_community.document_loaders.directory import _is_visible
 from langchain_core.document_loaders import BaseLoader
 from langchain_core.documents import Document
 from tqdm import tqdm
 
-from protollm.raw_data_processing.docs_parsers.parsers import ParsingScheme, DocType, BaseParser
-from protollm.raw_data_processing.docs_parsers.utils.logger import ParsingLogger
-from protollm.raw_data_processing.docs_parsers.loaders.pdf_loader import PDFLoader
-from protollm.raw_data_processing.docs_parsers.utils.utilities import correct_path_encoding
 from protollm.raw_data_processing.docs_parsers.loaders.doc_loader import WordDocumentLoader
+from protollm.raw_data_processing.docs_parsers.loaders.pdf_loader import PDFLoader
 from protollm.raw_data_processing.docs_parsers.loaders.zip_loader import ZipLoader
+from protollm.raw_data_processing.docs_parsers.parsers import BaseParser, DocType, ParsingScheme
+from protollm.raw_data_processing.docs_parsers.utils.logger import ParsingLogger
+from protollm.raw_data_processing.docs_parsers.utils.utilities import correct_path_encoding
 
 
 class RecursiveDirectoryLoader(BaseLoader):

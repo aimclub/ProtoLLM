@@ -1,3 +1,4 @@
+from pathlib import Path
 from typing import Optional
 import logging
 
@@ -8,12 +9,14 @@ from langchain_community.vectorstores.chroma import Chroma
 from protollm.rags.pipeline.etl_pipeline import DocsExtractPipeline
 from protollm.rags.settings.pipeline_settings import PipelineSettings
 from protollm.rags.settings.chroma_settings import ChromaSettings, settings as default_settings
+from langchain_core.embeddings import Embeddings
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
 
 def load_documents_to_chroma_db(settings: Optional[ChromaSettings] = None,
+                                embedding_function: Optional[Embeddings] = None,
                                 processing_batch_size: int = 100,
                                 loading_batch_size: int = 32,
                                 **kwargs) -> None:
@@ -26,10 +29,16 @@ def load_documents_to_chroma_db(settings: Optional[ChromaSettings] = None,
         f' loading_batch_size: {loading_batch_size}'
     )
 
-    pipeline_settings = PipelineSettings.config_from_file(settings.docs_processing_config)
+    if settings.docs_processing_config is None:
+        pipeline_settings = PipelineSettings.config_from_file(str(Path(__file__).parent.parent.parent / 'configs' / 'docs_processing_config.yaml'))
+    else:
+        pipeline_settings = PipelineSettings.config_from_file(settings.docs_processing_config)
+
+    if embedding_function is None:
+        embedding_function = HuggingFaceHubEmbeddings(model=settings.embedding_host)
 
     store = Chroma(collection_name=settings.collection_name,
-                   embedding_function=HuggingFaceHubEmbeddings(model=settings.embedding_host, huggingfacehub_api_token='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'),
+                   embedding_function=embedding_function,
                    client=chromadb.HttpClient(host=settings.chroma_host, port=settings.chroma_port))
 
     # Documents loading and processing
