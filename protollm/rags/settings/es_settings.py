@@ -1,12 +1,10 @@
 import json
-from os.path import dirname
 from pathlib import Path
 
 from pydantic import computed_field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
-
-CONFIG_PATH = Path(dirname(dirname(__file__)), '/stores/elasticsearch/configs')
+CONFIG_PATH = Path(__file__).parent.parent / 'stores/elasticsearch/configs'
 
 
 class ElasticsearchSettings(BaseSettings):
@@ -30,7 +28,7 @@ class ElasticsearchSettings(BaseSettings):
     content_field: str = 'paragraph'
 
     model_config = SettingsConfigDict(
-        env_file=Path(Path(__file__).parent.parent, '/configs/elastic.env'),
+        env_file=Path(__file__).parent.parent / 'configs' / 'elastic.env',
         env_file_encoding='utf-8',
         extra='ignore',
     )
