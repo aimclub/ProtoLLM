@@ -85,7 +85,7 @@ class MongoDBWrapper:
             Inserted document identifier according to InsertOneResult class.
         """
         try:
-            async with self.get_mongo_client() as client:
+            async with self.async_get_mongo_client() as client:
 
                 # _cursor might be called as collection
                 _cursor: AsyncIOMotorCollection = client[self.database][self.collection]
@@ -110,7 +110,7 @@ class MongoDBWrapper:
             Exceptions that might happen throughout connection attempt or performing insert statement.
         """
         try:
-            async with self.get_mongo_client() as client:
+            async with self.async_get_mongo_client() as client:
 
                 # _cursor might be called as collection
                 _cursor: AsyncIOMotorCollection = client[self.database][self.collection]
@@ -135,7 +135,7 @@ class MongoDBWrapper:
             Exceptions that might happen throughout connection attempt or fetching documents.
         """
         try:
-            async with self.get_mongo_client() as client:
+            async with self.async_get_mongo_client() as client:
 
                 # _cursor might be called as collection
                 _cursor: AsyncIOMotorCollection = client[self.database][self.collection]
@@ -147,6 +147,7 @@ class MongoDBWrapper:
 
     async def update_single_document(self, pattern: dict[Any, Any], update: dict[Any, Any]) -> UpdateResult:
         """
+        Performs modification of the document by transmitted content.
 
         Args:
             pattern dict[Any, Any]: the pattern under which the document will be searched in MongoDB
@@ -156,7 +157,7 @@ class MongoDBWrapper:
 
         """
         try:
-            async with self.get_mongo_client() as client:
+            async with self.async_get_mongo_client() as client:
 
                 # _cursor might be called as collection
                 _cursor: AsyncIOMotorCollection = client[self.database][self.collection]
@@ -169,7 +170,7 @@ class MongoDBWrapper:
 
     async def delete_single_document(self, pattern: dict[Any, Any]) -> DeleteResult:
         """
-        Deletes a document by transmitted searching pattern in MongoDB collection
+        Deletes a document by transmitted searching pattern in MongoDB collection.
 
         Args:
             pattern dict[Any, Any]: the pattern under which the document will be searched and deleted in MongoDB.
@@ -181,7 +182,7 @@ class MongoDBWrapper:
             Exceptions that might happen throughout connection attempt or performing delete statement.
         """
         try:
-            async with self.get_mongo_client() as client:
+            async with self.async_get_mongo_client() as client:
 
                 # _cursor might be called as collection
                 _cursor: AsyncIOMotorCollection = client[self.database][self.collection]
