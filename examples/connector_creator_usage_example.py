@@ -1,4 +1,5 @@
 import os
+import logging
 from typing import Optional
 
 from dotenv import load_dotenv
@@ -8,17 +9,22 @@ from pydantic import BaseModel, Field
 
 from protollm.connectors import create_llm_connector
 
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+
 
 def basic_call_example(url_with_name: str):
     """
     Example of using a model to get an answer.
-    
+
     Args:
         url_with_name: Model URL combined with the model name
     """
-    model = create_llm_connector(url_with_name, temperature=0.015, top_p=0.95)
-    res = model.invoke("Tell me a joke")
-    print(res.content)
+    try:
+        model = create_llm_connector(url_with_name, temperature=0.015, top_p=0.95)
+        res = model.invoke("Tell me a joke")
+        logging.info(res.content)
+    except Exception as e:
+        logging.error(f"An error occurred: {e}")
     
 
 # Some models do not support explicit function calls, so the system prompt will be used for this. If it is not
@@ -78,9 +84,12 @@ def function_call_example_with_functions(url_with_name: str):
 
     tools_as_functions = [territory_by_budget, parks_by_budget]
     model_with_tools = model.bind_tools(tools=tools_as_functions, tool_choice="auto")
-    res = model_with_tools.invoke(mssgs)
-    print(res.content)
-    print(res.tool_calls)
+    try:
+        res = model_with_tools.invoke(mssgs)
+        logging.info(res.content)
+        logging.info(res.tool_calls)
+    except Exception as e:
+        logging.error(f"An error occurred: {e}")
 
 
 def function_call_example_with_dicts(url_with_name: str):
@@ -153,9 +162,12 @@ def function_call_example_with_dicts(url_with_name: str):
     ]
 
     model_with_tools = model.bind_tools(tools=tools_as_dicts, tool_choice="auto")
-    res = model_with_tools.invoke(mssgs)
-    print(res.content)
-    print(res.tool_calls)
+    try:
+        res = model_with_tools.invoke(mssgs)
+        logging.info(res.content)
+        logging.info(res.tool_calls)
+    except Exception as e:
+        logging.error(f"An error occurred: {e}")
 
 
 def structured_output_example_with_dict(url_with_name: str):
@@ -190,8 +202,11 @@ def structured_output_example_with_dict(url_with_name: str):
     }
 
     structured_model = model.with_structured_output(schema=Joke)
-    res = structured_model.invoke("Tell me a joke about cats")
-    print(res)
+    try:
+        res = structured_model.invoke("Tell me a joke about cats")
+        logging.info(res)
+    except Exception as e:
+        logging.error(f"An error occurred: {e}")
 
 
 def structured_output_example_with_pydantic(url_with_name: str):
@@ -212,8 +227,11 @@ def structured_output_example_with_pydantic(url_with_name: str):
         )
 
     structured_model = model.with_structured_output(schema=Joke)
-    res = structured_model.invoke("Tell me a joke about cats")
-    print(res)
+    try:
+        res = structured_model.invoke("Tell me a joke about cats")
+        logging.info(res)
+    except Exception as e:
+        logging.error(f"An error occurred: {e}")
 
 
 if __name__ == "__main__":

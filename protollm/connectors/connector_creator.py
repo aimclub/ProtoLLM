@@ -42,48 +42,25 @@ class CustomChatOpenAI(ChatOpenAI):
         self._tools = None
 
     def invoke(self, messages: str | list, *args, **kwargs) -> AIMessage | dict | BaseModel:
+        
         if self._requires_custom_handling_for_tools() and self._tools:
             system_prompt = self._generate_system_prompt_with_tools()
-            # Add a system prompt with function description if it's not presented
-            if isinstance(messages, str):
-                messages = [SystemMessage(content=system_prompt), HumanMessage(content=messages)]
-            elif not any(isinstance(msg, SystemMessage) for msg in messages):
-                messages.insert(0, SystemMessage(content=system_prompt))
-            # If the system prompt is already in the list of messages, expand it with a description of the tools
-            else:
-                idx = 0
-                for index, obj in enumerate(messages):
-                    if isinstance(obj, SystemMessage):
-                        idx = index
-                        break
-                messages[idx].content += "\n\n" + system_prompt
-                
+            messages = self._handle_system_prompt(messages, system_prompt)
+        
         if self._requires_custom_handling_for_structured_output() and self._response_format:
             system_prompt = self._generate_system_prompt_with_schema()
-            # Add a system prompt with function description if it's not presented
-            if isinstance(messages, str):
-                messages = [SystemMessage(content=system_prompt), HumanMessage(content=messages)]
-            elif not any(isinstance(msg, SystemMessage) for msg in messages):
-                messages.insert(0, SystemMessage(content=system_prompt))
-            # If the system prompt is already in the list of messages, expand it with a description of the tools
-            else:
-                idx = 0
-                for index, obj in enumerate(messages):
-                    if isinstance(obj, SystemMessage):
-                        idx = index
-                        break
-                messages[idx].content += "\n\n" + system_prompt
+            messages = self._handle_system_prompt(messages, system_prompt)
 
         response = self._super_invoke(messages, *args, **kwargs)
 
-        if isinstance(response, AIMessage) and ("<function=" in response.content):
-            tool_calls = self._parse_function_calls(response.content)
-            if tool_calls:
-                response.tool_calls = tool_calls
-                response.content = ""
-
-        if isinstance(response, AIMessage) and self._response_format:
-            response = self._parse_custom_structure(response)
+        match response:
+            case AIMessage() if ("<function=" in response.content):
+                tool_calls = self._parse_function_calls(response.content)
+                if tool_calls:
+                    response.tool_calls = tool_calls
+                    response.content = ""
+            case AIMessage() if self._response_format:
+                response = self._parse_custom_structure(response)
 
         return response
     
@@ -116,26 +93,29 @@ class CustomChatOpenAI(ChatOpenAI):
             ValueError: If tools in an unsupported format have been passed.
         """
         tool_descriptions = []
-        if self._tool_choice_mode not in ["auto", None, "any", "required", True]:
-            tool_choice_mode = f"<<{self._tool_choice_mode}>>"
-        else:
-            tool_choice_mode = str(self._tool_choice_mode)
+        match self._tool_choice_mode:
+            case "auto" | None | "any" | "required" | True:
+                tool_choice_mode = str(self._tool_choice_mode)
+            case _:
+                tool_choice_mode = f"<<{self._tool_choice_mode}>>"
         for tool in self._tools:
-            if isinstance(tool, dict):
-                tool_descriptions.append(
-                    f"Function name: {tool['name']}\n"
-                    f"Description: {tool['description']}\n"
-                    f"Parameters: {json.dumps(tool['parameters'], ensure_ascii=False)}"
-                )
-            elif isinstance(tool, BaseTool):
-                tool_descriptions.append(
-                    f"Function name: {tool.name}\n"
-                    f"Description: {tool.description}\n"
-                    f"Parameters: {json.dumps(tool.args, ensure_ascii=False)}")
-            else:
-                raise ValueError(
-                    "Unsupported tool type. Try using a dictionary or function with the @tool decorator as tools"
-                )
+            match tool:
+                case dict():
+                    tool_descriptions.append(
+                        f"Function name: {tool['name']}\n"
+                        f"Description: {tool['description']}\n"
+                        f"Parameters: {json.dumps(tool['parameters'], ensure_ascii=False)}"
+                    )
+                case BaseTool():
+                    tool_descriptions.append(
+                        f"Function name: {tool.name}\n"
+                        f"Description: {tool.description}\n"
+                        f"Parameters: {json.dumps(tool.args, ensure_ascii=False)}"
+                    )
+                case _:
+                    raise ValueError(
+                        "Unsupported tool type. Try using a dictionary or function with the @tool decorator as tools"
+                    )
         tool_prefix = "You have access to the following functions:\n\n"
         tool_instructions = (
             "There are the following 4 function call options:\n"
@@ -160,17 +140,22 @@ class CustomChatOpenAI(ChatOpenAI):
             ValueError: If the structure descriptions for the response were passed in an unsupported format.
         """
         schema_descriptions = []
-        schemas = [self._response_format] if not isinstance(self._response_format, list) else self._response_format
+        match self._response_format:
+            case list():
+                schemas = self._response_format
+            case _:
+                schemas = [self._response_format]
         for schema in schemas:
-            if isinstance(schema, dict):
-                schema_descriptions.append(str(schema))
-            elif issubclass(schema, BaseModel):
-                schema_descriptions.append(str(schema.model_json_schema()))
-            else:
-                raise ValueError(
-                    "Unsupported schema type. Try using a description of the answer structure as a dictionary or"
-                    " Pydantic model."
-                )
+            match schema:
+                case dict():
+                    schema_descriptions.append(str(schema))
+                case _ if issubclass(schema, BaseModel):
+                    schema_descriptions.append(str(schema.model_json_schema()))
+                case _:
+                    raise ValueError(
+                        "Unsupported schema type. Try using a description of the answer structure as a dictionary or"
+                        " Pydantic model."
+                    )
         schema_prefix = "Generate a JSON object that matches one of the following schemas:\n\n"
         schema_instructions = (
             "Your response must contain ONLY valid JSON, parsable by a standard JSON parser. Do not include any"
@@ -190,7 +175,7 @@ class CustomChatOpenAI(ChatOpenAI):
         """
         return any(model_name in self.model_name.lower() for model_name in models_without_structured_output)
     
-    def _parse_custom_structure(self, response_from_model) -> dict | BaseModel:
+    def _parse_custom_structure(self, response_from_model) -> dict | BaseModel | None:
         """
         Parses the model response into a dictionary or Pydantic class
         
@@ -200,23 +185,25 @@ class CustomChatOpenAI(ChatOpenAI):
         Raises:
             ValueError: If a structured response is not obtained
         """
-        if isinstance([self._response_format][0], dict):
-            try:
-                return json.loads(response_from_model.content)
-            except json.JSONDecodeError as e:
-                raise ValueError(
-                    "Failed to return structured output. There may have been a problem with loading JSON from the"
-                    f" model.\n{e}"
-                )
-        elif issubclass([self._response_format][0], BaseModel):
-            for schema in [self._response_format]:
+        match [self._response_format][0]:
+            case dict():
                 try:
-                    return schema.model_validate_json(response_from_model.content)
-                except ValidationError:
-                    continue
-            raise ValueError(
-                "Failed to return structured output. There may have been a problem with validating JSON from the model."
-            )
+                    return json.loads(response_from_model.content)
+                except json.JSONDecodeError as e:
+                    raise ValueError(
+                        "Failed to return structured output. There may have been a problem with loading JSON from the"
+                        f" model.\n{e}"
+                    )
+            case _ if issubclass([self._response_format][0], BaseModel):
+                for schema in [self._response_format]:
+                    try:
+                        return schema.model_validate_json(response_from_model.content)
+                    except ValidationError:
+                        continue
+                raise ValueError(
+                    "Failed to return structured output. There may have been a problem with validating JSON from the"
+                    " model."
+                )
         
     @staticmethod
     def _parse_function_calls(content: str) -> List[Dict[str, Any]]:
@@ -252,6 +239,19 @@ class CustomChatOpenAI(ChatOpenAI):
             tool_calls.append(tool_call)
 
         return tool_calls
+    
+    @staticmethod
+    def _handle_system_prompt(msgs, sys_prompt):
+        match msgs:
+            case str():
+                return [SystemMessage(content=sys_prompt), HumanMessage(content=msgs)]
+            case list():
+                if not any(isinstance(msg, SystemMessage) for msg in msgs):
+                    msgs.insert(0, SystemMessage(content=sys_prompt))
+                else:
+                    idx = next((index for index, obj in enumerate(msgs) if isinstance(obj, SystemMessage)), 0)
+                    msgs[idx].content += "\n\n" + sys_prompt
+        return msgs
 
 
 def create_llm_connector(model_url: str, *args: Any, **kwargs: Any) -> CustomChatOpenAI | GigaChat:
