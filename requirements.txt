@@ -1,3 +1,5 @@
+deepeval==2.3.3
+
 # LangChain
 
 langchain>=0.3.0
