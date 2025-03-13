@@ -1,25 +1,14 @@
-from deepeval.metrics import (GEval,
-                              AnswerRelevancyMetric,
-                              FaithfulnessMetric,
-                              ContextualPrecisionMetric,
-                              ContextualRecallMetric,
-                              ContextualRelevancyMetric,
-                              TaskCompletionMetric,
-                              ToolCorrectnessMetric)
+from deepeval.metrics import GEval
 from deepeval.test_case import LLMTestCaseParams
 
-from protollm.metrics.deepeval_connector import DeepEvalConnector
+from .deepeval_connector import DeepEvalConnector
 
 model_for_metrics = DeepEvalConnector()
-metrics_init_params = {
-    "model": model_for_metrics,
-    "async_mode": False,
-}
 
-# Use LLMs
+# Custom metric for evaluating the correctness of an answer
 correctness_metric = GEval(
     name="Correctness",
-    criteria=( # Сan be overridden for a specific task
+    criteria=(
         "1. Correctness and Relevance:"
         "- Compare the actual response against the expected response. Determine the"
         " extent to which the actual response captures the key elements and concepts of"
@@ -45,14 +34,6 @@ correctness_metric = GEval(
         LLMTestCaseParams.ACTUAL_OUTPUT,
         LLMTestCaseParams.EXPECTED_OUTPUT,
     ],
-    **metrics_init_params,
+    model=model_for_metrics,
+    async_mode=False
 )
-answer_relevancy = AnswerRelevancyMetric(**metrics_init_params)
-faithfulness = FaithfulnessMetric(**metrics_init_params)
-context_precision = ContextualPrecisionMetric(**metrics_init_params)
-context_recall = ContextualRecallMetric(**metrics_init_params)
-context_relevancy = ContextualRelevancyMetric(**metrics_init_params)
-task_completion = TaskCompletionMetric(**metrics_init_params)
-
-# Don't use LLMs
-tool_correctness = ToolCorrectnessMetric()

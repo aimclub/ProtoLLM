@@ -1,26 +1,11 @@
 import os
-from dataclasses import dataclass
-from typing import Dict
 
-from dataclasses_json import dataclass_json
 from deepeval.models.base_model import DeepEvalBaseLLM
 from langchain_core.language_models.chat_models import BaseChatModel
 from pydantic import BaseModel
 from openai._types import NOT_GIVEN
 
-from protollm.connectors import create_llm_connector
-
-
-@dataclass_json
-@dataclass
-class Message:
-    """Template for message in following format {"role", "content"}."""
-
-    role: str
-    content: str
-
-    def to_dict(self) -> Dict:
-        return {"role": self.role, "content": self.content}
+from ..connectors import create_llm_connector
 
 
 class DeepEvalConnector(DeepEvalBaseLLM):
@@ -36,9 +21,7 @@ class DeepEvalConnector(DeepEvalBaseLLM):
         """Initialize instance with evaluation LLM.
 
         Args:
-            model: Evaluation model's name
             sys_prompt: predefined rules for model
-            base_url: URL where models are available
         """
         super().__init__(*args, **kwargs)
         self._sys_prompt = sys_prompt
@@ -47,7 +30,7 @@ class DeepEvalConnector(DeepEvalBaseLLM):
     @staticmethod
     def load_model() -> BaseChatModel:
         """Returns LangChain's ChatModel for requests"""
-        return create_llm_connector(os.getenv("LLM_URL"))
+        return create_llm_connector(os.getenv("DEEPEVAL_LLM_URL", "test_model"))
 
     def generate(
             self,
@@ -55,7 +38,7 @@ class DeepEvalConnector(DeepEvalBaseLLM):
             *args,
             **kwargs,
     ) -> str | BaseModel:
-        """Get a response form LLM to given question.
+        """Get a response from LLM to given question.
 
         Args:
             prompt (str): Query, the model must answer.
