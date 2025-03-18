@@ -9,7 +9,9 @@ from pydantic import BaseModel, Field
 
 from protollm.connectors import create_llm_connector
 
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+logging.basicConfig(
+    level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
+)
 
 
 def basic_call_example(url_with_name: str):
@@ -25,7 +27,7 @@ def basic_call_example(url_with_name: str):
         logging.info(res.content)
     except Exception as e:
         logging.error(f"An error occurred: {e}")
-    
+
 
 # Some models do not support explicit function calls, so the system prompt will be used for this. If it is not
 # specified, it will be generated from the tool description and response format. If specified, it will be
@@ -41,11 +43,15 @@ def function_call_example_with_functions(url_with_name: str):
     model = create_llm_connector(url_with_name)
     mssgs = [
         SystemMessage(content=""),
-        HumanMessage(content="Build a plan for placing new schools with a budget of 5 billion rubles."),
+        HumanMessage(
+            content="Build a plan for placing new schools with a budget of 5 billion rubles."
+        ),
     ]
 
     @tool
-    def territory_by_budget(is_best_one: bool, budget: int | None, service_type: str) -> str:
+    def territory_by_budget(
+        is_best_one: bool, budget: int | None, service_type: str
+    ) -> str:
         """
         Get potential territories for building a new service of a given type, considering the budget (amount in
         rubles).  This function should be used if the discussion involves placement, creation, construction, or erection
@@ -102,7 +108,9 @@ def function_call_example_with_dicts(url_with_name: str):
     model = create_llm_connector(url_with_name)
     mssgs = [
         SystemMessage(content=""),
-        HumanMessage(content="Build a plan for placing new schools with a budget of 5 billion rubles."),
+        HumanMessage(
+            content="Build a plan for placing new schools with a budget of 5 billion rubles."
+        ),
     ]
 
     tools_as_dicts = [
@@ -220,6 +228,7 @@ def structured_output_example_with_pydantic(url_with_name: str):
 
     class Joke(BaseModel):
         """Joke to tell user."""
+
         setup: str = Field(description="The setup of the joke")
         punchline: str = Field(description="The punchline to the joke")
         rating: Optional[int] = Field(
@@ -235,18 +244,19 @@ def structured_output_example_with_pydantic(url_with_name: str):
 
 
 if __name__ == "__main__":
-    load_dotenv("../config.env") # Change path to your config file if needed or pass URL with name directly
-    
+    load_dotenv(
+        "../config.env"
+    )  # Change path to your config file if needed or pass URL with name directly
+
     # model_url_and_name = os.getenv("LLAMA_URL")
     # model_url_and_name = os.getenv("GIGACHAT_URL")
     model_url_and_name = os.getenv("DEEPSEEK_URL")
     # model_url_and_name = os.getenv("DEEPSEEK_R1_URL")
     # model_url_and_name = os.getenv("GPT4_URL")
-    
+
     # Uncomment the example you want to run
     basic_call_example(model_url_and_name)
     function_call_example_with_functions(model_url_and_name)
     function_call_example_with_dicts(model_url_and_name)
     structured_output_example_with_dict(model_url_and_name)
     structured_output_example_with_pydantic(model_url_and_name)
-    

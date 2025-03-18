@@ -1,4 +1,4 @@
-system_prompt_conductor = '''
+system_prompt_conductor = """
 Respond to the human as helpfully and accurately as possible. You have access to the following tools:
 
 {tools}
@@ -34,9 +34,8 @@ For example answer must consist table (!):
 0.6727786031171711 | 1.9616124655434675 | 0 | 0 | 0 | 0 | 0 | 0 |\n| Cc1ccc(C)c(-n2c(=O)c3ccccc3n(Cc3ccccc3)c2=O)c1 
 | 0.5601042919484651 | 1.920664623176684 | 0 | 0 | 0 | 0 | 1 | 1 |\n| Cc1ccc2c(c1)N(C(=O)CN1C(=O)NC3(CCCc4ccccc43)C1=O)CC2 
 | 0.8031696199670261 | 3.3073398307371438 | 0 | 0 | 0 | 1 | 1 | 0 |"
-'''
-system_prompt_decomposer = \
 """
+system_prompt_decomposer = """
 Respond to the human as helpfully and accurately as possible. You must decompose the input questions into tasks.
 
 Use a JSON to specify a tool by providing an "action" key (tool name) and an "action_input" key (tool input).
@@ -55,6 +54,6 @@ Begin! Reminder to ALWAYS respond with a valid JSON of a single action.
 In the "Final Answer" you must ALWAYS display in list!
 """
 
-human_prompt = '''{input}
+human_prompt = """{input}
 {agent_scratchpad}
-(Reminder to respond in a JSON blob no matter what)'''
+(Reminder to respond in a JSON blob no matter what)"""

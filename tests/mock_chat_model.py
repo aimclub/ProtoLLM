@@ -46,16 +46,19 @@ class MockChatModel(BaseChatModel):
         role_map = {
             HumanMessage: "user",
             AIMessage: "assistant",
-            SystemMessage: "system"
+            SystemMessage: "system",
         }
 
-        return [{"role": role_map.get(type(message), "user"), "content": message.content} for message in messages]
+        return [
+            {"role": role_map.get(type(message), "user"), "content": message.content}
+            for message in messages
+        ]
 
     def _prepare_payload(
-            self,
-            context: List[Dict[str, str]],
-            stop: Optional[List[str]] = None,
-            **kwargs: Any
+        self,
+        context: List[Dict[str, str]],
+        stop: Optional[List[str]] = None,
+        **kwargs: Any,
     ) -> Dict[str, Any]:
         payload = {
             "model": self.model,
@@ -68,11 +71,13 @@ class MockChatModel(BaseChatModel):
         return payload
 
     def _generate(
-            self,
-            messages: List[BaseMessage],
-            stop: Optional[List[str]] = None,
-            **kwargs: Any,
+        self,
+        messages: List[BaseMessage],
+        stop: Optional[List[str]] = None,
+        **kwargs: Any,
     ) -> ChatResult:
-        ai_message = AIMessage(content='Action:```{ "action": "add_numbers", "action_input": { "a": 15, "b": 27 } }```')
+        ai_message = AIMessage(
+            content='Action:```{ "action": "add_numbers", "action_input": { "a": 15, "b": 27 } }```'
+        )
         generation = ChatGeneration(message=ai_message)
         return ChatResult(generations=[generation])

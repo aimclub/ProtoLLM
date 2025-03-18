@@ -25,9 +25,7 @@ def construct_job_context(job_name: str, abstract_task=None) -> JobContext:
     text_embedder = TextEmbedder(Config.text_embedder_host, Config.text_embedder_port)
 
     result_storage = ResultStorage(
-        redis_host=Config.redis_host,
-        redis_port=Config.redis_port,
-        prefix=job_name
+        redis_host=Config.redis_host, redis_port=Config.redis_port, prefix=job_name
     )
 
     invoke_type_str = Config.job_invocation_type.lower()
@@ -40,7 +38,9 @@ def construct_job_context(job_name: str, abstract_task=None) -> JobContext:
             raise ValueError(f"Found unknown invocation type '{invoke_type_str}'.")
     job_invoker = JobInvoker(abstract_task, result_storage, invoke_type)
 
-    vector_db = VectorDB(vector_bd_host=Config.vector_bd_host, vector_db_port=Config.vector_db_port)
+    vector_db = VectorDB(
+        vector_bd_host=Config.vector_bd_host, vector_db_port=Config.vector_db_port
+    )
 
     return JobContext(
         llm_api=llm_api,

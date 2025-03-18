@@ -7,8 +7,7 @@ logger = logging.getLogger(__name__)
 
 
 class RecursiveSplitter(RecursiveCharacterTextSplitter):
-    """Splitting text by the given sequence of splitters.
-    """
+    """Splitting text by the given sequence of splitters."""
 
     def __init__(
         self,

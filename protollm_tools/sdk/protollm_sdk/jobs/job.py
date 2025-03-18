@@ -31,4 +31,4 @@ class Job(ABC):
         pass
 
 
-TJob = TypeVar('TJob', bound=Job)
+TJob = TypeVar("TJob", bound=Job)

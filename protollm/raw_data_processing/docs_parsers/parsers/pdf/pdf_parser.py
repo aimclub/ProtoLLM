@@ -12,8 +12,13 @@ from protollm.raw_data_processing.docs_parsers.utils.exceptions import (
 )
 from protollm.raw_data_processing.docs_parsers.parsers.base import BaseParser
 from protollm.raw_data_processing.docs_parsers.parsers.entities import ParsingScheme
-from protollm.raw_data_processing.docs_parsers.parsers.utilities import CONTENTS_KEYWORDS
-from protollm.raw_data_processing.docs_parsers.utils.utilities import correct_path_encoding, is_bad_encoding
+from protollm.raw_data_processing.docs_parsers.parsers.utilities import (
+    CONTENTS_KEYWORDS,
+)
+from protollm.raw_data_processing.docs_parsers.utils.utilities import (
+    correct_path_encoding,
+    is_bad_encoding,
+)
 
 
 class PDFParser(BaseParser):
@@ -44,7 +49,9 @@ class PDFParser(BaseParser):
         self.remove_service_info = remove_service_info
 
     def lazy_parse(self, blob: Blob) -> Iterator[Document]:
-        from protollm.raw_data_processing.docs_parsers.parsers.pdf.utilities import extract_by_lines
+        from protollm.raw_data_processing.docs_parsers.parsers.pdf.utilities import (
+            extract_by_lines,
+        )
 
         source = blob.source
         source = correct_path_encoding(source) if source is not None else ""

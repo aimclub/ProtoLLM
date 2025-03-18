@@ -32,9 +32,11 @@ class RedisWrapper:
         try:
             with self._get_redis() as redis:
                 redis.set(key, json.dumps(item))
-                redis.publish(key, 'set')
-                logger.info(f"The result with the prefix {key} has been successfully "
-                            f"written to the redis")
+                redis.publish(key, "set")
+                logger.info(
+                    f"The result with the prefix {key} has been successfully "
+                    f"written to the redis"
+                )
         except Exception as ex:
             msg = f"Saving the result with the {key} prefix has been interrupted. Error: {ex}."
             logger.info(msg)
@@ -44,7 +46,9 @@ class RedisWrapper:
         try:
             with self._get_redis() as redis:
                 response = redis.get(key)
-                logger.info(f"The item with the {key} prefix was successfully retrieved from the redis")
+                logger.info(
+                    f"The item with the {key} prefix was successfully retrieved from the redis"
+                )
                 return response
         except Exception as ex:
             msg = f"The receipt of the element with the {key} prefix was interrupted. Error: {ex}"
@@ -55,7 +59,9 @@ class RedisWrapper:
         try:
             with self._get_redis() as redis:
                 response = redis.get(key)
-                logger.info(f"The request for the {key} key has been successfully processed.")
+                logger.info(
+                    f"The request for the {key} key has been successfully processed."
+                )
                 return True if response is not None else False
         except Exception as ex:
             msg = f"An error occurred while processing the {key} key. Error: {ex}"
@@ -64,25 +70,29 @@ class RedisWrapper:
 
     async def wait_item(self, key, timeout: float = 60) -> bytes:
         """
-            Waits for an item to appear in the specified Redis channel.
+        Waits for an item to appear in the specified Redis channel.
 
-            Note:
-                There is a very small chance that the message might be published
-                before the intended channel is subscribed to. This could result
-                in the `wait_item` method getting stuck in a loop.
-            """
+        Note:
+            There is a very small chance that the message might be published
+            before the intended channel is subscribed to. This could result
+            in the `wait_item` method getting stuck in a loop.
+        """
         try:
             async with self.get_redis_async() as redis:
                 pubsub = redis.pubsub()
                 await pubsub.subscribe(f"{key}")
                 while True:
-                    message = await pubsub.get_message(ignore_subscribe_messages=True, timeout=timeout)
+                    message = await pubsub.get_message(
+                        ignore_subscribe_messages=True, timeout=timeout
+                    )
                     if message is not None:
-                        event = message['data']
-                        if event == b'set':
+                        event = message["data"]
+                        if event == b"set":
                             value = await redis.get(key)
                             if value is not None:
-                                logger.info(f"The item with the {key} prefix was successfully retrieved from the redis")
+                                logger.info(
+                                    f"The item with the {key} prefix was successfully retrieved from the redis"
+                                )
                                 return value
         except Exception as ex:
             msg = f"The receipt of the element with the {key} prefix was interrupted. Error: {ex}"

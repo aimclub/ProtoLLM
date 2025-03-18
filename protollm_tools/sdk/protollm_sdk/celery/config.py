@@ -32,7 +32,7 @@ class CeleryConfig(metaclass=Singleton):
         celery_init_kwargs: dict | None = None,
         conf_update: dict[str, Any] | None | object = _ARG_UNSET,
         formats: list[str] | None | object = _ARG_UNSET,
-        task_kwargs: dict[str, Any] | None | object = _ARG_UNSET
+        task_kwargs: dict[str, Any] | None | object = _ARG_UNSET,
     ):
         self.queue = queue if queue is not None else Config.celery_queue_name
 
@@ -43,18 +43,22 @@ class CeleryConfig(metaclass=Singleton):
 
         self.redis_host = redis_host if redis_host is not None else Config.redis_host
         self.redis_port = (
-            redis_port
-            if redis_port is not _ARG_UNSET
-            else Config.redis_port
+            redis_port if redis_port is not _ARG_UNSET else Config.redis_port
         )
 
         self.celery_init_kwargs = celery_init_kwargs
 
-        self.conf_update = conf_update if conf_update is not _ARG_UNSET else _Defaults.conf_update
+        self.conf_update = (
+            conf_update if conf_update is not _ARG_UNSET else _Defaults.conf_update
+        )
         self.formats = formats if formats is not _ARG_UNSET else _Defaults.formats
 
-        self.task_kwargs = (task_kwargs or {}) if task_kwargs is not _ARG_UNSET else dict(
-            queue = self.queue,
+        self.task_kwargs = (
+            (task_kwargs or {})
+            if task_kwargs is not _ARG_UNSET
+            else dict(
+                queue=self.queue,
+            )
         )
 
     @property
@@ -62,21 +66,33 @@ class CeleryConfig(metaclass=Singleton):
         static_kwargs = dict(broker=self.mq_url, backend=self.redis_url)
 
         return (
-            (self.queue, ),
-            static_kwargs if self.celery_init_kwargs is None else dict(static_kwargs, **self.celery_init_kwargs),
+            (self.queue,),
+            (
+                static_kwargs
+                if self.celery_init_kwargs is None
+                else dict(static_kwargs, **self.celery_init_kwargs)
+            ),
         )
 
     @property
     def mq_url(self) -> str:
         schema = "amqp"
         creds = f"{self.mq_usr}:{self.mq_pwd}"
-        base = f"{self.mq_host}:{self.mq_port}" if self.mq_port is not None else self.mq_host
+        base = (
+            f"{self.mq_host}:{self.mq_port}"
+            if self.mq_port is not None
+            else self.mq_host
+        )
 
         return f"{schema}://{creds}@{base}/"
 
     @property
     def redis_url(self) -> str:
         schema = "redis"
-        base = f"{self.redis_host}:{self.redis_port}" if self.redis_port is not None else self.redis_host
+        base = (
+            f"{self.redis_host}:{self.redis_port}"
+            if self.redis_port is not None
+            else self.redis_host
+        )
 
         return f"{schema}://{base}"

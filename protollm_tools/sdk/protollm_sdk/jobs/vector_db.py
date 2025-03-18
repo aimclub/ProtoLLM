@@ -17,7 +17,11 @@ class VectorDB:
         :param vector_db_port: port of vector db
         :type vector_db_port: str | int | None
         """
-        self.url = f"http://{vector_bd_host}:{vector_db_port}" if vector_db_port is not None else f"http://{vector_bd_host}"
+        self.url = (
+            f"http://{vector_bd_host}:{vector_db_port}"
+            if vector_db_port is not None
+            else f"http://{vector_bd_host}"
+        )
         self.client = httpx.Client()
 
     def api_v1(self):
@@ -29,6 +33,6 @@ class VectorDB:
         response = self.client.get(
             urljoin(self.url, "/api/v1"),
             headers={"Content-type": "application/json"},
-            timeout=10 * 60
+            timeout=10 * 60,
         )
         return response.json()

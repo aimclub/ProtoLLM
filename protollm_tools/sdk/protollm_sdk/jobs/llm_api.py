@@ -3,7 +3,11 @@ from urllib.parse import urljoin
 
 import httpx
 
-from protollm_sdk.models.job_context_models import PromptModel, ResponseModel, ChatCompletionModel
+from protollm_sdk.models.job_context_models import (
+    PromptModel,
+    ResponseModel,
+    ChatCompletionModel,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -14,10 +18,10 @@ class LLMAPI:
     """
 
     def __init__(
-            self,
-            llm_api_host: str,
-            llm_api_port: str | int | None = None,
-            timeout_sec: int = 10 * 60,
+        self,
+        llm_api_host: str,
+        llm_api_port: str | int | None = None,
+        timeout_sec: int = 10 * 60,
     ):
         """
         Initialize LLMAPI
@@ -29,7 +33,11 @@ class LLMAPI:
         :param timeout_sec: Timeout in seconds
         :type timeout_sec: int
         """
-        self.path = f"http://{llm_api_host}:{llm_api_port}" if llm_api_port is not None else f"http://{llm_api_host}"
+        self.path = (
+            f"http://{llm_api_host}:{llm_api_port}"
+            if llm_api_port is not None
+            else f"http://{llm_api_host}"
+        )
         self.timeout_sec = timeout_sec
         self.client = httpx.Client()
 
@@ -46,12 +54,12 @@ class LLMAPI:
                 urljoin(self.path, "/generate"),
                 headers={"Content-type": "application/json"},
                 data=request.model_dump_json(),
-                timeout=self.timeout_sec
+                timeout=self.timeout_sec,
             )
             if response.status_code == 500:
-                raise ConnectionError('The LLM server is not available.')
+                raise ConnectionError("The LLM server is not available.")
             elif response.status_code == 422:
-                raise ValueError(f'Data model validation error. {response.json()}')
+                raise ValueError(f"Data model validation error. {response.json()}")
             result = ResponseModel.model_validate(response.json())
             logger.info("The request has been successfully processed.")
             return result
@@ -74,12 +82,12 @@ class LLMAPI:
                 urljoin(self.path, "/chat_completion"),
                 headers={"Content-type": "application/json"},
                 data=request.model_dump_json(),
-                timeout=self.timeout_sec
+                timeout=self.timeout_sec,
             )
             if response.status_code == 500:
-                raise ConnectionError('The LLM server is not available.')
+                raise ConnectionError("The LLM server is not available.")
             elif response.status_code == 422:
-                raise ValueError(f'Data model validation error. {response.json()}')
+                raise ValueError(f"Data model validation error. {response.json()}")
             result = ResponseModel.model_validate(response.json())
             logger.info("The request has been successfully processed.")
             return result

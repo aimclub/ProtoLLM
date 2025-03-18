@@ -11,6 +11,7 @@ from protollm.metrics.evaluation_metrics import correctness_metric
 
 class Joke(BaseModel):
     """Joke to tell user."""
+
     setup: str = Field(description="The setup of the joke")
     punchline: str = Field(description="The punchline to the joke")
     rating: Optional[int] = Field(
@@ -21,15 +22,17 @@ class Joke(BaseModel):
 def test_metric_connector():
     model = DeepEvalConnector()
     mock_response = AIMessage(content="Hello, world!")
-    with patch.object(model, 'generate', return_value=mock_response):
+    with patch.object(model, "generate", return_value=mock_response):
         result = model.generate("Hello")
         assert result.content == "Hello, world!"
 
 
 def test_metric_connector_with_schema():
     model = DeepEvalConnector()
-    mock_response = Joke.model_validate_json('{"setup": "test", "punchline": "test", "score": "7"}')
-    with patch.object(model, 'generate', return_value=mock_response):
+    mock_response = Joke.model_validate_json(
+        '{"setup": "test", "punchline": "test", "score": "7"}'
+    )
+    with patch.object(model, "generate", return_value=mock_response):
         response = model.generate(prompt="Tell me a joke", schema=Joke)
         assert issubclass(type(response), BaseModel)
 
@@ -38,15 +41,17 @@ def test_correctness_metric():
     test_case = LLMTestCase(
         input="The dog chased the cat up the tree, who ran up the tree?",
         actual_output="It depends, some might consider the cat, while others might argue the dog.",
-        expected_output="The cat."
+        expected_output="The cat.",
     )
-    
+
     with (
         patch.object(
-            correctness_metric, "_generate_evaluation_steps", return_value=["first step", "second step"]
+            correctness_metric,
+            "_generate_evaluation_steps",
+            return_value=["first step", "second step"],
         ),
         patch.object(
-            correctness_metric,"evaluate", return_value=(1.0, "all good")
+            correctness_metric, "evaluate", return_value=(1.0, "all good")
         ) as mocked_evaluate,
     ):
         correctness_metric.measure(test_case)

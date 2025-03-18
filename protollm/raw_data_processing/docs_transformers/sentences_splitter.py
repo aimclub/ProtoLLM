@@ -3,7 +3,9 @@ from typing import Any, Iterable, Optional
 
 from langchain_text_splitters import TextSplitter
 
-from protollm.raw_data_processing.docs_transformers.utilities import fix_list_dots_separators
+from protollm.raw_data_processing.docs_transformers.utilities import (
+    fix_list_dots_separators,
+)
 
 
 class SentencesSplitter(TextSplitter):

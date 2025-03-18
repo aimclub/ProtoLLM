@@ -31,10 +31,10 @@ class VseGPTConnector(DeepEvalBaseLLM):
     """Implementation of Evaluation agent based on large language model for Assistant's answers evaluation."""
 
     def __init__(
-            self,
-            model: str,
-            sys_prompt: str = "",
-            base_url="https://api.vsegpt.ru/v1",
+        self,
+        model: str,
+        sys_prompt: str = "",
+        base_url="https://api.vsegpt.ru/v1",
     ):
         """Initialize instance with evaluation LLM.
 
@@ -55,13 +55,13 @@ class VseGPTConnector(DeepEvalBaseLLM):
         return OpenAI(api_key=os.environ.get("VSE_GPT_KEY"), base_url=self.base_url)
 
     def generate(
-            self,
-            prompt: str,
-            context: str | None = None,
-            temperature: float = 0.015,
-            chat_history: list[Message] | None = None,
-            *args,
-            **kwargs,
+        self,
+        prompt: str,
+        context: str | None = None,
+        temperature: float = 0.015,
+        chat_history: list[Message] | None = None,
+        *args,
+        **kwargs,
     ) -> str:
         """Get a response form LLM to given question.
 
@@ -97,13 +97,13 @@ class VseGPTConnector(DeepEvalBaseLLM):
         return response.choices[0].message.content
 
     async def a_generate(
-            self,
-            prompt: str,
-            context: str | None = None,
-            temperature: float = 0.015,
-            chat_history: list[Message] | None = None,
-            *args,
-            **kwargs,
+        self,
+        prompt: str,
+        context: str | None = None,
+        temperature: float = 0.015,
+        chat_history: list[Message] | None = None,
+        *args,
+        **kwargs,
     ) -> str:
         return self.generate(
             prompt, context, temperature, chat_history, *args, **kwargs
@@ -191,11 +191,11 @@ if __name__ == "__main__":
             input=question,
             actual_output=outer_llm_ans,
             expected_output="В рамках формирования улично-дорожной сети (УДС) Санкт-Петербурга "
-                            "необходимо обеспечить формирование опорного каркаса УДС за счет развития "
-                            "современной транспортной инфраструктуры, повышения связности объектов "
-                            "транспортной инфраструктуры, увеличения пропускной способности, развития "
-                            "магистралей непрерывного движения и магистралей с улучшенными условиями движения, "
-                            "строительства многоуровневых развязок и транспортно-пересадочных узлов.",
+            "необходимо обеспечить формирование опорного каркаса УДС за счет развития "
+            "современной транспортной инфраструктуры, повышения связности объектов "
+            "транспортной инфраструктуры, увеличения пропускной способности, развития "
+            "магистралей непрерывного движения и магистралей с улучшенными условиями движения, "
+            "строительства многоуровневых развязок и транспортно-пересадочных узлов.",
             retrieval_context=None,
         )
     )

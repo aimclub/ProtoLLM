@@ -7,42 +7,41 @@ dict_for_map_many_func = {
     "sclerosis": "gen_mols_multiple_sclerosis",
     "Drug_Resistance": "gen_mols_acquired_drug_resistance",
     "Parkinson": "gen_mols_parkinson",
-    "nothing": "nothing"
+    "nothing": "nothing",
 }
 
 
 def validate_decompose(
-    idx: int, 
-    decompose_lst: list, 
-    validation_path="experiment3.xlsx"
-    ) -> bool:
-    
+    idx: int, decompose_lst: list, validation_path="experiment3.xlsx"
+) -> bool:
+
     lines = pd.read_excel(validation_path)
     columns = lines.columns
     lines = lines.values.tolist()
 
     num_tasks_true = len(lines[idx][0].split(","))
     lines[idx][2] = decompose_lst
-    
+
     if len(decompose_lst) == num_tasks_true:
         lines[idx][3] = True
-        
-        pd.DataFrame(
-            lines, columns=columns
-        ).to_excel(validation_path, index=False)
+
+        pd.DataFrame(lines, columns=columns).to_excel(validation_path, index=False)
         return True
     else:
         lines[idx][3] = False
-        pd.DataFrame(
-            lines, columns=columns
-        ).to_excel(validation_path, index=False)
+        pd.DataFrame(lines, columns=columns).to_excel(validation_path, index=False)
         return False
 
 
-def validate_conductor(idx: int, func: dict, sub_task_number: int, path_total_val="experiment3_example.xlsx") -> bool:
+def validate_conductor(
+    idx: int,
+    func: dict,
+    sub_task_number: int,
+    path_total_val="experiment3_example.xlsx",
+) -> bool:
     """
-    Validate conductors agent answer. File must consist of next columns = 
-    'case', 'content', 'decomposers_tasks', 'is_correct_context', 'task 1', 
+    Validate conductors agent answer. File must consist of next columns =
+    'case', 'content', 'decomposers_tasks', 'is_correct_context', 'task 1',
     'task 2', 'task 3', 'task 4', 'task 5'
 
     Parameters
@@ -62,11 +61,11 @@ def validate_conductor(idx: int, func: dict, sub_task_number: int, path_total_va
     lines = pd.read_excel(path_total_val)
     columns = lines.columns
     lines = lines.values.tolist()
-    
+
     try:
         target_name = lines[idx][0].split(", ")[sub_task_number]
     except:
-        target_name = 'nothing'
+        target_name = "nothing"
     if isinstance(func, bool):
         return False
 
@@ -93,9 +92,11 @@ def validate_conductor(idx: int, func: dict, sub_task_number: int, path_total_va
                 columns=columns,
             ).to_excel(path_total_val, index=False)
             return False
-        
-        
-def compute_metrics(model_name: str = 'no_name_model', file_path: str = 'experiment3_example.xlsx'):
+
+
+def compute_metrics(
+    model_name: str = "no_name_model", file_path: str = "experiment3_example.xlsx"
+):
     """
     Compute pipeline metrics
 
@@ -116,7 +117,7 @@ def compute_metrics(model_name: str = 'no_name_model', file_path: str = 'experim
 
     correct_subtasks = 0
     correct_tasks = 0
-    
+
     decomposer_true = 0
 
     # add zeros columns for result
@@ -136,9 +137,9 @@ def compute_metrics(model_name: str = 'no_name_model', file_path: str = 'experim
                 .split(", ")
             )
             decomposer_true += row[3]
-            
+
             row[11 - 1] = len(cases)
-            
+
             # for every subtask in main task(query)
             for n, case in enumerate(cases):
                 is_correct = dict_for_map_many_func[case] == row[4 + n]
@@ -153,26 +154,33 @@ def compute_metrics(model_name: str = 'no_name_model', file_path: str = 'experim
                 row[12 - 1] = 1
             else:
                 row[12 - 1] = 0
-            
+
             if just_1_case_in_all_smpls:
                 if len(cases) > 1:
                     just_1_case_in_all_smpls = False
-                
-            number_subtasks, number_tasks = number_subtasks + len(cases), number_tasks + 1
+
+            number_subtasks, number_tasks = (
+                number_subtasks + len(cases),
+                number_tasks + 1,
+            )
 
         except:
             continue
 
-    pd.DataFrame(lst, columns=columns).to_excel(
-        f"result.xlsx", index=False
-    )
+    pd.DataFrame(lst, columns=columns).to_excel(f"result.xlsx", index=False)
 
-    if not(just_1_case_in_all_smpls):
+    if not (just_1_case_in_all_smpls):
         print(
             "Percentage true subtasks (accuracy of whole pipeline): ",
             100 / (number_subtasks) * correct_subtasks,
         )
-        print("Percentage true tasks by Decomposer: ", 100 / number_tasks * decomposer_true)
-        print("Percentage true tasks by Conductor: ", 100 / (number_subtasks) * correct_subtasks)
+        print(
+            "Percentage true tasks by Decomposer: ",
+            100 / number_tasks * decomposer_true,
+        )
+        print(
+            "Percentage true tasks by Conductor: ",
+            100 / (number_subtasks) * correct_subtasks,
+        )
     else:
         print("Percentage true tasks: ", 100 / (number_tasks) * correct_tasks)

@@ -23,6 +23,7 @@ def init_celery(celery_config: CeleryConfig) -> Celery:
 
     return celery
 
+
 celery_config = CeleryConfig()
 celery = init_celery(celery_config)
 
@@ -31,7 +32,7 @@ logger = logging.getLogger(__name__)
 
 
 @celery.task(**celery_config.task_kwargs)
-def task_test(task_class: str, task_id: str, **kwargs): # noqa
+def task_test(task_class: str, task_id: str, **kwargs):  # noqa
     ctx = construct_job_context(task_class, abstract_task)
     if job_class := JOB_NAME2CLASS.get(task_class):
         job = job_class()
@@ -48,7 +49,11 @@ def task_test(task_class: str, task_id: str, **kwargs): # noqa
 
 @celery.task(**celery_config.task_kwargs)
 def abstract_task(task_class: type[Job], task_id: str, **kwargs):
-    class_name = task_class.__name__ if isinstance(task_class, type) else task_class.__class__.__name__
+    class_name = (
+        task_class.__name__
+        if isinstance(task_class, type)
+        else task_class.__class__.__name__
+    )
     ctx = construct_job_context(class_name, abstract_task)
     logger.info(f"Starting task '{task_id}'. Job '{class_name}'.")
     job_object = task_class() if isinstance(task_class, type) else task_class

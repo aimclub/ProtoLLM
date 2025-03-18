@@ -6,7 +6,10 @@ from langchain.agents import (
 )
 from langchain.prompts import ChatPromptTemplate, MessagesPlaceholder
 from langchain.tools.render import render_text_description_and_args
-from langchain_core.prompts import SystemMessagePromptTemplate, HumanMessagePromptTemplate
+from langchain_core.prompts import (
+    SystemMessagePromptTemplate,
+    HumanMessagePromptTemplate,
+)
 
 
 # Define tools using the @tool decorator
@@ -15,16 +18,18 @@ def add_numbers(a: int, b: int) -> int:
     """Adds two numbers."""
     return a + b
 
+
 @tool
 def multiply_numbers(a: int, b: int) -> int:
     """Multiplies two numbers."""
     return a * b
 
+
 # List of tools
 tools = [add_numbers, multiply_numbers]
 
 # Create the system and human prompts
-system_prompt = '''Respond to the human as helpfully and accurately as possible. You have access to the following tools:
+system_prompt = """Respond to the human as helpfully and accurately as possible. You have access to the following tools:
 
 {tools}
 
@@ -48,11 +53,11 @@ Thought: I know what to respond
 Action: {{ "action": "Final Answer", "action_input": "Final response to human" }}
 
 
-Begin! Reminder to ALWAYS respond with a valid JSON blob of a single action. Use tools if necessary. Respond directly if appropriate. Format is Action:```$JSON_BLOB``` then Observation'''
+Begin! Reminder to ALWAYS respond with a valid JSON blob of a single action. Use tools if necessary. Respond directly if appropriate. Format is Action:```$JSON_BLOB``` then Observation"""
 
-human_prompt = '''{input}
+human_prompt = """{input}
 {agent_scratchpad}
-(Reminder to respond in a JSON blob no matter what)'''
+(Reminder to respond in a JSON blob no matter what)"""
 
 system_message = SystemMessagePromptTemplate.from_template(
     system_prompt,

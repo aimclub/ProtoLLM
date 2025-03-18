@@ -15,7 +15,12 @@ class ResultStorage:
     the identifier of the current task (job_id)
     """
 
-    def __init__(self, redis_host: str, redis_port: str | int | None = None, prefix: str | None = None):
+    def __init__(
+        self,
+        redis_host: str,
+        redis_port: str | int | None = None,
+        prefix: str | None = None,
+    ):
         """
         Initialize ResultStorage
 
@@ -26,7 +31,11 @@ class ResultStorage:
         :param prefix: prefix for the key
         :type prefix: str | None
         """
-        self.url = f"redis://{redis_host}:{redis_port}" if redis_port is not None else f"redis://{redis_host}"
+        self.url = (
+            f"redis://{redis_host}:{redis_port}"
+            if redis_port is not None
+            else f"redis://{redis_host}"
+        )
         self.prefix = prefix or ""
 
     def for_job(self, job_name: str) -> "ResultStorage":
@@ -76,7 +85,9 @@ class ResultStorage:
         try:
             with self._get_redis() as rs:
                 rs.set(key, json.dumps(result))
-                logger.info(f"The result with the key {key} has been successfully written to the redis")
+                logger.info(
+                    f"The result with the key {key} has been successfully written to the redis"
+                )
         except Exception as ex:
             msg = f"Saving the result with the key {key} has been interrupted. Error: {ex}."
             logger.info(msg)
@@ -99,7 +110,9 @@ class ResultStorage:
                     return json.loads(result)
                 return result
         except Exception as ex:
-            msg = f"Failed to load the result with the key {key} from redis. Error: {ex}."
+            msg = (
+                f"Failed to load the result with the key {key} from redis. Error: {ex}."
+            )
             logger.error(msg)
             raise Exception(msg) from ex
 

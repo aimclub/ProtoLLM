@@ -5,11 +5,13 @@ from PIL import Image
 from docx.text.paragraph import Paragraph
 from lxml import etree
 
-from protollm.raw_data_processing.docs_parsers.parsers.word_doc.xml.xml_tag import XMLTag
+from protollm.raw_data_processing.docs_parsers.parsers.word_doc.xml.xml_tag import (
+    XMLTag,
+)
 
 
 def _convert_to_latex(
-    xml_element: etree.Element, parsing_config: 'DocxParsingConfig'
+    xml_element: etree.Element, parsing_config: "DocxParsingConfig"
 ) -> str:
     math_ml = parsing_config.omml2mml_transformation(xml_element).getroot()
     tex = parsing_config.mml2tex_transformation(math_ml)
@@ -17,7 +19,7 @@ def _convert_to_latex(
 
 
 def _extract_image_data(
-    xml_element: etree.Element, parsing_config: 'DocxParsingConfig'
+    xml_element: etree.Element, parsing_config: "DocxParsingConfig"
 ) -> dict:
     rid = xml_element.find(".//" + XMLTag.blip.value).get(XMLTag.embed.value)
     image_element = parsing_config.document_relationships[rid].target_part
@@ -27,7 +29,7 @@ def _extract_image_data(
 
 
 def _parse_raw_xml_element(
-    raw_xml_element: etree.Element, parsing_config: 'DocxParsingConfig'
+    raw_xml_element: etree.Element, parsing_config: "DocxParsingConfig"
 ) -> tuple[list[str], dict]:
     """Parse raw xml element."""
     texts = []
@@ -55,7 +57,7 @@ def _parse_raw_xml_element(
 
 
 def process_paragraph_body(
-    paragraph: Paragraph, parsing_config: 'DocxParsingConfig'
+    paragraph: Paragraph, parsing_config: "DocxParsingConfig"
 ) -> tuple[str, dict[str, dict]]:
     xml_paragraph = etree.fromstring(paragraph._element.xml)
     texts = []

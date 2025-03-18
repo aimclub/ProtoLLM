@@ -7,7 +7,10 @@ class Config:
     llm_api_host = os.environ.get("LLM_API_HOST", "localhost")
     llm_api_port = os.environ.get("LLM_API_PORT", "6672")
 
-    outer_llm_key = os.environ.get("OUTER_LLM_KEY", "sk-or-vv-c49f40fdb086053ec32c6ae2723b8d222cb7767f3b98527e7ae282986e7d33ed")
+    outer_llm_key = os.environ.get(
+        "OUTER_LLM_KEY",
+        "sk-or-vv-c49f40fdb086053ec32c6ae2723b8d222cb7767f3b98527e7ae282986e7d33ed",
+    )
 
     redis_host = os.environ.get("REDIS_HOST", "localhost")
     redis_port = os.environ.get("REDIS_PORT", "6379")

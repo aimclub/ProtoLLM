@@ -17,6 +17,7 @@ def cleanup_redis(redis_wrapper):
     with redis_wrapper._get_redis() as redis:
         redis.flushall()
 
+
 @pytest.mark.local
 def test_save_item_publishes_message(redis_wrapper):
     key = "test_key"
@@ -41,14 +42,19 @@ def test_save_item_publishes_message(redis_wrapper):
         assert message["channel"] == key.encode("utf-8")
         assert message["data"] == b"set"
 
+
 @pytest.mark.local
 def test_get_item_raises_exception(redis_wrapper):
     """Тестирует, что get_item выбрасывает исключение при ошибке."""
     key = "test_key"
 
     redis_wrapper.url = "redis://invalid_host:6379"
-    with pytest.raises(Exception, match=f"The receipt of the element with the {key} prefix was interrupted"):
+    with pytest.raises(
+        Exception,
+        match=f"The receipt of the element with the {key} prefix was interrupted",
+    ):
         redis_wrapper.get_item(key)
+
 
 @pytest.mark.local
 def test_save_and_get_item(redis_wrapper):
@@ -60,14 +66,18 @@ def test_save_and_get_item(redis_wrapper):
     assert retrieved_item == b'{"field": "value"}'
     assert json.loads(retrieved_item) == item
 
+
 @pytest.mark.local
 def test_save_item_raises_exception(redis_wrapper):
     key = "test_key"
     item = {"field": "value"}
 
     redis_wrapper.url = "redis://invalid_host:6379"
-    with pytest.raises(Exception, match=f"Saving the result with the {key} prefix has been interrupted"):
+    with pytest.raises(
+        Exception, match=f"Saving the result with the {key} prefix has been interrupted"
+    ):
         redis_wrapper.save_item(key, item)
+
 
 @pytest.mark.local
 def test_check_key(redis_wrapper):
@@ -78,12 +88,16 @@ def test_check_key(redis_wrapper):
     redis_wrapper.save_item(key, item)
     assert redis_wrapper.check_key(key) is True
 
+
 @pytest.mark.local
 def test_check_key_raises_exception(redis_wrapper):
     key = "test_key"
     redis_wrapper.url = "redis://invalid_host:6379"
-    with pytest.raises(Exception, match=f"An error occurred while processing the {key} key"):
+    with pytest.raises(
+        Exception, match=f"An error occurred while processing the {key} key"
+    ):
         redis_wrapper.check_key(key)
+
 
 @pytest.mark.local
 @pytest.mark.asyncio
@@ -95,15 +109,19 @@ async def test_wait_item(redis_wrapper):
 
     with redis_wrapper._get_redis() as redis:
         redis.set(key, json.dumps(item))
-        redis.publish(key, 'set')
+        redis.publish(key, "set")
 
     result = await wait_task
     assert result == b'{"field": "value"}'
+
 
 @pytest.mark.local
 @pytest.mark.asyncio
 async def test_wait_item_raises_exception(redis_wrapper):
     key = "test_key"
     redis_wrapper.url = "redis://invalid_host:6379"
-    with pytest.raises(Exception, match=f"The receipt of the element with the {key} prefix was interrupted"):
+    with pytest.raises(
+        Exception,
+        match=f"The receipt of the element with the {key} prefix was interrupted",
+    ):
         await redis_wrapper.wait_item(key, timeout=1)

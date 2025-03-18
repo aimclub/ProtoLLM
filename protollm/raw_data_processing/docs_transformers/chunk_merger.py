@@ -40,9 +40,7 @@ class ChunkMerger(TextSplitter):
             doc_meta = _get_metadata(doc.metadata)
             doc_chapter, doc_source = doc_meta["chapter"], doc_meta["source"]
 
-            if (
-                doc_chapter == chapter and doc_source == source
-            ):
+            if doc_chapter == chapter and doc_source == source:
                 merged_text = self.joiner.join((merged_chunk_content, doc_text))
                 if self._length_function(merged_text) <= self._chunk_size:
                     merged_chunk_content = merged_text
@@ -91,6 +89,4 @@ class ChunkMerger(TextSplitter):
         raise NotImplementedError("split_text is not implemented in ChunkMerger")
 
     def _merge_splits(self, splits: Iterable[str], separator: str) -> List[str]:
-        raise NotImplementedError(
-            "_merge_splits is not implemented in ChunkMerger"
-        )
+        raise NotImplementedError("_merge_splits is not implemented in ChunkMerger")

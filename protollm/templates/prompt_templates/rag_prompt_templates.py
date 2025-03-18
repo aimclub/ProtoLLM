@@ -86,10 +86,16 @@ PROMPT_REFORMAT_TEMPLATE = """
 <|start_header_id|>assistant<|end_header_id|>
 """
 
-PROMPT_REFORMAT = PromptTemplate(template=PROMPT_REFORMAT_TEMPLATE, input_variables=['question'])
-PROMPT_PLAN = PromptTemplate(template=PROMPT_PLAN_TEMPLATE, input_variables=['context'])
-PROMPT_RANK = PromptTemplate(template=PROMPT_RANK_TEMPLATE, input_variables=['question', 'context'])
-PROMPT_LLM_RESPONSE = PromptTemplate(template=PROMPT_LLM_RESPONSE_TEMPLATE, input_variables=['paragraphs', 'question'])
+PROMPT_REFORMAT = PromptTemplate(
+    template=PROMPT_REFORMAT_TEMPLATE, input_variables=["question"]
+)
+PROMPT_PLAN = PromptTemplate(template=PROMPT_PLAN_TEMPLATE, input_variables=["context"])
+PROMPT_RANK = PromptTemplate(
+    template=PROMPT_RANK_TEMPLATE, input_variables=["question", "context"]
+)
+PROMPT_LLM_RESPONSE = PromptTemplate(
+    template=PROMPT_LLM_RESPONSE_TEMPLATE, input_variables=["paragraphs", "question"]
+)
 
 BOS, EOS = "<|begin_of_text|>", "<|end_of_text|>"
 SOH, EOH = "<|start_header_id|>", "<|end_header_id|>\n\n"

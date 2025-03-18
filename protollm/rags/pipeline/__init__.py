@@ -1,1 +1,5 @@
-from protollm.rags.pipeline.etl_pipeline import DocsLoadPipeline, DocsTransformPipeline, DocsExtractPipeline
+from protollm.rags.pipeline.etl_pipeline import (
+    DocsLoadPipeline,
+    DocsTransformPipeline,
+    DocsExtractPipeline,
+)

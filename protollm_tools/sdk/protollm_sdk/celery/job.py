@@ -8,6 +8,7 @@ from protollm_sdk.models.job_context_models import TextEmbedderRequest, PromptMo
 
 class TextEmbedderJob(Job):
     """Defining the embedder class inherited from Job"""
+
     def run(self, task_id: str, ctx: JobContext, **kwargs):
         """Redefining the run function"""
         request = TextEmbedderRequest(**kwargs)
@@ -35,6 +36,7 @@ class LLMAPIJob(Job):
 
 class OuterLLMAPIJob(Job):
     """Defining the llm class inherited from Job"""
+
     def run(self, task_id: str, ctx: JobContext, **kwargs):
         """Redefining the run function"""
         request = PromptModel(**kwargs)
@@ -50,6 +52,7 @@ class VectorDBJob(Job):
         """Redefining the run function"""
         resp = ctx.vector_db.api_v1()
         return resp
+
 
 # class LangchainLLMAPIJob(Job):
 #     """Defining the langchain class inherited from Job"""
@@ -81,7 +84,9 @@ class TestInvocationJob(Job):
 
         # Job calling is executed via passing the job class reference and the corresponding kwargs.
         job_result = ctx.job_invoker.invoke(ResultStorageJob, **my_kwargs)
-        logger.warning(f"{self.__class__.__name__} sent {ResultStorageJob.__class__.__name__} task with kwargs {my_kwargs}")
+        logger.warning(
+            f"{self.__class__.__name__} sent {ResultStorageJob.__class__.__name__} task with kwargs {my_kwargs}"
+        )
 
         # The get_result behaviour depends on the InvokeType (described above).
         result = job_result.get_result()

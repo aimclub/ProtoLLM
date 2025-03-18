@@ -14,12 +14,16 @@ from protollm.rags.pipeline.docs_processing.exceptions import TransformerNameErr
 from protollm.rags.pipeline.docs_processing.models import ConfigFile
 
 
-def _get_params_for_transformer(params: dict[str, Any],
-                                transformer_class: Type[BaseDocumentTransformer]) -> dict[str, Any]:
+def _get_params_for_transformer(
+    params: dict[str, Any], transformer_class: Type[BaseDocumentTransformer]
+) -> dict[str, Any]:
     text_splitter_params = inspect.signature(TextSplitter.__init__).parameters.keys()
-    transformer_params = {key: value for key, value in params.items()
-                          if key in inspect.signature(transformer_class.__init__).parameters.keys()
-                          or key in text_splitter_params}
+    transformer_params = {
+        key: value
+        for key, value in params.items()
+        if key in inspect.signature(transformer_class.__init__).parameters.keys()
+        or key in text_splitter_params
+    }
     return transformer_params
 
 
@@ -31,18 +35,22 @@ class PipelineSettings:
 
     @classmethod
     def config_from_file(cls, config_file: str):
-        with open(config_file, 'r') as f:
+        with open(config_file, "r") as f:
             yaml_config = yaml.safe_load(f)
         config_dict = ConfigFile.model_validate(yaml_config)
         for splitter in config_dict.splitter:
             if splitter.splitter_name not in transformer_object_dict:
-                raise TransformerNameError(f'There is no DocumentTransformer '
-                                           f'related to the name: {splitter.splitter_name}')
+                raise TransformerNameError(
+                    f"There is no DocumentTransformer "
+                    f"related to the name: {splitter.splitter_name}"
+                )
         return cls(config=config_dict)
 
     def update_transformer_params(self, new_params: dict[str, Any]):
         for transformer_class, transformer_params in self._transformers:
-            new_param_values = _get_params_for_transformer(new_params, transformer_class)
+            new_param_values = _get_params_for_transformer(
+                new_params, transformer_class
+            )
             transformer_params.update(new_param_values)
 
     def update_loader_params(self, new_params: dict[str, Any]):
@@ -55,7 +63,7 @@ class PipelineSettings:
     @loader_params.setter
     def loader_params(self, config: Optional[ConfigFile]):
         loader_params = deepcopy(config.loader.parsing_params)
-        loader_params['file_path'] = config.loader.file_path
+        loader_params["file_path"] = config.loader.file_path
         self._loader_params = loader_params
 
     @property
@@ -76,12 +84,13 @@ class PipelineSettings:
                 warnings.simplefilter("ignore")
                 tokenizer = AutoTokenizer.from_pretrained(self.config.tokenizer)
         for transformer_class, transformer_params in self._transformers:
-            if tokenizer is None or not hasattr(transformer_class, 'from_huggingface_tokenizer'):
+            if tokenizer is None or not hasattr(
+                transformer_class, "from_huggingface_tokenizer"
+            ):
                 transformer = transformer_class(**transformer_params)
             else:
                 transformer = transformer_class.from_huggingface_tokenizer(
-                    tokenizer,
-                    **transformer_params
+                    tokenizer, **transformer_params
                 )
             docs_transformers.append(transformer)
         return docs_transformers
@@ -91,12 +100,14 @@ class PipelineSettings:
         self._transformers = []
         if config is None:
             return
-        self._transformers.append((transformer_object_dict['recursive_character'], {}))
+        self._transformers.append((transformer_object_dict["recursive_character"], {}))
         for splitter in config.splitter:
             splitter_params = splitter.splitter_params
             transformer_class = transformer_object_dict[splitter.splitter_name]
-            transformer_params = _get_params_for_transformer(splitter_params, transformer_class)
-            if splitter.splitter_name != 'recursive_character':
+            transformer_params = _get_params_for_transformer(
+                splitter_params, transformer_class
+            )
+            if splitter.splitter_name != "recursive_character":
                 self._transformers.append((transformer_class, transformer_params))
             else:
                 self._transformers[0] = (transformer_class, transformer_params)

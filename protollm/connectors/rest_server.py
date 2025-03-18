@@ -4,14 +4,13 @@ from typing import Any, Dict, List, Optional, Union
 import requests
 from langchain_core.callbacks import CallbackManagerForLLMRun
 from langchain_core.language_models import BaseChatModel
-from langchain_core.messages import (AIMessage, BaseMessage, HumanMessage,
-                                     SystemMessage)
+from langchain_core.messages import AIMessage, BaseMessage, HumanMessage, SystemMessage
 from langchain_core.outputs import ChatGeneration, ChatResult
 
 
 class ChatRESTServer(BaseChatModel):
-    model: Optional[str] = 'llama3'
-    base_url: str = 'http://10.32.2.2:8672'
+    model: Optional[str] = "llama3"
+    base_url: str = "http://10.32.2.2:8672"
     timeout: Optional[int] = None
     """Timeout for the request stream"""
 
@@ -21,7 +20,7 @@ class ChatRESTServer(BaseChatModel):
         return "chat-rest-server"
 
     def _convert_messages_to_rest_server_messages(
-            self, messages: List[BaseMessage]
+        self, messages: List[BaseMessage]
     ) -> List[Dict[str, Union[str, List[str]]]]:
         chat_messages: List = []
         for message in messages:
@@ -36,43 +35,35 @@ class ChatRESTServer(BaseChatModel):
             case _:
                 raise ValueError("Received unsupported message type.")
 
-
         content = ""
         if isinstance(message.content, str):
             content = message.content
         else:
             raise ValueError(
-                "Unsupported message content type. "
-                "Must have type 'text' "
+                "Unsupported message content type. " "Must have type 'text' "
             )
-        chat_messages.append(
-            {
-                "role": role,
-                "content": content
-            }
-        )
+        chat_messages.append({"role": role, "content": content})
         return chat_messages
 
     def create_chat(
-            self,
-            messages: List[BaseMessage],
-            stop: Optional[List[str]] = None,
-            **kwargs: Any,
+        self,
+        messages: List[BaseMessage],
+        stop: Optional[List[str]] = None,
+        **kwargs: Any,
     ) -> Dict[str, Any]:
         payload = {
             "model": self.model,
-            "messages": self._convert_messages_to_rest_server_messages(
-                messages)
+            "messages": self._convert_messages_to_rest_server_messages(messages),
         }
 
-        if self.base_url=='mock':
-            return {'test':'test'}
+        if self.base_url == "mock":
+            return {"test": "test"}
 
         response = requests.post(
-            url=f'{self.base_url}/v1/chat/completions',
+            url=f"{self.base_url}/v1/chat/completions",
             headers={"Content-Type": "application/json"},
             json=payload,
-            timeout=self.timeout
+            timeout=self.timeout,
         )
         response.encoding = "utf-8"
         match response.status_code:
@@ -93,16 +84,15 @@ class ChatRESTServer(BaseChatModel):
         return json.loads(response.text)
 
     def _generate(
-            self,
-            messages: List[BaseMessage],
-            stop: Optional[List[str]] = None,
-            run_manager: Optional[CallbackManagerForLLMRun] = None,
-            **kwargs: Any,
+        self,
+        messages: List[BaseMessage],
+        stop: Optional[List[str]] = None,
+        run_manager: Optional[CallbackManagerForLLMRun] = None,
+        **kwargs: Any,
     ) -> ChatResult:
         response = self._create_chat(messages, stop, **kwargs)
         chat_generation = ChatGeneration(
-            message=AIMessage(
-                content=response['choices'][0]['message']['content']),
+            message=AIMessage(content=response["choices"][0]["message"]["content"]),
             generation_info=response,
         )
         return ChatResult(generations=[chat_generation])
@@ -114,7 +104,4 @@ class ChatRESTServer(BaseChatModel):
         This information is used by the LangChain callback system, which
         is used for tracing purposes make it possible to monitor LLMs.
         """
-        return {
-            "model_name": self.model,
-            "url": self.base_url
-        }
+        return {"model_name": self.model, "url": self.base_url}

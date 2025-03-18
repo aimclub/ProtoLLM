@@ -3,7 +3,11 @@ from time import sleep
 
 from openai import OpenAI
 
-from protollm_sdk.models.job_context_models import PromptModel, ChatCompletionModel, ResponseModel
+from protollm_sdk.models.job_context_models import (
+    PromptModel,
+    ChatCompletionModel,
+    ResponseModel,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -14,9 +18,9 @@ class OuterLLMAPI:
     """
 
     def __init__(
-            self,
-            key: str,
-            timeout_sec: int = 10 * 60,
+        self,
+        key: str,
+        timeout_sec: int = 10 * 60,
     ):
         """
         Initialize OuterLLMAPI
@@ -33,11 +37,11 @@ class OuterLLMAPI:
         )
 
     def _chat_completion(
-            self,
-            messages: list[dict[str, str]],
-            temperature: float,
-            tokens_limit: int,
-            model: str or None
+        self,
+        messages: list[dict[str, str]],
+        temperature: float,
+        tokens_limit: int,
+        model: str or None,
     ) -> str:
         """
         Set up a chat completion
@@ -61,7 +65,8 @@ class OuterLLMAPI:
             temperature=temperature,
             n=1,
             max_tokens=tokens_limit,
-            timeout=self.timeout_sec)
+            timeout=self.timeout_sec,
+        )
 
         result = response.choices[0].message.content
         logger.info(result)
@@ -78,9 +83,10 @@ class OuterLLMAPI:
         messages = [{"role": "user", "content": request.content}]
         try:
             result = self._chat_completion(
-                messages, request.meta.temperature,
+                messages,
+                request.meta.temperature,
                 request.meta.tokens_limit,
-                model=request.meta.model
+                model=request.meta.model,
             )
             return ResponseModel(content=result)
         except Exception as ex:
@@ -97,13 +103,15 @@ class OuterLLMAPI:
         :type request: ChatCompletionModel
         :return: ResponseModel
         """
-        messages = [{"role": unit.role, "content": unit.content} for unit in request.messages]
+        messages = [
+            {"role": unit.role, "content": unit.content} for unit in request.messages
+        ]
         try:
             result = self._chat_completion(
                 messages,
                 request.meta.temperature,
                 request.meta.tokens_limit,
-                model=request.meta.model
+                model=request.meta.model,
             )
             return ResponseModel(content=result)
         except Exception as ex:

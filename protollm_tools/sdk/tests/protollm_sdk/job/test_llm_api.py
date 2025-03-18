@@ -4,7 +4,11 @@ from urllib.parse import urljoin
 import pytest
 
 from protollm_sdk.jobs.llm_api import LLMAPI
-from protollm_sdk.models.job_context_models import PromptModel, ResponseModel, ChatCompletionModel
+from protollm_sdk.models.job_context_models import (
+    PromptModel,
+    ResponseModel,
+    ChatCompletionModel,
+)
 
 
 @pytest.fixture
@@ -20,8 +24,9 @@ def mock_post():
     """
     Fixture for mocking the httpx.Client.post method.
     """
-    with patch('httpx.Client.post') as mock_post:
+    with patch("httpx.Client.post") as mock_post:
         yield mock_post
+
 
 @pytest.mark.ci
 def test_llmapi_initialization():
@@ -33,6 +38,7 @@ def test_llmapi_initialization():
 
     llm_api_with_port = LLMAPI("localhost", 8080)
     assert llm_api_with_port.path == "http://localhost:8080"
+
 
 @pytest.mark.ci
 def test_llmapi_inference_success(mock_post, llm_api):
@@ -53,10 +59,11 @@ def test_llmapi_inference_success(mock_post, llm_api):
         urljoin("http://localhost:8080", "/generate"),
         headers={"Content-type": "application/json"},
         data='{"prompt": "test prompt"}',
-        timeout=10 * 60
+        timeout=10 * 60,
     )
 
     assert isinstance(response, ResponseModel)
+
 
 @pytest.mark.ci
 def test_llmapi_inference_server_error(mock_post, llm_api):
@@ -69,9 +76,12 @@ def test_llmapi_inference_server_error(mock_post, llm_api):
 
     mock_request = MagicMock(spec=PromptModel)
 
-    with pytest.raises(Exception,
-                       match='The response generation has been interrupted. Error: The LLM server is not available..'):
+    with pytest.raises(
+        Exception,
+        match="The response generation has been interrupted. Error: The LLM server is not available..",
+    ):
         llm_api.inference(mock_request)
+
 
 @pytest.mark.ci
 def test_llmapi_inference_validation_error(mock_post, llm_api):
@@ -85,9 +95,12 @@ def test_llmapi_inference_validation_error(mock_post, llm_api):
 
     mock_request = MagicMock(spec=PromptModel)
 
-    with pytest.raises(Exception,
-                       match="The response generation has been interrupted. Error: Data model validation error.."):
+    with pytest.raises(
+        Exception,
+        match="The response generation has been interrupted. Error: Data model validation error..",
+    ):
         llm_api.inference(mock_request)
+
 
 @pytest.mark.ci
 def test_llmapi_chat_completion_success(mock_post, llm_api):
@@ -108,10 +121,11 @@ def test_llmapi_chat_completion_success(mock_post, llm_api):
         urljoin("http://localhost:8080", "/chat_completion"),
         headers={"Content-type": "application/json"},
         data='{"chat": "test chat"}',
-        timeout=10 * 60
+        timeout=10 * 60,
     )
 
     assert isinstance(response, ResponseModel)
+
 
 @pytest.mark.ci
 def test_llmapi_chat_completion_server_error(mock_post, llm_api):
@@ -124,9 +138,12 @@ def test_llmapi_chat_completion_server_error(mock_post, llm_api):
 
     mock_request = MagicMock(spec=PromptModel)
 
-    with pytest.raises(Exception,
-                       match='The response generation has been interrupted. Error: The LLM server is not available..'):
+    with pytest.raises(
+        Exception,
+        match="The response generation has been interrupted. Error: The LLM server is not available..",
+    ):
         llm_api.chat_completion(mock_request)
+
 
 @pytest.mark.ci
 def test_llmapi_chat_completion_validation_error(mock_post, llm_api):
@@ -140,6 +157,8 @@ def test_llmapi_chat_completion_validation_error(mock_post, llm_api):
 
     mock_request = MagicMock(spec=PromptModel)
 
-    with pytest.raises(Exception,
-                       match="The response generation has been interrupted. Error: Data model validation error.."):
+    with pytest.raises(
+        Exception,
+        match="The response generation has been interrupted. Error: Data model validation error..",
+    ):
         llm_api.chat_completion(mock_request)

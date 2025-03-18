@@ -20,7 +20,9 @@ from deepeval.test_case import LLMTestCase, ToolCall
 
 from protollm.metrics import correctness_metric, model_for_metrics
 
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+logging.basicConfig(
+    level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
+)
 
 answer_relevancy = AnswerRelevancyMetric(model=model_for_metrics, async_mode=False)
 tool_correctness = ToolCorrectnessMetric()
@@ -31,27 +33,30 @@ if __name__ == "__main__":
     test_case = LLMTestCase(
         input="What if these shoes don't fit?",
         actual_output="We offer a 30-day full refund at no extra cost.",
-        expected_output="You are eligible for a 30 day full refund at no extra cost."
+        expected_output="You are eligible for a 30 day full refund at no extra cost.",
     )
 
-    answer_relevancy.measure(test_case) # Evaluate metric
+    answer_relevancy.measure(test_case)  # Evaluate metric
     logging.info(f"Answer relevancy score {answer_relevancy.score}")
     logging.info(f"Answer relevancy reason: {answer_relevancy.reason}")
-    
-    correctness_metric.measure(test_case) # Evaluate metric
+
+    correctness_metric.measure(test_case)  # Evaluate metric
     logging.info(f"Correctness score {correctness_metric.score}")
     logging.info(f"Correctness reason: {correctness_metric.reason}")
-    
+
     # ===================================metrics not using LLM=========================================
     # Create test case for metric
     test_case = LLMTestCase(
         input="What if these shoes don't fit?",
         actual_output="We offer a 30-day full refund at no extra cost.",
         # Replace this with the tools that was actually used by your LLM agent
-        tools_called=[ToolCall(name="WebSearch", input_parameters={}), ToolCall(name="ToolQuery", input_parameters={})],
+        tools_called=[
+            ToolCall(name="WebSearch", input_parameters={}),
+            ToolCall(name="ToolQuery", input_parameters={}),
+        ],
         expected_tools=[ToolCall(name="WebSearch", input_parameters={})],
     )
-    
+
     tool_correctness.measure(test_case)
     logging.info(f"Tool correctness score {tool_correctness.score}")
     logging.info(f"Tool correctness reason: {tool_correctness.reason}")

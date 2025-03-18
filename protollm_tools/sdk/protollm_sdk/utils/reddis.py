@@ -10,10 +10,7 @@ def get_reddis_wrapper():
     :return: RedisWrapper object
     :rtype: RedisWrapper
     """
-    return RedisWrapper(
-        redis_host=Config.redis_host,
-        redis_port=Config.redis_port
-    )
+    return RedisWrapper(redis_host=Config.redis_host, redis_port=Config.redis_port)
 
 
 def load_result(rd: RedisWrapper, job_id: str, prefix: str or None) -> bytes:

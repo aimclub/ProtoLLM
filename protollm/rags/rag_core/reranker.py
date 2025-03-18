@@ -21,24 +21,31 @@ class LLMReranker:
         self.qual_threshold = 2
         self._llm = llm
 
-    def rerank_context(self, context: list[Document], user_query: str, top_k: int = 3) -> list[Document]:
-        ranking_prompts = [self._prompt_template.format(question=user_query,
-                                                        context=context_i.page_content +
-                                                                " Имя файла, откуда взят параграф " +
-                                                                context_i.metadata.get('source',
-                                                                                       '/None').split('/')[-1])
-                           for context_i in context]
+    def rerank_context(
+        self, context: list[Document], user_query: str, top_k: int = 3
+    ) -> list[Document]:
+        ranking_prompts = [
+            self._prompt_template.format(
+                question=user_query,
+                context=context_i.page_content
+                + " Имя файла, откуда взят параграф "
+                + context_i.metadata.get("source", "/None").split("/")[-1],
+            )
+            for context_i in context
+        ]
         answers_ranking, bad_query = self._get_ranking_answer(ranking_prompts)
         if bad_query:
             fixed_answers = self._regenerate_answer(bad_query)
             answers_ranking += fixed_answers
         ext_context = self._extract_top_context(answers_ranking, top_k)
         if not ext_context:
-            warnings.warn('Reranker does not support retrieved context')
+            warnings.warn("Reranker does not support retrieved context")
         res_context = [context[ranking_prompts.index(i)] for i in ext_context]
         return res_context
 
-    def _extract_top_context(self, pairs_to_rank: List[Tuple[str, int]], top_k: int) -> list[str]:
+    def _extract_top_context(
+        self, pairs_to_rank: List[Tuple[str, int]], top_k: int
+    ) -> list[str]:
         if not pairs_to_rank:
             return []
         pairs_to_rank.sort(key=lambda x: x[1], reverse=True)
@@ -46,13 +53,15 @@ class LLMReranker:
         context = context[:top_k]
         return context
 
-    def _get_ranking_answer(self, ranking_prompts: list[str]) -> Tuple[list[Tuple[str, int]], list[str]]:
+    def _get_ranking_answer(
+        self, ranking_prompts: list[str]
+    ) -> Tuple[list[Tuple[str, int]], list[str]]:
         answer = [self._llm.invoke(prompt) for prompt in ranking_prompts]
         answers_ranking = []
         bad_queries = []
         for i, ans_i in enumerate(answer):
             try:
-                score = int(ans_i.split('ОЦЕНКА: ')[-1].strip())
+                score = int(ans_i.split("ОЦЕНКА: ")[-1].strip())
                 answers_ranking.append((ranking_prompts[i], score))
             except:
                 bad_queries.append(ranking_prompts[i])
@@ -68,7 +77,9 @@ class LLMReranker:
                 return fixed_queries
         return fixed_queries
 
-    def merge_docs(self, query: str, contexts: list[list[Document]], top_k: int = 3) -> list[Document]:
+    def merge_docs(
+        self, query: str, contexts: list[list[Document]], top_k: int = 3
+    ) -> list[Document]:
         ctx = []
         for context in zip(*contexts):
             ctx.extend(self.rerank_context(context, query, 1))
@@ -77,4 +88,3 @@ class LLMReranker:
             return self.rerank_context(ctx, query, top_k)
 
         return ctx
-

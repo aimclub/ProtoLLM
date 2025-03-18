@@ -4,8 +4,8 @@ from pydantic import BaseModel
 
 
 class ConfigLoader(BaseModel):
-    file_path: str = ''
-    save_path: str = ''
+    file_path: str = ""
+    save_path: str = ""
     loader_name: str
     parsing_params: dict[str, Any] = dict()
 

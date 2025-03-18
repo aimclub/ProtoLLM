@@ -15,7 +15,9 @@ from protollm.raw_data_processing.docs_parsers.parsers.utilities import is_bulle
 from protollm.raw_data_processing.docs_parsers.parsers.word_doc.docx_parsing_config import (
     DocxParsingConfig,
 )
-from protollm.raw_data_processing.docs_parsers.parsers.word_doc.xml import process_paragraph_body
+from protollm.raw_data_processing.docs_parsers.parsers.word_doc.xml import (
+    process_paragraph_body,
+)
 
 
 def _get_list_level(split_text: list[str], level: int = -1) -> int:

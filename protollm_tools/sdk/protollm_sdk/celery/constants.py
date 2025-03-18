@@ -1,4 +1,10 @@
-from protollm_sdk.celery.job import TextEmbedderJob, LLMAPIJob, ResultStorageJob, VectorDBJob, OuterLLMAPIJob
+from protollm_sdk.celery.job import (
+    TextEmbedderJob,
+    LLMAPIJob,
+    ResultStorageJob,
+    VectorDBJob,
+    OuterLLMAPIJob,
+)
 
 JOBS = {TextEmbedderJob, LLMAPIJob, ResultStorageJob, VectorDBJob, OuterLLMAPIJob}
 

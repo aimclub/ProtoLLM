@@ -1,6 +1,11 @@
 import pytest
 
-from protollm_sdk.models.job_context_models import PromptModel, PromptMeta, ChatCompletionModel
+from protollm_sdk.models.job_context_models import (
+    PromptModel,
+    PromptMeta,
+    ChatCompletionModel,
+)
+
 
 @pytest.mark.ci
 def test_from_prompt_model():
@@ -10,9 +15,9 @@ def test_from_prompt_model():
             temperature=0.5,
             tokens_limit=100,
             stop_words=["stop", "words"],
-            model="gpt-3"
+            model="gpt-3",
         ),
-        content="This is a test prompt"
+        content="This is a test prompt",
     )
 
     chat_completion = ChatCompletionModel.from_prompt_model(prompt_model)
