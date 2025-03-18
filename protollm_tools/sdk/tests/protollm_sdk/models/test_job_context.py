@@ -1,6 +1,8 @@
+import pytest
+
 from protollm_sdk.models.job_context_models import PromptModel, PromptMeta, ChatCompletionModel
 
-
+@pytest.mark.ci
 def test_from_prompt_model():
     prompt_model = PromptModel(
         job_id="test_job_123",

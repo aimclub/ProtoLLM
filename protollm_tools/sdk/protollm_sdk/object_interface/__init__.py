@@ -1,1 +1,2 @@
 from protollm_sdk.object_interface.redis_wrapper import RedisWrapper
+from protollm_sdk.object_interface.rabbit_mq_wrapper import RabbitMQWrapper

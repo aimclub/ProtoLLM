@@ -1,6 +1,6 @@
 import os
-from samplefactory.synthetic_pipelines.chains import FreeQueryChain
-from samplefactory.utils import Dataset, VLLMChatOpenAI
+from protollm_synthetic.synthetic_pipelines.chains import FreeQueryChain
+from protollm_synthetic.utils import Dataset, VLLMChatOpenAI
 import json
 import asyncio
 
@@ -45,5 +45,3 @@ free_query_chain = FreeQueryChain(llm=llm)
 asyncio.run(free_query_chain.run(dataset, n_examples=3))
 
 print(free_query_chain.data)
-
-# TODO write everything

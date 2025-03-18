@@ -2,10 +2,11 @@ from unittest.mock import patch, MagicMock
 from urllib.parse import urljoin
 
 import httpx
+import pytest
 
 from protollm_sdk.jobs.vector_db import VectorDB
 
-
+@pytest.mark.ci
 def test_vector_db_initialization_without_port():
     """
     Test that VectorDB is initialized correctly without a port.
@@ -14,7 +15,7 @@ def test_vector_db_initialization_without_port():
     assert vector_db.url == "http://localhost"
     assert isinstance(vector_db.client, httpx.Client)
 
-
+@pytest.mark.ci
 def test_vector_db_initialization_with_port():
     """
     Test that VectorDB is initialized correctly with a port.
@@ -23,7 +24,7 @@ def test_vector_db_initialization_with_port():
     assert vector_db_with_port.url == "http://localhost:8080"
     assert isinstance(vector_db_with_port.client, httpx.Client)
 
-
+@pytest.mark.ci
 @patch('httpx.Client.get')
 def test_vector_db_api_v1(mock_get):
     """

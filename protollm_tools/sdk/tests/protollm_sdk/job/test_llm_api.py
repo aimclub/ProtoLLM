@@ -23,7 +23,7 @@ def mock_post():
     with patch('httpx.Client.post') as mock_post:
         yield mock_post
 
-
+@pytest.mark.ci
 def test_llmapi_initialization():
     """
     Test that LLMAPI is initialized correctly with and without a port.
@@ -34,7 +34,7 @@ def test_llmapi_initialization():
     llm_api_with_port = LLMAPI("localhost", 8080)
     assert llm_api_with_port.path == "http://localhost:8080"
 
-
+@pytest.mark.ci
 def test_llmapi_inference_success(mock_post, llm_api):
     """
     Test inference method of LLMAPI for a successful response.
@@ -58,7 +58,7 @@ def test_llmapi_inference_success(mock_post, llm_api):
 
     assert isinstance(response, ResponseModel)
 
-
+@pytest.mark.ci
 def test_llmapi_inference_server_error(mock_post, llm_api):
     """
     Test inference method of LLMAPI for a 500 error.
@@ -73,7 +73,7 @@ def test_llmapi_inference_server_error(mock_post, llm_api):
                        match='The response generation has been interrupted. Error: The LLM server is not available..'):
         llm_api.inference(mock_request)
 
-
+@pytest.mark.ci
 def test_llmapi_inference_validation_error(mock_post, llm_api):
     """
     Test inference method of LLMAPI for a 422 validation error.
@@ -89,7 +89,7 @@ def test_llmapi_inference_validation_error(mock_post, llm_api):
                        match="The response generation has been interrupted. Error: Data model validation error.."):
         llm_api.inference(mock_request)
 
-
+@pytest.mark.ci
 def test_llmapi_chat_completion_success(mock_post, llm_api):
     """
     Test chat_completion method of LLMAPI for a successful response.
@@ -113,7 +113,7 @@ def test_llmapi_chat_completion_success(mock_post, llm_api):
 
     assert isinstance(response, ResponseModel)
 
-
+@pytest.mark.ci
 def test_llmapi_chat_completion_server_error(mock_post, llm_api):
     """
     Test inference method of LLMAPI for a 500 error.
@@ -128,7 +128,7 @@ def test_llmapi_chat_completion_server_error(mock_post, llm_api):
                        match='The response generation has been interrupted. Error: The LLM server is not available..'):
         llm_api.chat_completion(mock_request)
 
-
+@pytest.mark.ci
 def test_llmapi_chat_completion_validation_error(mock_post, llm_api):
     """
     Test inference method of LLMAPI for a 422 validation error.

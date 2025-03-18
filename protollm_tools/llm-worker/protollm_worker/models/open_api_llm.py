@@ -28,7 +28,7 @@ class OpenAPILLM(APIlLLM, BaseLLM):
         :param timeout_sec: Timeout for API requests in seconds (default is 10 minutes).
         :type timeout_sec: int
         """
-        super().__init__(model_url)
+        super().__init__(model_url, token)
 
         self.model = default_model
         self.token = token

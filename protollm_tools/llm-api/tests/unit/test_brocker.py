@@ -1,6 +1,6 @@
 import json
 import uuid
-from unittest.mock import AsyncMock, patch, MagicMock
+from unittest.mock import AsyncMock, patch, MagicMock, ANY
 
 import pytest
 from protollm_sdk.models.job_context_models import ResponseModel, ChatCompletionTransactionModel, ChatCompletionModel, \
@@ -13,20 +13,17 @@ from protollm_api.backend.broker import send_task, get_result
 async def test_send_task(test_local_config):
     prompt = ChatCompletionModel(
         job_id=str(uuid.uuid4()),
+        priority=None,
         meta=PromptMeta(),
         messages=[ChatCompletionUnit(role="user", content="test request")]
     )
     transaction = ChatCompletionTransactionModel(prompt=prompt, prompt_type=PromptTypes.CHAT_COMPLETION.value)
 
-    with patch("protollm_api.backend.broker.pika.BlockingConnection") as mock_connection:
-        mock_channel = MagicMock()
-        mock_connection.return_value.channel.return_value = mock_channel
+    mock_rabbit = MagicMock()
 
-        await send_task(test_local_config, test_local_config.queue_name, transaction)
+    await send_task(test_local_config, test_local_config.queue_name, transaction, mock_rabbit)
 
-        mock_connection.assert_called_once()
-        mock_channel.queue_declare.assert_called_with(queue=test_local_config.queue_name)
-        mock_channel.basic_publish.assert_called_once()
+    mock_rabbit.publish_message.assert_called_once_with(test_local_config.queue_name, ANY, True)
 
 
 @pytest.mark.asyncio

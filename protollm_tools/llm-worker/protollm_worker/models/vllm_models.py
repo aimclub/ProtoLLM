@@ -4,7 +4,6 @@ from protollm_sdk.models.job_context_models import PromptModel, ChatCompletionMo
     ChatCompletionTransactionModel, PromptTypes
 from vllm import LLM, SamplingParams
 
-from protollm_worker.config import GPU_MEMORY_UTILISATION, TENSOR_PARALLEL_SIZE, TOKENS_LEN
 from protollm_worker.models.base import BaseLLM, LocalLLM
 
 logging.basicConfig(level=logging.INFO)
@@ -17,7 +16,7 @@ class VllMModel(LocalLLM, BaseLLM):
     and chat-based completions.
     """
 
-    def __init__(self, model_path, n_ctx=8192):
+    def __init__(self, model_path, tensor_parallel_size, gpu_memory_utilisation, tokens_len, n_ctx=8192):
         """
         Initialize the vLLM-based model.
 
@@ -30,9 +29,9 @@ class VllMModel(LocalLLM, BaseLLM):
 
         self.model = LLM(
             model=model_path,
-            tensor_parallel_size=TENSOR_PARALLEL_SIZE,
-            gpu_memory_utilization=GPU_MEMORY_UTILISATION,
-            max_model_len=TOKENS_LEN
+            tensor_parallel_size=tensor_parallel_size,
+            gpu_memory_utilization=gpu_memory_utilisation,
+            max_model_len=tokens_len
         )
         self.handlers = {
             PromptTypes.SINGLE_GENERATION.value: self.generate,

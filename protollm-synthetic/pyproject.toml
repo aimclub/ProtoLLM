@@ -1,5 +1,5 @@
 [tool.poetry]
-name = "samplefactory"
+name = "protollm-synthetic"
 version = "0.1.0"
 description = "Sample generation with LLMs"
 authors = ["Your Name <you@example.com>"]

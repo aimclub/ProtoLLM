@@ -1,0 +1,15 @@
+{
+    "listeners": {
+        "*:6672": {
+            "pass": "applications/backend"
+        }
+    },
+    "applications": {
+        "backend": {
+            "type": "python",
+            "path": ".",
+            "module": "protollm_api.backend.main",
+            "callable": "app"
+        }
+    }
+}

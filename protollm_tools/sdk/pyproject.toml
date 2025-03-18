@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "protollm-sdk"
-version = "1.0.1"
+version = "1.1.6"
 description = ""
 authors = ["aimclub"]
 readme = "README.md"
@@ -26,6 +26,12 @@ openai = "^1.42.0"
 [tool.poetry.group.dev.dependencies]
 pytest = "^8.2.2"
 pytest-asyncio = "^0.24.0"
+
+[tool.pytest.ini_options]
+markers = [
+    "local: Mark tests as part of the local pipeline (e.g., for Redis/Rabbit/etc)",
+    "ci: Mark tests as part of the CI pipeline"
+]
 
 [build-system]
 requires = ["poetry-core"]

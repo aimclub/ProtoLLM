@@ -12,6 +12,15 @@ Available pipelines:
 
 ## Installation
 
+```bash
+poetry install
+```
+
+set OPENAI_API_KEY and OPENAI_API_BASE in your environment (it can be openai model or local model that is set with vllm openai server), e.g. 
+```bash
+export OPENAI_API_KEY=your_api_key
+export OPENAI_API_BASE=your_api_base
+```
 
 ## Usage
 

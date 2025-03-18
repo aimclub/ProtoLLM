@@ -3,14 +3,14 @@ import json
 import copy
 from datetime import datetime
 import logging
-from samplefactory.synthetic_pipelines.prompts import (generate_summary_system_prompt, generate_summary_evaluation_system_prompt,
+from protollm_synthetic.synthetic_pipelines.prompts import (generate_summary_system_prompt, generate_summary_evaluation_system_prompt,
                                                         generate_rag_system_prompt, check_summary_quality_human_prompt,
                                                         generate_rag_human_prompt, generate_aspect_summarisation_prompt,
                                                         generate_summary_human_prompt, generate_aspect_summarisation_evaluation_system_prompt,
                                                         generate_quiz_system_prompt, generate_quiz_human_prompt,
                                                         generate_instruction_one_shot_system_prompt, generate_instruction_one_shot_human_prompt,
                                                         merge_instructions, merge_instructions_human_prompt)
-from samplefactory.utils import Dataset
+from protollm_synthetic.utils import Dataset
 import numpy as np
 import asyncio
 from typing import List, Optional, Dict, Any, TypeVar, cast
@@ -26,10 +26,10 @@ from langchain_core.runnables import (Runnable, RunnablePassthrough,
                                       RunnableParallel, RunnableLambda)
 from langchain.chains.combine_documents import create_stuff_documents_chain
 from openai import APIConnectionError
-from samplefactory.synthetic_pipelines.genetic_evolver import GeneticEvolver
+from protollm_synthetic.synthetic_pipelines.genetic_evolver import GeneticEvolver
 
 import random
-from samplefactory.synthetic_pipelines.schemes import (SummaryQualitySchema, 
+from protollm_synthetic.synthetic_pipelines.schemes import (SummaryQualitySchema, 
                                                        RAGScheme, AspectSummarisationQualitySchema,
                                                        QuizScheme, FreeQueryScheme, FreeQueryMerger)
 

@@ -162,3 +162,4 @@ cython_debug/
 .idea/
 
 .env.test
+.DS_Store

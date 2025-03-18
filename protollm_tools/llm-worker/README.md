@@ -28,39 +28,32 @@ The provided `docker-compose.yml` template can be used to deploy your LLM model(
 version: '3.8'
 
 services:
-  llm:
-    container_name: <your_container_name>
-    image: <your_image_name>:latest
-    runtime: nvidia
-    deploy:
-      resources:
-        limits:
-          memory: 100G
-    build:
-      context: ..
-      dockerfile: Dockerfile
-    env_file: .env
-    environment:
-      TOKENS_LEN: 16384
-      GPU_MEMORY_UTILISATION: 0.9
-      TENSOR_PARALLEL_SIZE: 2
-      MODEL_PATH: /data/<your_path_to_model>
-      NVIDIA_VISIBLE_DEVICES: <your_GPUs>
-      REDIS_HOST: localhost
-      REDIS_PORT: 6379
-      FORCE_CMAKE: 1
-    volumes:
-      - <your_path_to_data_in_docker>:/data
-    ports:
-      - "8677:8672"
-    networks:
-      - llm_wrap_network
-    restart: unless-stopped
+   llm:
+      container_name: <your_container_name>
+      image: <your_image_name>:latest
+      runtime: nvidia
+      deploy:
+         resources:
+            limits:
+               memory: 100G
+      build:
+         context: ..
+         dockerfile: Dockerfile
+      env_file: .env
+      environment:
+         FORCE_CMAKE: 1
+      volumes:
+         - <your_path_to_data_in_docker>:/data
+      ports:
+         - "8677:8672"
+      networks:
+         - llm_wrap_network
+      restart: unless-stopped
 
 networks:
-  llm_wrap_network:
-    name: llm_wrap_network
-    driver: bridge
+   llm_wrap_network:
+      name: llm_wrap_network
+      driver: bridge
 ```
 
 ### Adding Multiple Models

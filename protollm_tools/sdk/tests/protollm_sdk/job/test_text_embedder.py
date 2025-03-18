@@ -10,7 +10,7 @@ from protollm_sdk.models.job_context_models import TextEmbedderRequest, TextEmbe
 
 
 # ---------------------------- Initialisations tests ----------------------------
-
+@pytest.mark.ci
 @pytest.mark.parametrize(
     "host, port, expected_path",
     [
@@ -28,7 +28,7 @@ def test_text_embedder_initialization(host, port, expected_path):
     assert text_embedder.path == expected_path
     assert isinstance(text_embedder.client, httpx.Client)
 
-
+@pytest.mark.ci
 def test_text_embedder_timeout_default():
     """
     Tests that the default timeout value is correctly set.
@@ -36,7 +36,7 @@ def test_text_embedder_timeout_default():
     text_embedder = TextEmbedder(text_emb_host="localhost", text_emb_port=8080)
     assert text_embedder.timeout_sec == 10 * 60  # Default timeout is 10 minutes
 
-
+@pytest.mark.ci
 @pytest.mark.parametrize(
     "custom_timeout",
     [30, 60, 120]
@@ -48,7 +48,7 @@ def test_text_embedder_custom_timeout(custom_timeout):
     text_embedder = TextEmbedder(text_emb_host="localhost", text_emb_port=8080, timeout_sec=custom_timeout)
     assert text_embedder.timeout_sec == custom_timeout
 
-
+@pytest.mark.ci
 def test_text_embedder_client_initialization():
     """
     Tests that httpx.Client is initialized when the object is created.
@@ -74,15 +74,14 @@ def text_embedder_request():
     """
     data = {
         "job_id": str(uuid.uuid4()),
-        "inputs": "Ехал грека через реку видит грека в реке рак.",
+        "inputs": "A Greek was crossing the river when he saw a crab in the water.",
         "truncate": False
     }
     return TextEmbedderRequest(**data)
 
 
 # ---------------------------- Function Tests ----------------------------
-
-@pytest.mark.skip(reason="Error: [Errno 111] Connection refused.")
+@pytest.mark.local
 def test_text_embedder_inference(text_embedder, text_embedder_request):
     """
     Tests that the inference method returns a valid TextEmbedderResponse.
@@ -90,7 +89,7 @@ def test_text_embedder_inference(text_embedder, text_embedder_request):
     res = text_embedder.inference(text_embedder_request)
     assert isinstance(res, TextEmbedderResponse)
 
-
+@pytest.mark.ci
 def test_text_embedder_connection_error(text_embedder, text_embedder_request):
     """
     Tests that a ConnectionError is raised when the server returns a 500 status code.
@@ -100,7 +99,7 @@ def test_text_embedder_connection_error(text_embedder, text_embedder_request):
         with pytest.raises(Exception, match='The embedding was interrupted. Error: The LLM server is not available.'):
             text_embedder.inference(text_embedder_request)
 
-
+@pytest.mark.ci
 def test_text_embedder_validation_error(text_embedder, text_embedder_request):
     """
     Tests that a ValueError is raised when the server returns a 422 status code.

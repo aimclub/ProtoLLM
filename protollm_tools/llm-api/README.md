@@ -105,15 +105,21 @@ These variables must be configured and synchronized with the LLM-core system:
 
 ### Example `.env` File
 ```env
-INNER_LLM_URL=localhost:8670
-REDIS_HOST=localhost
+# API
+CELERY_BROKER_URL=amqp://admin:admin@127.0.0.1:5672/
+CELERY_RESULT_BACKEND=redis://127.0.0.1:6379/0
+REDIS_HOST=redis
 REDIS_PORT=6379
-REDIS_PREFIX=llm-api
-RABBIT_MQ_HOST=localhost
+RABBIT_MQ_HOST=rabbitmq
 RABBIT_MQ_PORT=5672
 RABBIT_MQ_LOGIN=admin
 RABBIT_MQ_PASSWORD=admin
-QUEUE_NAME=llm-api-queue
+WEB_RABBIT_MQ=15672
+API_PORT=6672
+
+# RabbitMQ
+RABBITMQ_DEFAULT_USER=admin
+RABBITMQ_DEFAULT_PASS=admin
 ```
 
 ---
@@ -161,14 +167,31 @@ Below is the architecture diagram for the interaction between API, RabbitMQ, LLM
 ### Running the API
 1. Configure environment variables in the `.env` file.
 2. Start the API using:
-   ```python
-    app = FastAPI()
+```python
+app = FastAPI()
 
-    config = Config.read_from_env()
+config = Config.read_from_env()
 
-    app.include_router(get_router(config))
-   ```
+app.include_router(get_router(config))
+```
+### Running the API Locally (without Docker)
+To run the API locally using Uvicorn, use the following command:
 
+```sh
+uvicorn protollm_api.backend.main:app --host 127.0.0.1 --port 8000 --reload
+```
+
+Or use this main file:
+```python
+app = FastAPI()
+
+config = Config.read_from_env()
+
+app.include_router(get_router(config))
+    
+if __name__ == "__main__":
+    uvicorn.run("protollm_api.backend.main:app", host="127.0.0.1", port=8000, reload=True)
+```
 ### Example Request
 #### Generate
 ```bash

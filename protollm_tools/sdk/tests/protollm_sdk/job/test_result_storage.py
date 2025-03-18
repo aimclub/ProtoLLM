@@ -16,7 +16,7 @@ def mock_redis():
 def result_storage():
     return ResultStorage(redis_host="localhost", redis_port=6379, prefix="test_job")
 
-
+@pytest.mark.ci
 def test_for_job(result_storage):
     """
     Test that for_job correctly creates a new ResultStorage instance with a new job prefix.
@@ -29,7 +29,7 @@ def test_for_job(result_storage):
 
         assert new_storage is mock_result_storage.return_value
 
-
+@pytest.mark.ci
 def test_build_key(result_storage):
     """
     Test the build_key method for formatting keys.
@@ -40,7 +40,7 @@ def test_build_key(result_storage):
     key_without_prefix = result_storage.build_key(job_id="12345", prefix=None)
     assert key_without_prefix == "12345"
 
-
+@pytest.mark.ci
 def test_save_dict_success(mock_redis, result_storage):
     """
     Test saving a dictionary to Redis.
@@ -51,7 +51,7 @@ def test_save_dict_success(mock_redis, result_storage):
 
     mock_redis_instance.set.assert_called_once_with("test_job:12345", json.dumps({"status": "success"}))
 
-
+@pytest.mark.ci
 def test_save_dict_failure(mock_redis, result_storage):
     """
     Test failure when saving a dictionary to Redis.
@@ -65,7 +65,7 @@ def test_save_dict_failure(mock_redis, result_storage):
 
     mock_redis_instance.set.assert_called_once_with("test_job:12345", json.dumps({"status": "success"}))
 
-
+@pytest.mark.ci
 def test_load_bytes_or_str_dict_success(mock_redis, result_storage):
     """
     Test loading a dictionary from Redis.
@@ -80,7 +80,7 @@ def test_load_bytes_or_str_dict_success(mock_redis, result_storage):
 
     assert result == {"status": "success"}
 
-
+@pytest.mark.ci
 def test_load_not_bytes_or_str_dict_success(mock_redis, result_storage):
     """
     Test loading a dictionary from Redis.
@@ -95,7 +95,7 @@ def test_load_not_bytes_or_str_dict_success(mock_redis, result_storage):
 
     assert result == 123
 
-
+@pytest.mark.ci
 def test_load_dict_failure(mock_redis, result_storage):
     """
     Test failure when loading a dictionary from Redis.

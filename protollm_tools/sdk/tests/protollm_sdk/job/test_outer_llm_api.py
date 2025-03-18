@@ -19,7 +19,7 @@ def mock_openai():
         mock_openai().chat.completions.create = MagicMock()
         yield mock_openai().chat.completions.create
 
-
+@pytest.mark.ci
 def test_outer_llmapi_initialization():
     outer_llm_api = OuterLLMAPI("key")
     assert outer_llm_api.model == "openai/gpt-4o-2024-08-06"
@@ -29,7 +29,7 @@ def test_outer_llmapi_initialization():
         "key")
     assert outer_llm_api.client.base_url == URL("https://api.vsegpt.ru/v1/")
 
-
+@pytest.mark.ci
 def test_outer_llmapi_inference_success(mock_openai, outer_llm_api):
     """
     Test inference method of OuterLLMAPI for a successful response.
@@ -60,7 +60,7 @@ def test_outer_llmapi_inference_success(mock_openai, outer_llm_api):
     assert isinstance(response, ResponseModel)
     assert response.content == "Test success"
 
-
+@pytest.mark.ci
 def test_outer_llmapi_inference_server_error(mock_openai, outer_llm_api):
     """
     Test inference method of OuterLLMAPI for a 500 error.
@@ -79,7 +79,7 @@ def test_outer_llmapi_inference_server_error(mock_openai, outer_llm_api):
                        match="The response generation has been interrupted. Error: The LLM server is not available."):
         outer_llm_api.inference(mock_request)
 
-
+@pytest.mark.ci
 def test_outer_llmapi_chat_completion_success(mock_openai, outer_llm_api):
     """
     Test chat_completion method of OuterLLMAPI for a successful response.
@@ -112,7 +112,7 @@ def test_outer_llmapi_chat_completion_success(mock_openai, outer_llm_api):
     assert isinstance(response, ResponseModel)
     assert response.content == "Test chat success"
 
-
+@pytest.mark.ci
 def test_outer_llmapi_chat_completion_server_error(mock_openai, outer_llm_api):
     """
     Test chat_completion method of OuterLLMAPI for a 500 error.

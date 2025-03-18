@@ -14,7 +14,7 @@ def result_storage():
     return {"question": "What is the ultimate question answer?",
             "answers": "42"}
 
-
+@pytest.mark.ci
 def test_task_test_unknown_job_class(caplog):
     task_id = str(uuid.uuid4())
     task_class = "unknown_class"
@@ -24,7 +24,7 @@ def test_task_test_unknown_job_class(caplog):
 
     assert f"Error in task '{task_id}'. Unknown job class: '{task_class}'." in caplog.text
 
-
+@pytest.mark.local
 def test_task_test_known_job_class(caplog, result_storage):
     caplog.set_level(logging.INFO)
     task_id = str(uuid.uuid4())
@@ -51,7 +51,7 @@ class DummyJob(Job):
 def dummy_job():
     return DummyJob()
 
-
+@pytest.mark.ci
 def test_abstract_task_class_input(caplog, dummy_job):
     caplog.set_level("INFO")
 
@@ -70,7 +70,7 @@ def test_abstract_task_class_input(caplog, dummy_job):
     assert job_instance.task_id == task_id
     assert job_instance.kwargs == {"test_arg": "value"}
 
-
+@pytest.mark.ci
 def test_abstract_task_instance_input(caplog, dummy_job):
     caplog.set_level("INFO")
 

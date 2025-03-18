@@ -3,7 +3,7 @@ import uuid
 from protollm_sdk.config import Config
 from protollm_sdk.celery.app import task_test
 from protollm_sdk.celery.job import TextEmbedderJob, ResultStorageJob, LLMAPIJob, \
-    VectorDBJob, OuterLLMAPIJob
+    VectorDBJob, OuterLLMAPIJob  # , LangchainLLMAPIJob
 from protollm_sdk.object_interface import RedisWrapper
 
 
@@ -52,7 +52,6 @@ async def out_llm_resp(redis_client: RedisWrapper):
 
     task_test.apply_async(args=(OuterLLMAPIJob.__name__, llm_request["job_id"]), kwargs=llm_request)
     result = await redis_client.wait_item(f"{OuterLLMAPIJob.__name__}:{llm_request['job_id']}", timeout=60)
-
 
 def get_dict(key):
     rd = RedisWrapper(redis_host=Config.redis_host,

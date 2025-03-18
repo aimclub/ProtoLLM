@@ -4,8 +4,10 @@ import logging
 import pika
 from protollm_sdk.models.job_context_models import PromptModel, ChatCompletionModel, PromptTransactionModel, \
     PromptWrapper, ChatCompletionTransactionModel
+from protollm_sdk.object_interface import RabbitMQWrapper
 from protollm_sdk.object_interface.redis_wrapper import RedisWrapper
 
+from protollm_worker.config import Config
 from protollm_worker.models.base import BaseLLM
 
 logging.basicConfig(level=logging.INFO)
@@ -22,41 +24,21 @@ class LLMWrap:
 
     def __init__(self,
                  llm_model: BaseLLM,
-                 redis_host: str,
-                 redis_port: str,
-                 queue_name: str,
-                 rabbit_host: str,
-                 rabbit_port: str,
-                 rabbit_login: str,
-                 rabbit_password: str,
-                 redis_prefix: str):
+                 config: Config):
         """
         Initialize the LLMWrap class with the necessary configurations.
 
         :param llm_model: The language model to use for processing prompts.
         :type llm_model: BaseLLM
-        :param redis_host: Hostname for the Redis server.
-        :type redis_host: str
-        :param redis_port: Port for the Redis server.
-        :type redis_port: str
-        :param queue_name: Name of the RabbitMQ queue to consume messages from.
-        :type queue_name: str
-        :param rabbit_host: Hostname for the RabbitMQ server.
-        :type rabbit_host: str
-        :param rabbit_port: Port for the RabbitMQ server.
-        :type rabbit_port: str
-        :param rabbit_login: Login for RabbitMQ authentication.
-        :type rabbit_login: str
-        :param rabbit_password: Password for RabbitMQ authentication.
-        :type rabbit_password: str
-        :param redis_prefix: Prefix for Redis keys to store results.
-        :type redis_prefix: str
+        :param config: Set for setting Redis and RabbitMQ.
+        :type config: Config
         """
         self.llm = llm_model
         logger.info('Loaded model')
 
-        self.redis_bd = RedisWrapper(redis_host, redis_port)
-        self.redis_prefix = redis_prefix
+        self.redis_bd = RedisWrapper(config.redis_host, config.redis_port)
+        self.rabbitMQ = RabbitMQWrapper(config.rabbit_host, config.rabbit_port, config.rabbit_login, config.rabbit_password)
+        self.redis_prefix = config.redis_prefix
         logger.info('Connected to Redis')
 
         self.models = {
@@ -64,41 +46,13 @@ class LLMWrap:
             'chat_completion': ChatCompletionModel,
         }
 
-        self.queue_name = queue_name
-        self.rabbit_host = rabbit_host
-        self.rabbit_port = rabbit_port
-        self.rabbit_login = rabbit_login
-        self.rabbit_password = rabbit_password
+        self.queue_name = config.queue_name
 
     def start_connection(self):
         """
         Establish a connection to the RabbitMQ broker and start consuming messages from the specified queue.
         """
-        connection = pika.BlockingConnection(
-            pika.ConnectionParameters(
-                host=self.rabbit_host,
-                port=self.rabbit_port,
-                virtual_host='/',
-                credentials=pika.PlainCredentials(
-                    username=self.rabbit_login,
-                    password=self.rabbit_password
-                )
-            )
-        )
-
-        channel = connection.channel()
-        logger.info('Connected to the broker')
-
-        channel.queue_declare(queue=self.queue_name)
-        logger.info('Queue has been declared')
-
-        channel.basic_consume(
-            on_message_callback=self._callback,
-            queue=self.queue_name,
-            auto_ack=True
-        )
-
-        channel.start_consuming()
+        self.rabbitMQ.consume_messages(self.queue_name, self._callback)
         logger.info('Started consuming messages')
 
     def _dump_from_body(self, message_body) -> PromptModel | ChatCompletionModel:

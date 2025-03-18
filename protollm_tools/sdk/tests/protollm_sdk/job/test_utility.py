@@ -8,7 +8,7 @@ from protollm_sdk.jobs.job_context import JobContext
 from protollm_sdk.jobs.job_invoke import InvokeType
 from protollm_sdk.jobs.utility import construct_job_context
 
-
+@pytest.mark.ci
 def test_construct_job_context_real():
     """
     Test construct_job_context function with real environment variables and connections.
@@ -26,7 +26,7 @@ def test_construct_job_context_real():
     assert job_context.vector_db is not None
     assert job_context.job_invoker is not None
 
-
+@pytest.mark.ci
 def test_construct_job_context_with_invoke_type_worker():
     """
     Test construct_job_context with a missing environment variable.
@@ -38,7 +38,7 @@ def test_construct_job_context_with_invoke_type_worker():
         job_context = construct_job_context(job_name)
         assert job_context.job_invoker._invoke_type == InvokeType.Worker
 
-
+@pytest.mark.ci
 def test_construct_job_context_with_invoke_type_blocking():
     """
     Test construct_job_context with a missing environment variable.
@@ -52,7 +52,7 @@ def test_construct_job_context_with_invoke_type_blocking():
 
     Config.reload_invocation_type()
 
-
+@pytest.mark.ci
 def test_construct_job_context_with_wrong_invoke_type():
     """
     Test construct_job_context with a missing environment variable.

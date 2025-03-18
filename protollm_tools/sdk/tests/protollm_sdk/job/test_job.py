@@ -44,19 +44,16 @@ def test_llm_request(llm_request):
     res = LLMResponse(job_id=llm_request["job_id"], text=r.content)
     assert isinstance(res, LLMResponse)
 
-
-@pytest.mark.skip(reason="Test waits infinitely in GitHub Action")
+@pytest.mark.local
 def test_text_embedder_request(text_embedder_request):
     random_id = uuid.uuid4()
     result = task_test.apply_async(args=(TextEmbedderJob.__name__, random_id), kwargs=text_embedder_request)
     assert isinstance(result.get(), TextEmbedderResponse)
 
-
-@pytest.mark.skip(reason="Test waits infinitely in GitHub Action")
+@pytest.mark.local
 def test_result_storage(result_storage):
     random_id = uuid.uuid4()
     task_test.apply_async(args=(ResultStorageJob.__name__, random_id), kwargs=result_storage)
-
 
 @pytest.mark.skip(reason="We don't have local vector DB")
 def test_ping_vector_db():

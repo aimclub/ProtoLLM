@@ -4,11 +4,10 @@ services:
   rabbitmq:
     image: "rabbitmq:3-management"
     ports:
-      - "5672:5672"   # RabbitMQ broker port
-      - "15672:15672" # RabbitMQ management interface
-    environment:
-      - RABBITMQ_DEFAULT_USER=admin
-      - RABBITMQ_DEFAULT_PASS=admin
+      - ${RABBIT_PORT}:5672
+      - ${WEB_RABBIT_MQ}:15672
+    env_file:
+      - .env
     volumes:
       - "rabbitmq_data:/var/lib/rabbitmq"
     networks:
@@ -17,7 +16,7 @@ services:
   redis:
     image: "redis:alpine"
     ports:
-      - "6379:6379"
+      - ${REDIS_PORT}:6379
     volumes:
       - redis_data:/var/lib/data
     networks:
@@ -30,60 +29,39 @@ services:
       - redis
     networks:
       - llm_wrap_network
-    environment:
-      - CELERY_BROKER_URL=amqp://admin:admin@rabbitmq:5672/
-      - CELERY_RESULT_BACKEND=redis://redis:6379/0
-      - C_FORCE_ROOT=True
-      - LLM_API_HOST=localhost
-      - LLM_API_PORT=6672
-      - TEXT_EMB_HOST=embedding_server
-      - TEXT_EMB_PORT=80
-      - REDIS_HOST=redis
-      - REDIS_PORT=6379
-      - RABBIT_HOST=rabbitmq
-      - RABBIT_PORT=5672
-      - VECTOR_HOST=localhost
-      - VECTOR_PORT=9941
+    env_file:
+      - .env
     command: celery -A protollm_sdk.celery.app worker --loglevel=info
 
   flower:
     build: .
     ports:
-      - "7672:7672"
+      - ${FLOWER_PORT}:7672
     depends_on:
       - rabbitmq
       - celery_worker
     networks:
       - llm_wrap_network
-    environment:
-      - CELERY_BROKER_URL=amqp://admin:admin@rabbitmq:5672/
-      - CELERY_RESULT_BACKEND=redis://redis:6379/0
-      - LLM_API_HOST=localhost
-      - LLM_API_PORT=6672
-      - TEXT_EMB_HOST=embedding_server
-      - TEXT_EMB_PORT=80
-      - REDIS_HOST=redis
-      - REDIS_PORT=6379
-      - RABBIT_HOST=rabbitmq
-      - RABBIT_PORT=5672
-      - VECTOR_HOST=localhost
-      - VECTOR_PORT=9941
-    command: sh -c "sleep 20 && celery -A protollm_sdk.celery.app flower --broker=amqp://guest:guest@rabbitmq:5672/ --port=7672"
+    env_file:
+      - .env
+    command: sh -c "sleep 20 && celery -A protollm_sdk.celery.app flower --broker=${CELERY_BROKER_URL} --port=7672"
 
   server:
     image: chromadb/chroma:latest
+    env_file:
+      - .env
     environment:
       - IS_PERSISTENT=TRUE
     ports:
-      - 9941:8000
+      - ${VECTOR_PORT}:8000
     networks:
       - llm_wrap_network
 
   embedding_server:
-    image: ${EMBEDDING_IMAGE:-ghcr.io/huggingface/text-embeddings-inference:cpu-0.3.0} #default image with CPU support
-    command: --model-id ${ST_MODEL:-intfloat/multilingual-e5-large} --revision ${ST_MODEL_REVISION:-main} #configure model and model revision paramters
+    image: ${EMBEDDING_IMAGE}
+    command: --model-id ${ST_MODEL} --revision ${ST_MODEL_REVISION}
     ports:
-      - 9942:80
+      - ${EMBEDER_PORT}:80
     networks:
       - llm_wrap_network
 
