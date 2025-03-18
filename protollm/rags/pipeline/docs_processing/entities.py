@@ -6,29 +6,36 @@ from langchain_core.document_loaders import BaseLoader
 from langchain_core.documents import Document
 from langchain_core.load import load as ln_load
 
-from protollm.raw_data_processing.docs_transformers import ChunkMerger, RecursiveSplitter
-from protollm.raw_data_processing.docs_transformers.metadata_sentence_splitter import DivMetadataSentencesSplitter
-from protollm.raw_data_processing.docs_transformers.key_words_splitter import MultiMetadataAppender
+from protollm.raw_data_processing.docs_transformers import (
+    ChunkMerger,
+    RecursiveSplitter,
+)
+from protollm.raw_data_processing.docs_transformers.metadata_sentence_splitter import (
+    DivMetadataSentencesSplitter,
+)
+from protollm.raw_data_processing.docs_transformers.key_words_splitter import (
+    MultiMetadataAppender,
+)
 
 
 transformer_object_dict = {
-    'recursive_character': RecursiveSplitter,
+    "recursive_character": RecursiveSplitter,
     # 'list_hierarchy': ListHierarchySplitter,
-    'hierarchical_merger': ChunkMerger,
-    'div_sentence_splitter': DivMetadataSentencesSplitter,
-    'keyword_appender': MultiMetadataAppender
+    "hierarchical_merger": ChunkMerger,
+    "div_sentence_splitter": DivMetadataSentencesSplitter,
+    "keyword_appender": MultiMetadataAppender,
 }
 
 
 class LoaderType(str, Enum):
-    docx = 'docx'
-    doc = 'doc'
-    odt = 'odt'
-    rtf = 'rtf'
-    pdf = 'pdf'
-    directory = 'directory'
-    zip = 'zip'
-    json = 'json'
+    docx = "docx"
+    doc = "doc"
+    odt = "odt"
+    rtf = "rtf"
+    pdf = "pdf"
+    directory = "directory"
+    zip = "zip"
+    json = "json"
 
 
 class LangChainDocumentLoader(BaseLoader):
@@ -36,6 +43,6 @@ class LangChainDocumentLoader(BaseLoader):
         self.file_path = file_path
 
     def lazy_load(self) -> Iterator[Document]:
-        with open(self.file_path, 'r') as f:
+        with open(self.file_path, "r") as f:
             for i, doc_dict in load(f).items():
                 yield ln_load(doc_dict)

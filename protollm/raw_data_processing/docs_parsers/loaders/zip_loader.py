@@ -14,7 +14,9 @@ from protollm.raw_data_processing.docs_parsers.parsers import (
     WordDocumentParser,
 )
 from protollm.raw_data_processing.docs_parsers.utils.logger import ParsingLogger
-from protollm.raw_data_processing.docs_parsers.utils.utilities import correct_path_encoding
+from protollm.raw_data_processing.docs_parsers.utils.utilities import (
+    correct_path_encoding,
+)
 
 
 class ZipLoader(BaseLoader):

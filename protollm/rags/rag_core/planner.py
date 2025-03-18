@@ -25,12 +25,15 @@ class Planner:
         bad_idx = []
         for i, ans in enumerate(answer):
             try:
-                result = ast.literal_eval(ans.content.split('ЗАПРОСЫ:')[1].strip().split(']')[0] + ']')
+                result = ast.literal_eval(
+                    ans.content.split("ЗАПРОСЫ:")[1].strip().split("]")[0] + "]"
+                )
                 answer[i] = result
             except:
                 bad_idx.append(i)
-        return [answer[i] for i in range(len(answer)) if i not in bad_idx], [answer[i] for i in range(len(answer)) if
-                                                                             i in bad_idx]
+        return [answer[i] for i in range(len(answer)) if i not in bad_idx], [
+            answer[i] for i in range(len(answer)) if i in bad_idx
+        ]
 
     def _regenerate_answer(self, query: list, retries: int = 3):
         fixed_queries = []

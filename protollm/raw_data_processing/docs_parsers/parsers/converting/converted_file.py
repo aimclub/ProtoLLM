@@ -2,7 +2,9 @@ from contextlib import contextmanager
 from tempfile import TemporaryDirectory, NamedTemporaryFile
 from typing import BinaryIO, Generator, Union, Optional
 
-from protollm.raw_data_processing.docs_parsers.parsers.converting.converting import _convert_with_soffice
+from protollm.raw_data_processing.docs_parsers.parsers.converting.converting import (
+    _convert_with_soffice,
+)
 from protollm.raw_data_processing.docs_parsers.parsers.entities import ConvertingDocType
 
 

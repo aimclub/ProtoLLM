@@ -11,7 +11,10 @@ from protollm_tools.sdk.protollm_sdk.jobs.job import Job
 from protollm_tools.sdk.protollm_sdk.jobs.job_context import JobContext
 
 from protollm_tools.llm_agents_api.models import StairsLLMAgentResult
-from protollm_tools.llm_agents_api.config import CUSTOM_USER_MESSAGE, CUSTOM_SYSTEM_MESSAGE
+from protollm_tools.llm_agents_api.config import (
+    CUSTOM_USER_MESSAGE,
+    CUSTOM_SYSTEM_MESSAGE,
+)
 from protollm_tools.llm_agents_api.parse_result import parse_intermediate_steps
 from protollm_tools.llm_agents_api.tools import (
     query_database_rag,
@@ -19,9 +22,10 @@ from protollm_tools.llm_agents_api.tools import (
     get_resource,
     restore_works_edges,
     start_schedule,
-    extract_scheduling_params
+    extract_scheduling_params,
 )
 from protollm.agents.llama31_agents.llama31_agent import Llama31ChatModel
+
 
 class StairsLLMAgentJob(Job):
     """
@@ -38,10 +42,11 @@ class StairsLLMAgentJob(Job):
         super().__init__()
         self.tools = [
             query_database_rag,
-            get_time, get_resource,
+            get_time,
+            get_resource,
             restore_works_edges,
             start_schedule,
-            extract_scheduling_params
+            extract_scheduling_params,
         ]
         self.prompt = ChatPromptTemplate.from_messages(
             [
@@ -79,7 +84,9 @@ class StairsLLMAgentJob(Job):
         is_scheduling: bool or None = kwargs.get("is_scheduling", None)
         request += "" if is_scheduling is None else f" is_scheduling={is_scheduling}"
 
-        agent_request = {"input": request}  # , "context": {"is_project": is_project, "is_scheduling": is_scheduling}}
+        agent_request = {
+            "input": request
+        }  # , "context": {"is_project": is_project, "is_scheduling": is_scheduling}}
 
         agent = create_structured_chat_agent(
             llm=self.llm,
@@ -109,26 +116,34 @@ from protollm_tools.sdk.protollm_sdk.utils.reddis import get_reddis_wrapper, loa
 
 from protollm_tools.llm_agents_api.jobs import StairsLLMAgentJob
 
-def prepare_test_data(request: str, is_project: str or None, is_scheduling: str or None, tools: list[str]) -> dict:
+
+def prepare_test_data(
+    request: str, is_project: str or None, is_scheduling: str or None, tools: list[str]
+) -> dict:
     return {
         "request": request,
         "is_project": is_project,
         "is_scheduling": is_scheduling,
-        "tools": tools
+        "tools": tools,
     }
+
 
 SCHEDULE_QUERY = "Запусти планирования для проекта"
 
 SCHEDULE_TEST = prepare_test_data(SCHEDULE_QUERY, True, False, ["start_schedule"])
+
 
 def main():
     job_id = str(uuid.uuid4())
     ctx = construct_job_context("agent")
     job = StairsLLMAgentJob()
     request, is_project, is_scheduling, _ = SCHEDULE_TEST
-    job.run(job_id=job_id, ctx=ctx, request=request, is_project=True, is_scheduling=False)
+    job.run(
+        job_id=job_id, ctx=ctx, request=request, is_project=True, is_scheduling=False
+    )
     rd = get_reddis_wrapper()
     result = str(load_result(rd, job_id, "agent"))
+
 
 if __name__ == "__main__":
     main()

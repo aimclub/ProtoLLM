@@ -4,7 +4,10 @@ from langchain.agents import (
     tool,
 )
 from langchain.prompts import ChatPromptTemplate, MessagesPlaceholder
-from langchain_core.prompts import SystemMessagePromptTemplate, HumanMessagePromptTemplate
+from langchain_core.prompts import (
+    SystemMessagePromptTemplate,
+    HumanMessagePromptTemplate,
+)
 
 from tests.mock_chat_model import MockChatModel
 
@@ -25,7 +28,7 @@ def test_from_prompt_model():
     tools = [add_numbers, multiply_numbers]
 
     # Create the system and human prompts
-    system_prompt = '''Respond to the human as helpfully and accurately as possible. You have access to the following tools:
+    system_prompt = """Respond to the human as helpfully and accurately as possible. You have access to the following tools:
     
     {tools}
     
@@ -50,11 +53,11 @@ def test_from_prompt_model():
     
     
     Begin! Reminder to ALWAYS respond with a valid JSON blob of a single action. Use tools if necessary. 
-    Respond directly if appropriate. Format is Action:```$JSON_BLOB``` then Observation'''
+    Respond directly if appropriate. Format is Action:```$JSON_BLOB``` then Observation"""
 
-    human_prompt = '''{input}
+    human_prompt = """{input}
     {agent_scratchpad}
-    (Reminder to respond in a JSON blob no matter what)'''
+    (Reminder to respond in a JSON blob no matter what)"""
 
     system_message = SystemMessagePromptTemplate.from_template(
         system_prompt,

@@ -4,7 +4,11 @@ from typing import Iterator, Union, Any, Optional
 from langchain_core.document_loaders import BaseLoader, Blob
 from langchain_core.documents import Document
 
-from protollm.raw_data_processing.docs_parsers.parsers import WordDocumentParser, ParsingScheme, DocType
+from protollm.raw_data_processing.docs_parsers.parsers import (
+    WordDocumentParser,
+    ParsingScheme,
+    DocType,
+)
 from protollm.raw_data_processing.docs_parsers.utils.logger import ParsingLogger
 
 

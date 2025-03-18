@@ -13,7 +13,10 @@ from protollm.raw_data_processing.docs_parsers.parsers.word_doc.utilities import
     get_chapters,
     add_headings_hierarchy,
 )
-from protollm.raw_data_processing.docs_parsers.utils.utilities import correct_path_encoding, is_bad_encoding
+from protollm.raw_data_processing.docs_parsers.utils.utilities import (
+    correct_path_encoding,
+    is_bad_encoding,
+)
 
 
 class WordDocumentParser(BaseParser):

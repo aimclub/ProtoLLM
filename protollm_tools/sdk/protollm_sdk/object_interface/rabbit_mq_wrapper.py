@@ -8,7 +8,14 @@ logger = logging.getLogger(__name__)
 
 
 class RabbitMQWrapper:
-    def __init__(self, rabbit_host: str, rabbit_port: int, rabbit_user: str, rabbit_password: str, virtual_host: str = '/'):
+    def __init__(
+        self,
+        rabbit_host: str,
+        rabbit_port: int,
+        rabbit_user: str,
+        rabbit_password: str,
+        virtual_host: str = "/",
+    ):
         """
         Initialize RabbitMQ wrapper.
 
@@ -22,7 +29,7 @@ class RabbitMQWrapper:
             host=rabbit_host,
             port=rabbit_port,
             virtual_host=virtual_host,
-            credentials=pika.PlainCredentials(rabbit_user, rabbit_password)
+            credentials=pika.PlainCredentials(rabbit_user, rabbit_password),
         )
 
     @contextmanager
@@ -40,7 +47,7 @@ class RabbitMQWrapper:
             channel.close()
             connection.close()
 
-    def publish_message(self, queue_name: str, message: dict, durable: bool=True):
+    def publish_message(self, queue_name: str, message: dict, durable: bool = True):
         """
         Publish a message to a specified queue with an optional priority.
 
@@ -51,28 +58,32 @@ class RabbitMQWrapper:
         """
         try:
             with self.get_channel() as channel:
-                arguments = {'x-max-priority': 5}
+                arguments = {"x-max-priority": 5}
                 priority = message.get("kwargs").get("prompt").get("priority")
 
-                channel.queue_declare(queue=queue_name, durable=durable, arguments=arguments)
-
-                properties = pika.BasicProperties(
-                    delivery_mode=2,
-                    priority=priority
+                channel.queue_declare(
+                    queue=queue_name, durable=durable, arguments=arguments
                 )
+
+                properties = pika.BasicProperties(delivery_mode=2, priority=priority)
                 channel.basic_publish(
-                    exchange='',
+                    exchange="",
                     routing_key=queue_name,
                     body=json.dumps(message),
-                    properties=properties
+                    properties=properties,
                 )
                 logger.info(
-                    f"Message published to queue '{queue_name}' with priority {priority if priority is not None else 'None'}")
+                    f"Message published to queue '{queue_name}' with priority {priority if priority is not None else 'None'}"
+                )
         except Exception as ex:
-            logger.error(f"Failed to publish message to queue '{queue_name}'. Error: {ex}")
-            raise Exception(f"Failed to publish message to queue '{queue_name}'. Error: {ex}") from ex
+            logger.error(
+                f"Failed to publish message to queue '{queue_name}'. Error: {ex}"
+            )
+            raise Exception(
+                f"Failed to publish message to queue '{queue_name}'. Error: {ex}"
+            ) from ex
 
-    def consume_messages(self, queue_name: str, callback, durable: bool=True):
+    def consume_messages(self, queue_name: str, callback, durable: bool = True):
         """
         Start consuming messages from a specified queue.
 
@@ -84,15 +95,19 @@ class RabbitMQWrapper:
             connection = pika.BlockingConnection(self.connection_params)
             channel = connection.channel()
 
-            channel.queue_declare(queue=queue_name, durable=durable, arguments={"x-max-priority": 5})
+            channel.queue_declare(
+                queue=queue_name, durable=durable, arguments={"x-max-priority": 5}
+            )
 
             channel.basic_consume(
-                queue=queue_name,
-                on_message_callback=callback,
-                auto_ack=True
+                queue=queue_name, on_message_callback=callback, auto_ack=True
             )
             logger.info(f"Started consuming messages from queue '{queue_name}'")
             channel.start_consuming()
         except Exception as ex:
-            logger.error(f"Failed to consume messages from queue '{queue_name}'. Error: {ex}")
-            raise Exception(f"Failed to consume messages from queue '{queue_name}'. Error: {ex}")
+            logger.error(
+                f"Failed to consume messages from queue '{queue_name}'. Error: {ex}"
+            )
+            raise Exception(
+                f"Failed to consume messages from queue '{queue_name}'. Error: {ex}"
+            )

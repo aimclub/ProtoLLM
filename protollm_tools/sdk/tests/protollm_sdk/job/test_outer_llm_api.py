@@ -4,8 +4,13 @@ import pytest
 from httpx import URL
 
 from protollm_sdk.jobs.outer_llm_api import OuterLLMAPI
-from protollm_sdk.models.job_context_models import PromptModel, ResponseModel, ChatCompletionModel, \
-    ChatCompletionUnit, PromptMeta
+from protollm_sdk.models.job_context_models import (
+    PromptModel,
+    ResponseModel,
+    ChatCompletionModel,
+    ChatCompletionUnit,
+    PromptMeta,
+)
 
 
 @pytest.fixture
@@ -15,9 +20,10 @@ def outer_llm_api():
 
 @pytest.fixture
 def mock_openai():
-    with patch('protollm_sdk.jobs.outer_llm_api.OpenAI') as mock_openai:
+    with patch("protollm_sdk.jobs.outer_llm_api.OpenAI") as mock_openai:
         mock_openai().chat.completions.create = MagicMock()
         yield mock_openai().chat.completions.create
+
 
 @pytest.mark.ci
 def test_outer_llmapi_initialization():
@@ -25,9 +31,9 @@ def test_outer_llmapi_initialization():
     assert outer_llm_api.model == "openai/gpt-4o-2024-08-06"
     assert outer_llm_api.timeout_sec == 10 * 60
     assert isinstance(outer_llm_api.client.api_key, str)
-    assert len(outer_llm_api.client.api_key) == len(
-        "key")
+    assert len(outer_llm_api.client.api_key) == len("key")
     assert outer_llm_api.client.base_url == URL("https://api.vsegpt.ru/v1/")
+
 
 @pytest.mark.ci
 def test_outer_llmapi_inference_success(mock_openai, outer_llm_api):
@@ -54,11 +60,12 @@ def test_outer_llmapi_inference_success(mock_openai, outer_llm_api):
         temperature=0.7,
         n=1,
         max_tokens=100,
-        timeout=10 * 60
+        timeout=10 * 60,
     )
 
     assert isinstance(response, ResponseModel)
     assert response.content == "Test success"
+
 
 @pytest.mark.ci
 def test_outer_llmapi_inference_server_error(mock_openai, outer_llm_api):
@@ -75,9 +82,12 @@ def test_outer_llmapi_inference_server_error(mock_openai, outer_llm_api):
     mock_meta.model = None
     mock_request.meta = mock_meta
 
-    with pytest.raises(Exception,
-                       match="The response generation has been interrupted. Error: The LLM server is not available."):
+    with pytest.raises(
+        Exception,
+        match="The response generation has been interrupted. Error: The LLM server is not available.",
+    ):
         outer_llm_api.inference(mock_request)
+
 
 @pytest.mark.ci
 def test_outer_llmapi_chat_completion_success(mock_openai, outer_llm_api):
@@ -106,11 +116,12 @@ def test_outer_llmapi_chat_completion_success(mock_openai, outer_llm_api):
         temperature=0.7,
         n=1,
         max_tokens=100,
-        timeout=10 * 60
+        timeout=10 * 60,
     )
 
     assert isinstance(response, ResponseModel)
     assert response.content == "Test chat success"
+
 
 @pytest.mark.ci
 def test_outer_llmapi_chat_completion_server_error(mock_openai, outer_llm_api):
@@ -129,6 +140,8 @@ def test_outer_llmapi_chat_completion_server_error(mock_openai, outer_llm_api):
     mock_meta.model = None
     mock_request.meta = mock_meta
 
-    with pytest.raises(Exception,
-                       match="The response generation has been interrupted. Error: The LLM server is not available."):
+    with pytest.raises(
+        Exception,
+        match="The response generation has been interrupted. Error: The LLM server is not available.",
+    ):
         outer_llm_api.chat_completion(mock_request)

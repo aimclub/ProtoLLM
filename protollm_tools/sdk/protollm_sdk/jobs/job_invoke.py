@@ -12,6 +12,7 @@ class InvokeType(Enum):
     """
     Enum for job invocation type
     """
+
     Blocking = auto()
     Worker = auto()
 
@@ -84,7 +85,9 @@ class BlockingJobResult(JobResult):
                 return result
             time.sleep(wait)
 
-        raise TimeoutError(f"Couldn't retrieve result in {timeout // 60}min {timeout % 60}sec")
+        raise TimeoutError(
+            f"Couldn't retrieve result in {timeout // 60}min {timeout % 60}sec"
+        )
 
     def _ping_result(self) -> dict | None:
         return self.storage.load_dict(self.job_id)
@@ -125,7 +128,9 @@ class WorkerJobResult(JobResult):
                 return result
             time.sleep(wait)
 
-        raise TimeoutError(f"Couldn't retrieve result in {timeout // 60}min {timeout % 60}sec")
+        raise TimeoutError(
+            f"Couldn't retrieve result in {timeout // 60}min {timeout % 60}sec"
+        )
 
     def _ping_result(self) -> dict | None:
         """
@@ -142,10 +147,11 @@ class JobInvoker:
     """
 
     def __init__(
-            self,
-            abstract_celery_task: Callable[[type, str, ...], None] | None,
-            result_storage: ResultStorage,
-            invoke_type: InvokeType = InvokeType.Worker):
+        self,
+        abstract_celery_task: Callable[[type, str, ...], None] | None,
+        result_storage: ResultStorage,
+        invoke_type: InvokeType = InvokeType.Worker,
+    ):
         """
         Initialize JobInvoker
 
@@ -179,7 +185,11 @@ class JobInvoker:
             raise Exception(msg)
 
         task_id = str(uuid4())
-        job_name = job_class.__name__ if isinstance(job_class, type) else job_class.__class__.__name__
+        job_name = (
+            job_class.__name__
+            if isinstance(job_class, type)
+            else job_class.__class__.__name__
+        )
 
         self._logger.info(f"Invoking '{job_name}' with task id'{task_id}'.")
 

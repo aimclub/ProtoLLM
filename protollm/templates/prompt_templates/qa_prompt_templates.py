@@ -23,7 +23,7 @@ CLASSFIC_FC_PROMPT = """You have access to the following functions:
        like normal with your current knowledge and do not tell 
        the user about function calls"""
 
-EXT_SERVICE_PROMPT="""    Answer the question by following the rules below.
+EXT_SERVICE_PROMPT = """    Answer the question by following the rules below.
     For the answer you must use the context provided by user.
     Rules:
     1. You must only use provided information for the answer.
@@ -45,7 +45,7 @@ EXT_SERVICE_PROMPT="""    Answer the question by following the rules below.
     9. Answer should be three sentences maximum.
 """
 
-RAG_QA_PROMPT="""
+RAG_QA_PROMPT = """
     Answer the question following the rules below. For answer 
     you must use context provided by the user.
     Rules:

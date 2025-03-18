@@ -9,20 +9,21 @@ import pandas as pd
 
 
 class AnswerType(str, Enum):
-    RETRIEVAL = 'retrieval'
-    ANSWER = 'answer'
-    ERROR = 'error'
+    RETRIEVAL = "retrieval"
+    ANSWER = "answer"
+    ERROR = "error"
+
 
 def parse_ws_response(response):
     response_body = json.loads(response)
-    match (name := response_body.get('name')):
+    match (name := response_body.get("name")):
         case AnswerType.RETRIEVAL | AnswerType.ANSWER:
-            return name, response_body['result']
+            return name, response_body["result"]
         case AnswerType.ERROR:
-            raise Exception(response_body.get('detail'))
+            raise Exception(response_body.get("detail"))
         case _:
             return None, None
-        
+
 
 @click.command()
 @click.option("--basepath", type=str, default="0.0.0.0:8080")
@@ -43,7 +44,9 @@ def main(basepath, output):
     assert response.status_code == 200, "Failed to get agents"
     response = response.json()
     assert len(response) > 0, "No agents found"
-    agents_ids = {agent['agent_id']: agent['name'] for agent in response if "rag" in agent['name']}
+    agents_ids = {
+        agent["agent_id"]: agent["name"] for agent in response if "rag" in agent["name"]
+    }
 
     agents_responses = list()
     for question in questions:
@@ -54,9 +57,9 @@ def main(basepath, output):
                 request_payload = {
                     "dialogue_id": run_uid,
                     "agent_id": agent_id,
-                    "chat_history":[],
+                    "chat_history": [],
                     "query": question,
-                    "run_params": {}
+                    "run_params": {},
                 }
                 ws.send(json.dumps(request_payload))
                 try:
@@ -64,19 +67,19 @@ def main(basepath, output):
                         response = ws.recv()
                         response_type, response_data = parse_ws_response(response)
                         if response_type == AnswerType.RETRIEVAL:
-                            question_columns[f'docs_{agent_name}'] = response_data
+                            question_columns[f"docs_{agent_name}"] = response_data
                         elif response_type == AnswerType.ANSWER:
-                            question_columns[f'answer_{agent_name}'] = response_data
+                            question_columns[f"answer_{agent_name}"] = response_data
                 except ConnectionClosed:
                     pass
         click.echo("Finished collecting RAG agents responses")
 
-        for endpoint in ('router', 'ensemble'):
+        for endpoint in ("router", "ensemble"):
             click.echo(f"Collecting response from {endpoint}, {question=}")
             with wsclient.connect(f"ws://{basepath}/{endpoint}") as ws:
                 request_payload = {
                     "dialogue_id": run_uid,
-                    "chat_history":[],
+                    "chat_history": [],
                     "query": question,
                 }
                 ws.send(json.dumps(request_payload))
@@ -85,9 +88,9 @@ def main(basepath, output):
                         response = ws.recv()
                         response_type, response_data = parse_ws_response(response)
                         if response_type == AnswerType.RETRIEVAL:
-                            question_columns[f'docs_{endpoint}'] = response_data
+                            question_columns[f"docs_{endpoint}"] = response_data
                         elif response_type == AnswerType.ANSWER:
-                            question_columns[f'answer_{endpoint}'] = response_data
+                            question_columns[f"answer_{endpoint}"] = response_data
                 except ConnectionClosed:
                     pass
         click.echo("Finished collecting router and ensemble responses")
@@ -97,6 +100,7 @@ def main(basepath, output):
 
     df = pd.DataFrame().from_records(agents_responses)
     df.to_csv(output, index=False)
+
 
 if __name__ == "__main__":
     main()

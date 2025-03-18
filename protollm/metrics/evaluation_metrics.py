@@ -35,5 +35,5 @@ correctness_metric = GEval(
         LLMTestCaseParams.EXPECTED_OUTPUT,
     ],
     model=model_for_metrics,
-    async_mode=False
+    async_mode=False,
 )

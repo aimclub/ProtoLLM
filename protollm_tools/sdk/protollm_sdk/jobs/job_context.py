@@ -17,11 +17,10 @@ class JobContext:
     """
     The class contains contextual services for executing Job
     """
+
     llm_api: LLMAPI
     outer_llm_api: OuterLLMAPI
     text_embedder: TextEmbedder
     result_storage: ResultStorage
     vector_db: VectorDB
     job_invoker: JobInvoker
-
-

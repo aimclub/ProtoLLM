@@ -18,4 +18,6 @@ def test_load_result():
 
     result = load_result(redis, job_id, prefix)
 
-    assert ResponseModel.model_validate_json(result.decode()) == ResponseModel(content="value")
+    assert ResponseModel.model_validate_json(result.decode()) == ResponseModel(
+        content="value"
+    )

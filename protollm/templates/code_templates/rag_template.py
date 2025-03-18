@@ -5,7 +5,10 @@ from langchain_community.embeddings.huggingface_hub import HuggingFaceHubEmbeddi
 from langchain_community.vectorstores.chroma import Chroma
 
 from protollm.rags.rag_core.retriever import DocRetriever, DocsSearcherModels
-from protollm.rags.settings.chroma_settings import ChromaSettings, settings as default_settings
+from protollm.rags.settings.chroma_settings import (
+    ChromaSettings,
+    settings as default_settings,
+)
 from protollm.rags.stores.chroma.chroma_loader import load_documents_to_chroma_db
 
 
@@ -61,10 +64,13 @@ def proto_view(
     embedding_function = HuggingFaceHubEmbeddings(model=default_settings.embedding_host)
     chroma_client = init_chroma_client()
 
-    docs_searcher_models = DocsSearcherModels(embedding_model=embedding_function, chroma_client=chroma_client)
-    retriever = DocRetriever(top_k=k,
-                             docs_searcher_models=docs_searcher_models,
-                             )
+    docs_searcher_models = DocsSearcherModels(
+        embedding_model=embedding_function, chroma_client=chroma_client
+    )
+    retriever = DocRetriever(
+        top_k=k,
+        docs_searcher_models=docs_searcher_models,
+    )
 
     return retriever.retrieve_top(collection_name=collection, query=query)
 

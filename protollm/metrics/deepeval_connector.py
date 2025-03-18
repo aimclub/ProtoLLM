@@ -33,10 +33,10 @@ class DeepEvalConnector(DeepEvalBaseLLM):
         return create_llm_connector(os.getenv("DEEPEVAL_LLM_URL", "test_model"))
 
     def generate(
-            self,
-            prompt: str,
-            *args,
-            **kwargs,
+        self,
+        prompt: str,
+        *args,
+        **kwargs,
     ) -> str | BaseModel:
         """Get a response from LLM to given question.
 
@@ -54,19 +54,19 @@ class DeepEvalConnector(DeepEvalBaseLLM):
         if response_format == NOT_GIVEN:
             return self.model.invoke(messages).content
         else:
-            struct_llm = self.model.with_structured_output(schema=response_format, method="json_mode")
+            struct_llm = self.model.with_structured_output(
+                schema=response_format, method="json_mode"
+            )
             return struct_llm.invoke(messages)
 
     async def a_generate(
-            self,
-            prompt: str,
-            *args,
-            **kwargs,
+        self,
+        prompt: str,
+        *args,
+        **kwargs,
     ) -> str:
         """Same as synchronous generate method just because it must be implemented"""
-        return self.generate(
-            prompt, *args, **kwargs
-        )
+        return self.generate(prompt, *args, **kwargs)
 
     def get_model_name(self, *args, **kwargs) -> str:
         """Returns a description of what the class is about"""

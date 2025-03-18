@@ -25,12 +25,14 @@ class PromptModel(BaseModel):
 
 class ChatCompletionUnit(BaseModel):
     """A model for element of chat completion"""
+
     role: str
     content: str
 
 
 class ChatCompletionModel(BaseModel):
     """A model for chat completion order"""
+
     job_id: str
     priority: int | None = Field(default=None, examples=[None])
     source: str = "local"
@@ -38,18 +40,17 @@ class ChatCompletionModel(BaseModel):
     messages: list[ChatCompletionUnit]
 
     @classmethod
-    def from_prompt_model(cls, prompt_model: PromptModel) -> 'ChatCompletionModel':
+    def from_prompt_model(cls, prompt_model: PromptModel) -> "ChatCompletionModel":
         # Создаем первое сообщение из содержимого PromptModel
         initial_message = ChatCompletionUnit(
-            role="user",  # Или другой подходящий role
-            content=prompt_model.content
+            role="user", content=prompt_model.content  # Или другой подходящий role
         )
         # Возвращаем новый экземпляр ChatCompletionModel
         return cls(
             job_id=prompt_model.job_id,
             priority=prompt_model.priority,
             meta=prompt_model.meta,
-            messages=[initial_message]
+            messages=[initial_message],
         )
 
 
@@ -64,7 +65,9 @@ class ChatCompletionTransactionModel(BaseModel):
 
 
 class PromptWrapper(BaseModel):
-    prompt: Union[PromptTransactionModel, ChatCompletionTransactionModel] = Field(..., discriminator='prompt_type')
+    prompt: Union[PromptTransactionModel, ChatCompletionTransactionModel] = Field(
+        ..., discriminator="prompt_type"
+    )
 
 
 class ResponseModel(BaseModel):

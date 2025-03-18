@@ -2,22 +2,26 @@
 Example of using an agent in a chemical pipeline with tools for drug generation (by API).
 
 Process:
-- Reading from a file with example queries. 
-- Pipeline starts. 
+- Reading from a file with example queries.
+- Pipeline starts.
 - Results are written to the same file.
 """
-from langchain.agents import (
-    create_structured_chat_agent,
-    AgentExecutor,
-    tool
-)
+
+from langchain.agents import create_structured_chat_agent, AgentExecutor, tool
 import requests
 import json
 from langchain.prompts import ChatPromptTemplate, MessagesPlaceholder
-from langchain_core.prompts import SystemMessagePromptTemplate, HumanMessagePromptTemplate
+from langchain_core.prompts import (
+    SystemMessagePromptTemplate,
+    HumanMessagePromptTemplate,
+)
 import pandas as pd
 from protollm.agents.llama31_agents.llama31_agent import Llama31ChatModel
-from examples.real_world.chemical_pipeline.validate_tools import validate_decompose, compute_metrics, validate_conductor
+from examples.real_world.chemical_pipeline.validate_tools import (
+    validate_decompose,
+    compute_metrics,
+    validate_conductor,
+)
 
 
 def make_markdown_table(props: dict) -> str:
@@ -41,9 +45,7 @@ def make_markdown_table(props: dict) -> str:
 
     # fill the table rows dynamically based on the keys
     for i in range(num_rows):
-        row = [
-            str(props[key][i]) for key in headers
-        ]
+        row = [str(props[key][i]) for key in headers]
         markdown_table += "| " + " | ".join(row) + " |\n"
 
     return markdown_table
@@ -60,17 +62,12 @@ def request_mols_generation(num: int) -> list:
     Returns:
         list: list of generated molecules
     """
-    params = {
-        "numb_mol": num,
-        "cuda": True,
-        "mean_": 0.0,
-        "std_": 1.0,
-        "case_": "RNDM"
-    }
-    resp = requests.post('http://10.32.2.2:81/case_generator', data=json.dumps(params))
+    params = {"numb_mol": num, "cuda": True, "mean_": 0.0, "std_": 1.0, "case_": "RNDM"}
+    resp = requests.post("http://10.32.2.2:81/case_generator", data=json.dumps(params))
     ans = make_markdown_table(json.loads(resp.json()))
 
     return ans
+
 
 @tool
 def gen_mols_alzheimer(num: int) -> list:
@@ -88,13 +85,14 @@ def gen_mols_alzheimer(num: int) -> list:
         "cuda": True,
         "mean_": 0.0,
         "std_": 1.0,
-        "case_": "Alzhmr"
+        "case_": "Alzhmr",
     }
-    resp = requests.post('http://10.32.2.2:81/case_generator', data=json.dumps(params))
+    resp = requests.post("http://10.32.2.2:81/case_generator", data=json.dumps(params))
 
     ans = make_markdown_table(json.loads(resp.json()))
 
     return ans
+
 
 @tool
 def gen_mols_multiple_sclerosis(num: int) -> list:
@@ -114,9 +112,9 @@ def gen_mols_multiple_sclerosis(num: int) -> list:
         "cuda": True,
         "mean_": 0.0,
         "std_": 1.0,
-        "case_": "Sklrz"
+        "case_": "Sklrz",
     }
-    resp = requests.post('http://10.32.2.2:81/case_generator', data=json.dumps(params))
+    resp = requests.post("http://10.32.2.2:81/case_generator", data=json.dumps(params))
 
     ans = make_markdown_table(json.loads(resp.json()))
 
@@ -127,10 +125,10 @@ def gen_mols_multiple_sclerosis(num: int) -> list:
 def gen_mols_dyslipidemia(num: int) -> list:
     """
     Generation of molecules for the treatment of dyslipidemia.
-    Molecules that inhibit Proprotein Convertase Subtilisin/Kexin Type 9 with enhanced bioavailability and 
-    the ability to cross the BBB. Molecules have affinity to the protein ATP citrate synthase, enhances 
+    Molecules that inhibit Proprotein Convertase Subtilisin/Kexin Type 9 with enhanced bioavailability and
+    the ability to cross the BBB. Molecules have affinity to the protein ATP citrate synthase, enhances
     reverse cholesterol transport via ABCA1 upregulation
-    , inhibits HMG-CoA reductase with improved safety profile compared to statins. It can be  
+    , inhibits HMG-CoA reductase with improved safety profile compared to statins. It can be
     PCSK9 inhibitors to enhance LDL receptor recycling and reduce LDL cholesterol levels.
 
     """
@@ -139,17 +137,18 @@ def gen_mols_dyslipidemia(num: int) -> list:
         "cuda": True,
         "mean_": 0.0,
         "std_": 1.0,
-        "case_": "Dslpdm"
+        "case_": "Dslpdm",
     }
-    resp = requests.post('http://10.32.2.2:81/case_generator', data=json.dumps(params))
+    resp = requests.post("http://10.32.2.2:81/case_generator", data=json.dumps(params))
     ans = make_markdown_table(json.loads(resp.json()))
 
     return ans
 
+
 @tool
 def gen_mols_acquired_drug_resistance(num: int) -> list:
     """
-    Generation of molecules for acquired drug resistance. 
+    Generation of molecules for acquired drug resistance.
     Molecules that selectively induce apoptosis in drug-resistant tumor cells.
     It significantly enhances the activity of existing therapeutic agents against drug-resistant pathogens.
     """
@@ -158,33 +157,29 @@ def gen_mols_acquired_drug_resistance(num: int) -> list:
         "cuda": True,
         "mean_": 0.0,
         "std_": 1.0,
-        "case_": "TBLET"
+        "case_": "TBLET",
     }
-    resp = requests.post('http://10.32.2.2:81/case_generator', data=json.dumps(params))
+    resp = requests.post("http://10.32.2.2:81/case_generator", data=json.dumps(params))
     ans = make_markdown_table(json.loads(resp.json()))
 
     return ans
+
 
 @tool
 def gen_mols_lung_cancer(num: int) -> list:
     """
-    Generation of molecules for the treatment of lung cancer. 
-    Molecules are inhibitors of KRAS protein with G12C mutation. 
+    Generation of molecules for the treatment of lung cancer.
+    Molecules are inhibitors of KRAS protein with G12C mutation.
     The molecules are selective, meaning they should not bind with HRAS and NRAS proteins.
-    Its target KRAS proteins with all possible mutations, including G12A/C/D/F/V/S, G13C/D, 
+    Its target KRAS proteins with all possible mutations, including G12A/C/D/F/V/S, G13C/D,
     V14I, L19F, Q22K, D33E, Q61H, K117N and A146V/T.
     """
-    params = {
-        "numb_mol": num,
-        "cuda": True,
-        "mean_": 0.0,
-        "std_": 1.0,
-        "case_": "Cnsr"
-    }
-    resp = requests.post('http://10.32.2.2:81/case_generator', data=json.dumps(params))
+    params = {"numb_mol": num, "cuda": True, "mean_": 0.0, "std_": 1.0, "case_": "Cnsr"}
+    resp = requests.post("http://10.32.2.2:81/case_generator", data=json.dumps(params))
     ans = make_markdown_table(json.loads(resp.json()))
 
     return ans
+
 
 @tool
 def gen_mols_parkinson(num: int) -> list:
@@ -196,20 +191,28 @@ def gen_mols_parkinson(num: int) -> list:
         "cuda": True,
         "mean_": 0.0,
         "std_": 1.0,
-        "case_": "Prkns"
+        "case_": "Prkns",
     }
-    resp = requests.post('http://10.32.2.2:81/case_generator', data=json.dumps(params))
+    resp = requests.post("http://10.32.2.2:81/case_generator", data=json.dumps(params))
 
     ans = make_markdown_table(json.loads(resp.json()))
 
     return ans
 
+
 # List of tools
-tools = [gen_mols_parkinson, gen_mols_lung_cancer, gen_mols_acquired_drug_resistance,
-         gen_mols_dyslipidemia, gen_mols_multiple_sclerosis, gen_mols_alzheimer, request_mols_generation]
+tools = [
+    gen_mols_parkinson,
+    gen_mols_lung_cancer,
+    gen_mols_acquired_drug_resistance,
+    gen_mols_dyslipidemia,
+    gen_mols_multiple_sclerosis,
+    gen_mols_alzheimer,
+    request_mols_generation,
+]
 
 # Create the system and human prompts
-system_prompt = '''
+system_prompt = """
 Respond to the human as helpfully and accurately as possible. You have access to the following tools:
 
 {tools}
@@ -245,11 +248,11 @@ For example answer must consist table (!):
 0.6727786031171711 | 1.9616124655434675 | 0 | 0 | 0 | 0 | 0 | 0 |\n| Cc1ccc(C)c(-n2c(=O)c3ccccc3n(Cc3ccccc3)c2=O)c1 
 | 0.5601042919484651 | 1.920664623176684 | 0 | 0 | 0 | 0 | 1 | 1 |\n| Cc1ccc2c(c1)N(C(=O)CN1C(=O)NC3(CCCc4ccccc43)C1=O)CC2 
 | 0.8031696199670261 | 3.3073398307371438 | 0 | 0 | 0 | 1 | 1 | 0 |"
-'''
+"""
 
-human_prompt = '''{input}
+human_prompt = """{input}
 {agent_scratchpad}
-(Reminder to respond in a JSON blob no matter what)'''
+(Reminder to respond in a JSON blob no matter what)"""
 
 system_message = SystemMessagePromptTemplate.from_template(
     system_prompt,
@@ -271,19 +274,16 @@ prompt = ChatPromptTemplate.from_messages(
 
 # Initialize the custom LLM
 llm = Llama31ChatModel(
-    api_key='API_KEY_VSE_GPT',
+    api_key="API_KEY_VSE_GPT",
     base_url="https://api.vsegpt.ru/v1",
     model="meta-llama/llama-3.1-70b-instruct",
     temperature=0.5,
-    max_tokens=5000
+    max_tokens=5000,
 )
 
 # Create the structured chat agent
 agent = create_structured_chat_agent(
-    llm=llm,
-    tools=tools,
-    prompt=prompt,
-    stop_sequence=True
+    llm=llm, tools=tools, prompt=prompt, stop_sequence=True
 )
 
 # Create the AgentExecutor
@@ -293,26 +293,24 @@ agent_executor = AgentExecutor.from_agent_and_tools(
     verbose=True,
     return_intermediate_steps=True,
     output_keys=["output"],
-    early_stopping_method="generate"
+    early_stopping_method="generate",
 )
 
 # Example usage of the agent
 if __name__ == "__main__":
-    path = 'examples/chemical_pipeline/queries_responses_chemical.xlsx'
+    path = "examples/chemical_pipeline/queries_responses_chemical.xlsx"
     questions = pd.read_excel(path).values.tolist()
-    
+
     for i, q in enumerate(questions):
-        print('Task № ', i)
-        response = agent_executor.invoke({
-            "input": q[1]
-        })
-        
+        print("Task № ", i)
+        response = agent_executor.invoke({"input": q[1]})
+
         validate_decompose(i, response["intermediate_steps"], path)
         for n, tools_pred in enumerate(response["intermediate_steps"]):
             name_tool = tools_pred[0].tool
-            func = {'name': name_tool}
+            func = {"name": name_tool}
             validate_conductor(i, func, n, path)
-            
+
         # Access the output
         final_answer = response["output"]
         # Print the final answer

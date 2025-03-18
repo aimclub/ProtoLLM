@@ -5,7 +5,9 @@ from typing import Any, Iterable, Optional, List
 from langchain_core.documents import Document
 from langchain_text_splitters import TextSplitter
 
-from protollm.raw_data_processing.docs_transformers.utilities import fix_list_dots_separators
+from protollm.raw_data_processing.docs_transformers.utilities import (
+    fix_list_dots_separators,
+)
 
 logger = logging.getLogger(__name__)
 
