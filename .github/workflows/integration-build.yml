@@ -43,7 +43,7 @@ jobs:
           python -m pip install --upgrade pip
           pip install pytest
           pip install pytest-asyncio
-          pip install -r ./protollm_tools/llm-api/requirements.txt
+          pip install -r ./protollm_tools/llm_api/requirements.txt
       - name: Test llm_api with pytest
         run: |
-          pytest -s ./protollm_tools/llm-api/tests/integration
+          pytest -s ./protollm_tools/llm_api/tests/integration
