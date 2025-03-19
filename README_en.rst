@@ -56,6 +56,12 @@ The simplest way to install ProtoLLM is using ``pip``:
 
   $ pip install protollm
 
+Or with extras:
+
+.. code-block::
+
+  $ pip install protollm[api-tools]
+
 Modules with tools can be installed separately:
 
 .. code-block::
