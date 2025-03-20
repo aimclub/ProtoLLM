@@ -1,6 +1,6 @@
 from langchain_core.output_parsers import PydanticOutputParser
 
-from protollm.agents.agents_utils.pydantic_models import (
+from protollm.agents.agent_utils.pydantic_models import (
     Act,
     Chat,
     Plan,
