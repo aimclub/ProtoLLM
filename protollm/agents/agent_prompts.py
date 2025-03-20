@@ -1,7 +1,7 @@
 from langchain_community.tools.tavily_search import TavilySearchResults
 from langchain_core.prompts import ChatPromptTemplate
 
-from protollm.agents.agents_utils.parsers import (
+from protollm.agents.agent_utils.parsers import (
     chat_parser,
     planner_parser,
     replanner_parser,
