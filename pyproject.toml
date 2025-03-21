@@ -1,69 +1,76 @@
-[tool.poetry]
-readme = "README_en.rst"
+[project]
 name = "ProtoLLM"
 version = "0.1.1"
-description = ""
-authors = ["aimclub"]
+description = "A library with which to prototype LLM-based applications quickly and easily."
+requires-python = ">=3.10,<4.0"
+authors = [
+    { name = "aimclub", email = "aim.club@itmo.ru"}
+]
+readme = "README_en.rst"
+license = "BSD-3-Clause"
+packages = [{ include = "protollm" }]
+dependencies = [
+    "aioredis>=2.0.1,<3.0.0",
+    "celery>=5.4.0,<6.0.0",
+    "chardet==5.2.0",
+    "chromadb>=0.5.0,<0.6.0",
+    "click==8.1.7",
+    "deepeval==2.3.3; python_version >= '3.10' and python_version < '3.14'",
+    "fastapi>=0.111.0,<0.112.0",
+    "flower>=2.0.1,<3.0.0",
+    "ftfy==6.3.1",
+    "httpx>=0.27.0,<0.28.0",
+    "kombu>=5.3.7,<6.0.0",
+    "langchain>=0.3.4,<0.4.0",
+    "langchain-chroma==0.1.4",
+    "langchain-community==0.3.16",
+    "langchain-core==0.3.34",
+    "langchain-elasticsearch==0.3.2",
+    "langchain-gigachat==0.3.3",
+    "langchain-openai==0.3.3",
+    "langchain-text-splitters>=0.3.3,<0.4.0",
+    "numpy==1.26.4",
+    "openai>=1.42.0,<2.0.0",
+    "pandas>=2.2.3,<3.0.0",
+    "pdf2image==1.17.0",
+    "pdfplumber==0.11.5",
+    "pdfminer.six==20231228",
+    "pillow==11.1.0",
+    "pika>=1.3.2,<2.0.0",
+    "protollm-sdk==1.1.6",
+    "pydantic>=2.7.4,<3.0.0",
+    "pydantic-core==2.23.4",
+    "pydantic-settings==2.7.1",
+    "pypdf2==3.0.1",
+    "python-docx==1.1.2",
+    "python-dotenv==1.0.1",
+    "pytesseract==0.3.13",
+    "pyyaml==6.0.2",
+    "redis>=5.0.6,<6.0.0",
+    "requests>=2.32.3,<3.0.0",
+    "spacy==3.8.4; python_version >= '3.10' and python_version < '3.13'",
+    "tabulate==0.9.0",
+    "tornado>=6.4.1,<7.0.0",
+    "tqdm==4.67.1",
+    "transformers==4.48.2",
+    "urllib3>=2.2.2,<3.0.0",
+    "uuid>=1.30,<2.0.0",
+    "websockets==14.1"
+]
 
-[tool.poetry.dependencies]
-python = "^3.10"
-aioredis = "^2.0.1"
-celery = "^5.4.0"
-click = "8.1.7"
-kombu = "^5.3.7"
-redis = "^5.0.6"
-flower = "^2.0.1"
-pika = "^1.3.2"
-pydantic = "^2.7.4"
-pydantic-core = "2.23.4"
-pydantic-settings = "2.7.1"
-requests = "^2.32.3"
-fastapi = "^0.111.0"
-httpx = "^0.27.0"
-tornado = "^6.4.1"
-websockets = "14.1"
-urllib3 = "^2.2.2"
-langchain = "^0.3.4"
-langchain-chroma = "0.1.4"
-langchain-core = "0.3.34"
-langchain-community = "0.3.16"
-langchain-elasticsearch = "0.3.2"
-langchain-openai = "0.3.3"
-langchain-text-splitters = "^0.3.3"
-langchain-gigachat = "0.3.3"
-openai = "^1.42.0"
-transformers = "4.48.2"
-deepeval= { version = "2.3.3", python = ">=3.10,<3.14" }
-chromadb = "^0.5.0"
-python-dotenv = "1.0.1"
-protollm-sdk = "1.1.6"
-pandas = "^2.2.3"
-pyyaml = "6.0.2"
-tqdm = "4.67.1"
-uuid = "^1.30"
-pypdf2 = "3.0.1"
-pdfplumber = "0.11.5"
-pytesseract = "0.3.13"
-ftfy = "6.3.1"
-pdf2image = "1.17.0"
-"pdfminer.six" = "20231228"
-tabulate = "0.9.0"
-pillow = "11.1.0"
-numpy = "1.26.4"
-python-docx = "1.1.2"
-chardet = "5.2.0"
-spacy = { version = "3.8.4", python = ">=3.10,<3.13"}
+[project.urls]
+Homepage = "https://github.com/aimclub/ProtoLLM"
+Issues = "https://github.com/aimclub/ProtoLLM/issues"
 
-# Optional for LLM deployment
-protollm-api = { version = "^1.0.5", optional = true}
-protollm-worker = { version = "^1.0.5", optional = true}
+[project.optional-dependencies]
+api-tools = [
+    "protollm-api>=1.0.5,<2.0.0",
+    "protollm-worker>=1.0.5,<2.0.0"
+]
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^8.2.2"
 pytest-asyncio = "^0.24.0"
-
-[tool.poetry.extras]
-api-tools = ["protollm-api", "protollm-worker"]
 
 [build-system]
 requires = ["poetry-core"]

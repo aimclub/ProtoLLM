@@ -44,25 +44,43 @@ Proto LLM features
    Support for native models (GigaChat, YandexGPT, vsegpt, etc.).
    Interaction with open-source models deployed locally.
 
+Project Structure
+=================
+
+The latest stable release of ProtoLLM is in the `main branch <https://github.com/ITMO-NSS-team/ProtoLLM/tree/main>`__.
+
+The repository includes the following directories:
+
+* Package `protollm <https://github.com/ITMO-NSS-team/ProtoLLM/tree/main/protollm>`__  contains the main modules. It is the *core* of the ProtoLLM framework;
+* Package `protollm_tools <https://github.com/ITMO-NSS-team/ProtoLLM/tree/main/protollm_tools>`__  contains side tools with specific dependensied;
+* Package `examples <https://github.com/ITMO-NSS-team/ProtoLLM/tree/main/examples>`__ includes several *how-to-use-cases* where you can start to discover how ProtoLLM works;
+* All *unit and integration tests* can be observed in the `test <https://github.com/ITMO-NSS-team/ProtoLLM/tree/main/test>`__ directory;
+* The sources of the documentation are in the `docs <https://github.com/ITMO-NSS-team/ProtoLLM/tree/main/docs>`__ directory.
 
 Installation
 ============
 
-- Package installer for Python **pip**
-
-The simplest way to install ProtoLLM is using ``pip``:
+- The simplest way to install ProtoLLM is using ``pip``:
 
 .. code-block::
 
   $ pip install protollm
 
-Or with extras:
+A standard installation of ProtoLLM includes the main package with dependencies and
+`protollm-sdk <https://github.com/ITMO-NSS-team/ProtoLLM/tree/main/protollm_tools/sdk>`__ from ``protollm_tools``
+
+- Installation with extras:
 
 .. code-block::
 
   $ pip install protollm[api-tools]
 
-Modules with tools can be installed separately:
+When installing with ``api-tools`` extras,
+`protollm-worker <https://github.com/ITMO-NSS-team/ProtoLLM/tree/main/protollm_tools/llm-worker>`__
+and protollm-api `protollm-api <https://github.com/ITMO-NSS-team/ProtoLLM/tree/main/protollm_tools/llm-api>`__
+are additionally installed
+
+- Modules with tools can be installed separately:
 
 .. code-block::
 
@@ -72,24 +90,10 @@ Modules with tools can be installed separately:
 
   $ pip install protollm-sdk
 
-
-Project Structure
-=================
-
-The latest stable release of ProtoLLM is in the `master branch <https://github.com/ITMO-NSS-team/ProtoLLM/tree/master>`__.
-
-The repository includes the following directories:
-
-* Package `protollm <https://github.com/ITMO-NSS-team/ProtoLLM/tree/master/protollm>`__  contains the main modules. It is the *core* of the ProtoLLM framework;
-* Package `protollm_tools <https://github.com/ITMO-NSS-team/ProtoLLM/tree/master/protollm_tools>`__  contains side tools with specific dependensied;
-* Package `examples <https://github.com/ITMO-NSS-team/ProtoLLM/tree/master/examples>`__ includes several *how-to-use-cases* where you can start to discover how ProtoLLM works;
-* All *unit and integration tests* can be observed in the `test <https://github.com/ITMO-NSS-team/ProtoLLM/tree/master/test>`__ directory;
-* The sources of the documentation are in the `docs <https://github.com/ITMO-NSS-team/ProtoLLM/tree/master/docs>`__ directory.
-
 Contribution Guide
 ==================
 
-- The contribution guide is available in this `repository <https://github.com/ITMO-NSS-team/ProtoLLM/blob/master/docs/source/contribution.rst>`__.
+- The contribution guide is available in this `repository <https://github.com/ITMO-NSS-team/ProtoLLM/blob/main/docs/source/contribution.rst>`__.
 
 Acknowledgments
 ===============
