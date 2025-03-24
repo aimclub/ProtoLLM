@@ -28,7 +28,7 @@ if __name__ == "__main__":
     response = """
     Generate molecule with IC50 less then 5.
     """
-    state = {"input": response, "response": response, "language": "English"}
+    state = {"input": response, "language": "English"}
 
     model = create_llm_connector(
         "https://api.vsegpt.ru/v1;meta-llama/llama-3.1-70b-instruct"
