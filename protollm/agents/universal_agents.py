@@ -31,20 +31,21 @@ from protollm.agents.agent_utils.parsers import (
 from protollm.agents.agent_utils.pydantic_models import Response
 
 
-def in_translator_node(state: dict, conf: dict) -> Union[Dict, Command]:
+def in_translator_node(state: dict, config: dict) -> Union[Dict, Command]:
     """
     Detects the input language and translates it into English if necessary.
 
     Args:
         state (dict): The current execution state containing an 'input' key.
-        conf (dict): Configuration dictionary containing:
+        config (dict): Configuration dictionary containing:
             - 'llm' (BaseChatModel): An instance of a language model used for translation.
             - 'max_retries' (int): The maximum number of attempts to retry translation in case of errors.
     Returns:
         dict: Updated state with 'language' and optionally 'translation' fields.
     """
-    llm = conf["llm"]
-    max_retries = conf["max_retries"]
+
+    llm = config["configurable"]["llm"]
+    max_retries = config["configurable"]["max_retries"]
 
     translator_agent = translate_prompt | llm | translator_parser
     query = state.get("input", "")
@@ -72,7 +73,7 @@ def in_translator_node(state: dict, conf: dict) -> Union[Dict, Command]:
     )
 
 
-def re_translator_node(state: dict, conf: dict) -> Union[Dict, Command]:
+def re_translator_node(state: dict, config: dict) -> Union[Dict, Command]:
     """
     Translates a system-generated response back into the user's language.
 
@@ -80,15 +81,15 @@ def re_translator_node(state: dict, conf: dict) -> Union[Dict, Command]:
         state (dict): Current execution state containing:
             - 'response' (str): The system-generated response in English.
             - 'language' (str): The user's original language code or name.
-        conf (dict): Configuration dictionary containing:
+        config (dict): Configuration dictionary containing:
             - 'llm' (BaseChatModel): An instance of a language model used for back-translation.
             - 'max_retries' (int): The maximum number of retry attempts in case of errors.
 
     Returns:
         Command: Command object to update state or end execution.
     """
-    llm = conf["llm"]
-    max_retries = conf["max_retries"]
+    llm = config["configurable"]["llm"]
+    max_retries = config["configurable"]["max_retries"]
     language = state["language"]
 
     if language == "English":
@@ -114,7 +115,7 @@ def re_translator_node(state: dict, conf: dict) -> Union[Dict, Command]:
     )
 
 
-def supervisor_node(state: Dict[str, Union[str, List[str]]], conf: dict) -> Command:
+def supervisor_node(state: Dict[str, Union[str, List[str]]], config: dict) -> Command:
     """
     Oversees the execution of a given plan by formulating the next task for an agent and handling
     responses via an LLM-based supervisor.
@@ -125,7 +126,7 @@ def supervisor_node(state: Dict[str, Union[str, List[str]]], conf: dict) -> Comm
         Dictionary representing the current execution state, expected to contain:
             - "plan" (List[str]): A list of steps the supervisor will help execute.
             - "input" (str, optional): Initial user input or request.
-    conf : dict
+    config : dict
         Configuration dictionary containing:
             - 'llm' (BaseChatModel): An instance of a language model used by the supervisor.
             - 'max_retries' (int): Maximum number of retry attempts in case of errors.
@@ -147,10 +148,10 @@ def supervisor_node(state: Dict[str, Union[str, List[str]]], conf: dict) -> Comm
     - If no plan or input is available, prompts the user to rephrase their request.
     - If all retries fail, returns a fallback message suggesting alternative assistance.
     """
-    llm = conf["llm"]
-    max_retries = conf["max_retries"]
-    scenario_agents = conf["scenario_agents"]
-    tools_for_agents = conf["tools_for_agents"]
+    llm = config["configurable"]["llm"]
+    max_retries = config["configurable"]["max_retries"]
+    scenario_agents = config["configurable"]["scenario_agents"]
+    tools_for_agents = config["configurable"]["tools_for_agents"]
 
     plan = state.get("plan")
 
@@ -193,7 +194,7 @@ def supervisor_node(state: Dict[str, Union[str, List[str]]], conf: dict) -> Comm
 
 
 def web_search_node(
-    state: Dict[str, Union[str, List[str]]], conf: dict
+    state: Dict[str, Union[str, List[str]]], config: dict
 ) -> Union[Dict, Command]:
     """
     Executes a web search task using a language model (LLM) and predefined web tools.
@@ -203,7 +204,7 @@ def web_search_node(
     state : dict
         Dictionary representing the current execution state, expected to contain:
             - "plan" (List[str]): A list of steps to be executed by the agent.
-    conf : dict
+    config : dict
         Configuration dictionary containing:
             - 'llm' (BaseChatModel): An instance of the language model used for reasoning and task execution.
             - 'max_retries' (int): The maximum number of retry attempts if the web search fails.
@@ -221,9 +222,9 @@ def web_search_node(
     - Retries are handled with exponential backoff on failure.
     - If all attempts fail, returns a fallback response.
     """
-    llm = conf["llm"]
-    max_retries = conf["max_retries"]
-    web_tools = conf["web_tools"]
+    llm = config["configurable"]["llm"]
+    max_retries = config["configurable"]["max_retries"]
+    web_tools = config["configurable"]["web_tools"]
 
     web_agent = create_react_agent(llm, web_tools or [], state_modifier=worker_prompt)
 
@@ -254,7 +255,7 @@ def web_search_node(
 
 
 def plan_node(
-    state: Dict[str, Union[str, List[str]]], conf: dict
+    state: Dict[str, Union[str, List[str]]], config: dict
 ) -> Union[Dict[str, List[str]], Command]:
     """
     Generates an execution plan using a language model (LLM) based on the provided input.
@@ -266,7 +267,7 @@ def plan_node(
             - "input" (str): The user's original input request.
             - "language" (str): Detected language of the input.
             - "translation" (str, optional): The translated input if the language is not English.
-    conf : dict
+    config : dict
         Configuration dictionary containing:
             - 'llm' (BaseChatModel): An instance of the language model used to generate the plan.
             - 'max_retries' (int): Maximum number of retry attempts in case of failures.
@@ -285,10 +286,9 @@ def plan_node(
     - Handles JSON parsing errors and attempts to recover partial outputs.
     - Applies exponential backoff between retries.
     """
-    llm = conf["llm"]
-    max_retries = conf["max_retries"]
-    tools_descp = conf["tools_descp"]
-    print(planner_parser)
+    llm = config["configurable"]["llm"]
+    max_retries = config["configurable"]["max_retries"]
+    tools_descp = config["configurable"]["tools_descp"]
 
     planner = build_planner_prompt(tools_descp) | llm | planner_parser
     query = state["input"] if state["language"] == "English" else state["translation"]
@@ -322,7 +322,7 @@ def plan_node(
 
 
 def replan_node(
-    state: Dict[str, Union[str, List[str]]], conf: dict
+    state: Dict[str, Union[str, List[str]]], config: dict
 ) -> Union[Dict[str, Union[List[str], str]], Command]:
     """
     Refines or adjusts an existing execution plan based on previous steps and current state.
@@ -336,7 +336,7 @@ def replan_node(
             - "translation" (str, optional): Translated input if not in English.
             - "plan" (list of str): The current plan consisting of step descriptions.
             - "past_steps" (list of tuples): Previously executed steps and their responses.
-    conf : dict
+    config : dict
         Configuration dictionary containing:
             - 'llm' (BaseChatModel): The language model used for replanning.
             - 'max_retries' (int): Number of retries if execution fails.
@@ -355,9 +355,9 @@ def replan_node(
     - Handles parsing errors and extracts structured JSON if needed.
     - Applies exponential backoff between retries.
     """
-    llm = conf["llm"]
-    max_retries = conf["max_retries"]
-    tools_descp = conf["tools_descp"]
+    llm = config["configurable"]["llm"]
+    max_retries = config["configurable"]["max_retries"]
+    tools_descp = config["configurable"]["tools_descp"]
     replanner = build_replanner_prompt(tools_descp) | llm | replanner_parser
 
     query = state["input"] if state["language"] == "English" else state["translation"]
@@ -399,36 +399,8 @@ def replan_node(
     )
 
 
-def should_end(state) -> str:
-    """
-    Determines the next step based on the presence of a response.
-
-    This function decides whether execution should proceed to summarization
-    or require further supervision.
-
-    Parameters
-    ----------
-    state : PlanExecute
-        The current execution state, potentially containing a generated response.
-
-    Returns
-    -------
-    str
-        `"summary"` if a response is available, otherwise `"supervisor"`.
-
-    Notes
-    -----
-    - If the `"response"` key is present and non-empty, summarization is triggered.
-    - If no response is available, the system proceeds to the supervisor node.
-    """
-    if "response" in state and state["response"]:
-        return "summary"
-    else:
-        return "supervisor"
-
-
 def summary_node(
-    state: Dict[str, Union[str, List[str]]], conf: dict
+    state: Dict[str, Union[str, List[str]]], config: dict
 ) -> Union[Dict[str, str], Command]:
     """
     Summarizes the system's response based on the provided input query and past steps.
@@ -437,7 +409,7 @@ def summary_node(
     ----------
     state : dict
         Contains keys 'response', 'input', 'past_steps', and optionally 'translation'.
-    conf : dict
+    config : dict
         Configuration dictionary containing:
             - 'llm' (BaseChatModel): An instance of the language model used for generating summaries.
             - 'max_retries' (int): The maximum number of attempts to retry the summary generation in case of errors.
@@ -453,8 +425,8 @@ def summary_node(
     -----
     - Uses summary_prompt and the language model to create summaries.
     """
-    llm = conf["llm"]
-    max_retries = conf["max_retries"]
+    llm = config["configurable"]["llm"]
+    max_retries = config["configurable"]["max_retries"]
 
     system_response = state["response"]
     query = (
@@ -488,4 +460,4 @@ def summary_node(
         update={
             "response": "I can't answer your question right now. Maybe I can assist with something else?"
         },
-    )
+    )  
