@@ -51,8 +51,6 @@ def build_replanner_prompt(tools_rendered: str) -> ChatPromptTemplate:
         such results in your plan. If you see step number more than 15, you should generate final response \
         The result of the final step should be the final answer. Make sure that each 
         step has all the information needed - do not skip steps. Do no more than 3-5 steps.
-        If you see automl related task in past_steps and it has answer, the job is
-        done, don't use automl anymore.
 
         Your objective was this:
         {input}
@@ -90,7 +88,7 @@ def build_supervisor_prompt(
         tools_descp_for_agents += agent + "has these tools: " + str(tools) + "\n\n"
     supervisor_system_prompt = (
         "You are a supervisor tasked with managing a conversation between the"
-        f" following workers: {scenario_agents_or_tools}. Given the following user request, "
+        f" following workers: {scenario_agents}. Given the following user request, "
         "respond with the worker to act next. "
         'Your output must be json format: {{"next": "worker"}}'
         "Don't write any intros." + tools_descp_for_agents
@@ -150,15 +148,6 @@ language: {language};
 """
 )
 
-memory_prompt = ChatPromptTemplate.from_template(
-    """If the response suffers from the lack of memory, adjust it. Don't add any of your comments
-
-Your objective is this:
-input: {input};
-response: {response};
-memory {summary};
-"""
-)
 
 summary_prompt = ChatPromptTemplate.from_template(
     """Your task is to formulate final answer based on system_response using 

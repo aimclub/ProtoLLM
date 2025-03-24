@@ -3,6 +3,7 @@ Example of launching the Supervisor agent
 """
 
 from langchain_community.tools.tavily_search import TavilySearchResults
+from protollm.agents.universal_agents import supervisor_node
 
 from protollm.connectors import create_llm_connector
 
@@ -12,7 +13,6 @@ if __name__ == "__main__":
     """
     state = {
         "input": response,
-        "response": response,
         "language": "English",
         "plan": [
             "Use web_search to find the molecule was discovered in 2008 by American scientists."
