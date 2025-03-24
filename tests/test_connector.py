@@ -3,6 +3,8 @@ from unittest.mock import patch
 from langchain_core.language_models.chat_models import BaseChatModel
 from langchain_core.messages import HumanMessage, AIMessage, SystemMessage
 from langchain_core.tools import tool
+from langchain_gigachat import GigaChat
+from langchain_openai import ChatOpenAI
 from pydantic import BaseModel, Field
 import pytest
 
@@ -307,16 +309,47 @@ def test_structured_output_dict_out_of_the_box(custom_chat_openai_with_fc_and_so
         assert result["age"] == 30
 
 
-@pytest.mark.parametrize(
-    "model_url",
-    [
-        "https://api.vsegpt.ru/v1;openai/gpt-4o-mini",
-        "https://gigachat.devices.sberbank.ru/api/v1/chat/completions;GigaChat",
-        "test_model",
-        "https://example.com/v1;test/example_model"
-    ]
-)
-def test_connector_creator(model_url):
-    with pytest.raises(Exception):
-        connector = create_llm_connector(model_url)
-        assert issubclass(connector, BaseChatModel)
+def test_vsegpt_connector(monkeypatch):
+    model_url = "https://api.vsegpt.ru/v1;meta-llama/llama-3.1-70b-instruct"
+    test_api_key = "test_vsegpt_key"
+    monkeypatch.setenv("VSE_GPT_KEY", test_api_key)
+    connector = create_llm_connector(model_url)
+    assert isinstance(connector, CustomChatOpenAI)
+
+
+@patch("protollm.connectors.connector_creator.get_access_token", return_value="test_gigachat_token")
+def test_gigachat_connector(mock_get_token):
+    model_url = "https://gigachat.devices.sberbank.ru/api/v1;Gigachat"
+    connector = create_llm_connector(model_url)
+    assert isinstance(connector, GigaChat)
+
+
+def test_openai_connector(monkeypatch):
+    model_url = "https://api.openai.com/v1;gpt-4o"
+    test_api_key = "test_openai_key"
+    monkeypatch.setenv("OPENAI_KEY", test_api_key)
+    connector = create_llm_connector(model_url)
+    assert isinstance(connector, ChatOpenAI)
+
+
+def test_test_model_connector():
+    model_url = "test_model"
+    connector = create_llm_connector(model_url)
+    assert isinstance(connector, CustomChatOpenAI)
+
+
+def test_unsupported_provider():
+    model_url = "https://unknown.provider/v1;some-model"
+    with pytest.raises(ValueError) as exc_info:
+        create_llm_connector(model_url)
+    assert "Unsupported provider URL" in str(exc_info.value)
+
+
+@pytest.mark.parametrize("invalid_url", [
+    "invalid_url_without_semicolon",
+    "https://api.vsegpt.ru/v1",
+    ";;",
+])
+def test_invalid_url_format(invalid_url):
+    with pytest.raises(ValueError):
+        create_llm_connector(invalid_url)

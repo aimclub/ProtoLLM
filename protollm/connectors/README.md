@@ -21,12 +21,14 @@ model name with a semicolon (;), for example: `https://api.vsegpt.ru/v1;openai/g
 It is also possible to pass additional parameters for the model.  Available parameters:
 - `temperature`
 - `top_p`
+- `max_tokens`
 
-Before use, make sure that your config file has the necessary API key (`VSEGPT_KEY` by default), or in the case of
-Gigachat models, an authorisation key (`AUTHORIZATION_KEY`), which can be obtained from your personal account.
+Before use, make sure that your config file has the necessary API key (`VSE_GPT_KEY` by default or `OPENAI_KEY`), or in
+the case of Gigachat models, an authorisation key (`AUTHORIZATION_KEY`), which can be obtained from your personal 
+account.
 
 Example of how to use the function:
-```commandline
+```codeblock
 from protollm.connectors.connector_creator import create_llm_connector
 
 model = create_llm_connector("https://api.vsegpt.ru/v1;openai/gpt-4o-mini", temperature=0.015, top_p=0.95)
@@ -34,8 +36,6 @@ res = model.invoke("Tell me a joke")
 print(res.content)
 ```
 The rest of the examples are located in the `examples/connector_creator_usage_examples.py` module of the repository.
-
-
 
 ## New connectors
 

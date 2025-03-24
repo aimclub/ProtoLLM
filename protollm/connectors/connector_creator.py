@@ -254,7 +254,7 @@ class CustomChatOpenAI(ChatOpenAI):
         return msgs
 
 
-def create_llm_connector(model_url: str, *args: Any, **kwargs: Any) -> CustomChatOpenAI | GigaChat:
+def create_llm_connector(model_url: str, *args: Any, **kwargs: Any) -> CustomChatOpenAI | GigaChat | ChatOpenAI:
     """Creates the proper connector for a given LLM service URL.
 
     Args:
@@ -263,6 +263,7 @@ def create_llm_connector(model_url: str, *args: Any, **kwargs: Any) -> CustomCha
             - for Gigachat models family: 'https://gigachat.devices.sberbank.ru/api/v1/chat/completions;Gigachat'
               for Gigachat model you should also install certificates from 'НУЦ Минцифры' -
               instructions - 'https://developers.sber.ru/docs/ru/gigachat/certificates'
+            - for OpenAI: 'https://api.openai.com/v1;gpt-4o'
 
     Returns:
         The ChatModel object from 'langchain' that can be used to make requests to the LLM service,
@@ -276,6 +277,9 @@ def create_llm_connector(model_url: str, *args: Any, **kwargs: Any) -> CustomCha
         model_name = model_url.split(";")[1]
         access_token = get_access_token()
         return GigaChat(model=model_name, access_token=access_token, *args, **kwargs)
+    elif "api.openai" in model_url:
+        model_name = model_url.split(";")[1]
+        return ChatOpenAI(model=model_name, api_key=os.getenv("OPENAI_KEY"), *args, **kwargs)
     elif model_url == "test_model":
         return CustomChatOpenAI(model_name=model_url, api_key="test")
     else:
