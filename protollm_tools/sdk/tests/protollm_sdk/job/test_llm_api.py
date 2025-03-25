@@ -52,6 +52,7 @@ def test_llmapi_inference_success(mock_post, llm_api):
     mock_post.assert_called_once_with(
         urljoin("http://localhost:8080", "/generate"),
         headers={"Content-type": "application/json"},
+        params={},
         data='{"prompt": "test prompt"}',
         timeout=10 * 60
     )
@@ -107,6 +108,7 @@ def test_llmapi_chat_completion_success(mock_post, llm_api):
     mock_post.assert_called_once_with(
         urljoin("http://localhost:8080", "/chat_completion"),
         headers={"Content-type": "application/json"},
+        params={},
         data='{"chat": "test chat"}',
         timeout=10 * 60
     )
