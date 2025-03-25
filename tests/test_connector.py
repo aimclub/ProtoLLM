@@ -1,9 +1,9 @@
 from unittest.mock import patch
 
-from langchain_core.language_models.chat_models import BaseChatModel
 from langchain_core.messages import HumanMessage, AIMessage, SystemMessage
 from langchain_core.tools import tool
 from langchain_gigachat import GigaChat
+from langchain_ollama import ChatOllama
 from langchain_openai import ChatOpenAI
 from pydantic import BaseModel, Field
 import pytest
@@ -330,6 +330,12 @@ def test_openai_connector(monkeypatch):
     monkeypatch.setenv("OPENAI_KEY", test_api_key)
     connector = create_llm_connector(model_url)
     assert isinstance(connector, ChatOpenAI)
+
+
+def test_ollama_connector():
+    model_url = "ollama;http://localhost:11434;llama3.2"
+    connector = create_llm_connector(model_url)
+    assert isinstance(connector, ChatOllama)
 
 
 def test_test_model_connector():

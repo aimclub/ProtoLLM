@@ -239,9 +239,11 @@ if __name__ == "__main__":
     
     # model_url_and_name = os.getenv("LLAMA_URL")
     # model_url_and_name = os.getenv("GIGACHAT_URL")
-    model_url_and_name = os.getenv("DEEPSEEK_URL")
+    # model_url_and_name = os.getenv("DEEPSEEK_URL")
     # model_url_and_name = os.getenv("DEEPSEEK_R1_URL")
     # model_url_and_name = os.getenv("GPT4_URL")
+    # model_url_and_name = os.getenv("OPENAI_URL")
+    model_url_and_name = os.getenv("OLLAMA_URL")
     
     # Uncomment the example you want to run
     basic_call_example(model_url_and_name)
