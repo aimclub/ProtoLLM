@@ -1,3 +1,4 @@
+import json
 import logging
 from urllib.parse import urljoin
 
@@ -33,18 +34,24 @@ class LLMAPI:
         self.timeout_sec = timeout_sec
         self.client = httpx.Client()
 
-    def inference(self, request: PromptModel) -> ResponseModel:
+    def inference(self, request: PromptModel, queue_name: str = None) -> ResponseModel:
         """
         Simple response to a request in the response-question format
 
         :param request: simple request
         :type request: PromptModel
+        :param queue_name: name of the queue to which the request will be sent
+        :type queue_name: str
         :return: ResponseModel
         """
+        params = {}
+        if queue_name is not None:
+            params["queue_name"] = queue_name
         try:
             response = self.client.post(
                 urljoin(self.path, "/generate"),
                 headers={"Content-type": "application/json"},
+                params=params,
                 data=request.model_dump_json(),
                 timeout=self.timeout_sec
             )
@@ -60,19 +67,25 @@ class LLMAPI:
             logger.info(msg)
             raise Exception(msg)
 
-    def chat_completion(self, request: ChatCompletionModel) -> ResponseModel:
+    def chat_completion(self, request: ChatCompletionModel, queue_name: str = None) -> ResponseModel:
         """
         Response to a request taking into account the chat history
         (the initial prompt, user requests and model responses will be sent)
 
         :param request: request for chat completion
         :type request: ChatCompletionModel
+        :param queue_name: name of the queue to which the request will be sent
+        :type queue_name: str
         :return: ResponseModel
         """
+        params = {}
+        if queue_name is not None:
+            params["queue_name"] = queue_name
         try:
             response = self.client.post(
                 urljoin(self.path, "/chat_completion"),
                 headers={"Content-type": "application/json"},
+                params=params,
                 data=request.model_dump_json(),
                 timeout=self.timeout_sec
             )
