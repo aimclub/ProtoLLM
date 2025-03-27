@@ -21,14 +21,18 @@ from protollm.agents.agent_prompts import (
     summary_prompt,
     translate_prompt,
     worker_prompt,
+    chat_prompt
 )
 from protollm.agents.agent_utils.parsers import (
     planner_parser,
     replanner_parser,
     supervisor_parser,
     translator_parser,
+    chat_parser
 )
 from protollm.agents.agent_utils.pydantic_models import Response
+from langgraph.types import Command
+from langgraph.graph import END
 
 
 def in_translator_node(state: dict, config: dict) -> Union[Dict, Command]:
@@ -461,3 +465,61 @@ def summary_node(
             "response": "I can't answer your question right now. Maybe I can assist with something else?"
         },
     )  
+    
+    
+def chat_node(state, config: dict):
+    """
+    Processes user input through a chat agent and returns an appropriate response 
+    or next action. This agent decides whether it can handle the user query itself. 
+    If yes, responds with the {"response": agent_answer}.
+    Otherwise, calls main agentic system.
+
+    Parameters
+    ----------
+    state : dict | TypedDict
+        The current execution state, containing "input" (the user message) and 
+        optionally "translation" if the language is not English.
+    config : dict
+        Configuration dictionary containing a "configurable" sub-dictionary with the LLM model 
+        under the key "model".
+
+    Returns
+    -------
+    dict
+        If the response is a direct reply, returns {"response": message, "visualization": None}.
+        If the response requires an action, returns {"next": action, "visualization": None}.
+        If retries are exhausted, transitions to the planner with an empty response.
+
+    Raises
+    ------
+    Exception
+        Handles errors related to API failures, implementing exponential backoff (`2 ** attempt`).
+
+    Notes
+    -----
+    - If the user's language is not English, it processes the translated text instead.
+    - Resets visualization state on new responses.
+    """
+    llm = config["configurable"]["llm"]
+    chat_agent = chat_prompt | llm | chat_parser    
+    input = state["input"] if state.get('language', 'English') == 'English' else state['translation']
+    max_retries = 1
+
+    for attempt in range(max_retries):
+        try:
+            output = chat_agent.invoke(input)
+
+            if isinstance(output.action, Response):
+                state["response"] = output.action.response
+            else:
+                state["next"] = output.action.next
+            state["visualization"] = None 
+            
+        except Exception as e:  # Handle OpenAI API errors
+            print(f"Chat failed with error: {str(e)}. Retrying... ({attempt+1}/{max_retries})")
+            time.sleep(1.2 ** attempt)  
+
+    return Command(
+        goto='planner',
+        update={"response": None}
+    )

@@ -6,6 +6,7 @@ from protollm.agents.agent_utils.parsers import (
     replanner_parser,
     supervisor_parser,
     translator_parser,
+    chat_parser
 )
 
 
@@ -165,3 +166,22 @@ System_response: {system_response};
 intermediate_thoughts: {intermediate_thoughts};
 """
 )
+
+chat_prompt = ChatPromptTemplate.from_template(
+"""For the given objective, check whether it is simple enough to answer yourself. \
+If you can answer without any help and tools and the question is simple inquery, then write your answer. If you can't do that, call next worker: planner
+If the question is related to running models or checking for presence, training, inference - call planer!
+You should't answer to a several-sentenced questions. You can only chat with user on a simle topics
+
+
+Your objective is this:
+{input}
+
+Your output should match this JSON format, don't add any intros
+{{
+  "action": {{
+    "next" | "response" : str | str
+  }}
+}}
+"""
+).partial(format_instructions=chat_parser.get_format_instructions())
