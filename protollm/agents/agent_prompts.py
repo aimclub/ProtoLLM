@@ -81,7 +81,7 @@ def build_replanner_prompt(tools_rendered: str) -> ChatPromptTemplate:
 
 def build_supervisor_prompt(
     scenario_agents: list = ["web_search", "chemist", "nanoparticles", "automl"],
-    tools_for_agents: dict = {"web_serach": [TavilySearchResults]},
+    tools_for_agents: dict = {"web_search": [TavilySearchResults]},
 ):
     tools_descp_for_agents = ""
     for agent, tools in tools_for_agents.items():
