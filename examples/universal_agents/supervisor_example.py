@@ -29,4 +29,4 @@ if __name__ == "__main__":
         "tools_for_agents": {"web_serach": [TavilySearchResults]},
     }
     res = supervisor_node(state, conf)
-    print("Next node wiil be: ", res.update["next"])
+    print("Next node will be: ", res.update["next"])
