@@ -46,5 +46,5 @@ if __name__ == "__main__":
     print("Planner answer: ")
     print(res["plan"])
 
-    print("\nReplanner answer with fake plane: ")
+    print("\nReplanner answer with fake plan: ")
     print(replan_res["plan"])
