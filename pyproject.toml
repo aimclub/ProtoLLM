@@ -56,7 +56,8 @@ dependencies = [
     "urllib3>=2.2.2,<3.0.0",
     "uuid>=1.30,<2.0.0",
     "websockets==14.1",
-    "langchain-ollama (==0.3.0)"
+    "langchain-ollama (==0.3.0)",
+    "langgraph (>=0.3.24,<0.4.0)"
 ]
 
 [project.urls]
