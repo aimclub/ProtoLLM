@@ -146,7 +146,6 @@ class GraphBuilder:
         try:
             print("\n\nFINALLY ANSWER: ", v["response"].content)
         except:
-            print("\n\FINALLY ANSWER: ", v["response"])
-            
+            print("\n\nFINALLY ANSWER: ", v["response"])
     
     
