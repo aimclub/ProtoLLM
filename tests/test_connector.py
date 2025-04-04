@@ -72,11 +72,12 @@ class ExampleModel(BaseModel):
     age: int = Field(description="Person age")
 
 
-def test_connector():
+def test_self_hosted_invoke():
     conn = ChatRESTServer()
-    conn.base_url = 'mock'
-    chat = conn.create_chat(messages=[HumanMessage('M1'), HumanMessage('M2'), HumanMessage('M3')])
-    assert chat is not None
+    mock_response = AIMessage(content="Hello, world!")
+    with patch.object(ChatRESTServer, '_super_invoke', return_value=mock_response):
+        result = conn.invoke("Hello")
+        assert result.content == "Hello, world!"
 
 
 # Basic invoke
@@ -336,6 +337,12 @@ def test_ollama_connector():
     model_url = "ollama;http://localhost:11434;llama3.2"
     connector = create_llm_connector(model_url)
     assert isinstance(connector, ChatOllama)
+    
+
+def test_self_hosted_connector():
+    model_url = "self_hosted;http://99.99.99.99:9999;example_model"
+    connector = create_llm_connector(model_url)
+    assert isinstance(connector, ChatRESTServer)
 
 
 def test_test_model_connector():
