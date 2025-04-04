@@ -5,6 +5,7 @@ import re
 
 from dotenv import load_dotenv
 from langchain_core.messages import AIMessage, SystemMessage, HumanMessage
+from langchain_core.output_parsers import JsonOutputParser, PydanticOutputParser
 from langchain_core.tools import BaseTool
 from langchain_core.runnables import Runnable
 from langchain_gigachat import GigaChat
@@ -12,6 +13,7 @@ from langchain_ollama import ChatOllama
 from langchain_openai import ChatOpenAI
 from pydantic import BaseModel, ValidationError
 
+from protollm.connectors.rest_server import ChatRESTServer
 from protollm.connectors.utils import (get_access_token,
                                        models_without_function_calling,
                                        models_without_structured_output)
@@ -189,7 +191,8 @@ class CustomChatOpenAI(ChatOpenAI):
         match [self._response_format][0]:
             case dict():
                 try:
-                    return json.loads(response_from_model.content)
+                    parser = JsonOutputParser()
+                    return parser.invoke(response_from_model)
                 except json.JSONDecodeError as e:
                     raise ValueError(
                         "Failed to return structured output. There may have been a problem with loading JSON from the"
@@ -198,7 +201,8 @@ class CustomChatOpenAI(ChatOpenAI):
             case _ if issubclass([self._response_format][0], BaseModel):
                 for schema in [self._response_format]:
                     try:
-                        return schema.model_validate_json(response_from_model.content)
+                        parser = PydanticOutputParser(pydantic_object=schema)
+                        return parser.invoke(response_from_model)
                     except ValidationError:
                         continue
                 raise ValueError(
@@ -285,6 +289,9 @@ def create_llm_connector(model_url: str, *args: Any, **kwargs: Any) -> CustomCha
     elif "ollama" in model_url:
         url_and_name = model_url.split(";")
         return ChatOllama(model=url_and_name[2], base_url=url_and_name[1], *args, **kwargs)
+    elif "self_hosted" in model_url:
+        url_and_name = model_url.split(";")
+        return ChatRESTServer(model=url_and_name[2], base_url=url_and_name[1], *args, **kwargs)
     elif model_url == "test_model":
         return CustomChatOpenAI(model_name=model_url, api_key="test")
     else:
