@@ -13,6 +13,23 @@ corresponding system prompt is applied. Lists of models that have problems are k
 It is also important to note that additional certifications are required to use Gigachat models. Instructions on how to
 install them can be found [here](https://developers.sber.ru/docs/ru/gigachat/certificates).
 
+## Supported providers/LLM hosting services:
+1. https://api.vsepgt.ru/v1
+   - VSE_GPT_KEY env variable
+   - example of an argument for a function: `https://api.vsegpt.ru/v1;openai/gpt-4o-mini`
+2. https://api.openai.com/v1
+   - OPENAI_KEY env variable
+   - example of an argument for a function: `https://api.openai.com/v1;gpt-4o-mini`
+3. https://gigachat.devices.sberbank.ru/api/v1
+   - AUTHORIZATION_KEY env variable, which can be obtained from your personal account
+   - example of an argument for a function: `https://gigachat.devices.sberbank.ru/api/v1/chat/completions;GigaChat-Pro`
+4. Ollama (no API key required)
+   - example of an argument for a function: `ollama;http://localhost:11434;llama3.2`
+5. Self-hosted LLM (under FastAPI, no API key required)
+   - example of an argument for a function: `self_hosted;http://99.99.99.99:9999;example_model`
+
+Before use, make sure that your config file has the necessary API key or set it in the environment yourself.
+
 ## Examples of usage
 
 To create a connector it is necessary to pass to the function the URL of the corresponding service combined with the
@@ -20,12 +37,8 @@ model name with a semicolon (;), for example: `https://api.vsegpt.ru/v1;openai/g
 
 It is also possible to pass additional parameters for the model.  Available parameters:
 - `temperature`
-- `top_p`
+- `top_p` (not available for self-hosted models)
 - `max_tokens`
-
-Before use, make sure that your config file has the necessary API key (`VSE_GPT_KEY` by default or `OPENAI_KEY`), or in
-the case of Gigachat models, an authorisation key (`AUTHORIZATION_KEY`), which can be obtained from your personal 
-account.
 
 Example of how to use the function:
 ```codeblock
@@ -35,11 +48,10 @@ model = create_llm_connector("https://api.vsegpt.ru/v1;openai/gpt-4o-mini", temp
 res = model.invoke("Tell me a joke")
 print(res.content)
 ```
-The rest of the examples are located in the `examples/connector_creator_usage_examples.py` module of the repository.
+The rest of the examples you can [here](https://github.com/ITMO-NSS-team/ProtoLLM/tree/main/examples/connector_creator_usage_examples.py)
 
 ## New connectors
 
-For now connectors are available for services supporting the OpenAI API format, as well as for Gigachat family models.
 If you want to add a new connector, you need to implement a class based on the BaseChatModel class with all the
 necessary methods. Instructions for implementation available 
 [here](https://python.langchain.com/docs/how_to/custom_chat_model/).
