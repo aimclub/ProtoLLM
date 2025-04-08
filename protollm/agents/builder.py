@@ -4,9 +4,7 @@ from langgraph.graph import END, START, StateGraph
 from protollm.agents.universal_agents import (in_translator_node, plan_node,
                                               re_translator_node, replan_node,
                                               summary_node, supervisor_node,
-                                              chat_node)
-from protollm.connectors import create_llm_connector
-
+                                              chat_node, web_search_node)
 
 class GraphBuilder:
     """Builds a graph based on the basic structure of universal agents. 
@@ -106,7 +104,11 @@ class GraphBuilder:
         workflow.add_node("supervisor", supervisor_node)
         workflow.add_node("replan_node", replan_node)
         workflow.add_node("summary", summary_node)
-
+        
+        if self.conf["configurable"]["web_search"]:
+            workflow.add_node("web_search", web_search_node)
+            workflow.add_edge("web_search", "replan_node")
+            
         for agent_name, node in self.conf["configurable"]["scenario_agent_funcs"].items():
             workflow.add_node(agent_name, node)
             workflow.add_edge(agent_name, "replan_node")

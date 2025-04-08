@@ -1,6 +1,7 @@
 """Example of building a multi-agent system with a scenario agent using GraphBuilder"""
 
 import os
+import time
 from typing import Annotated, Optional
 
 import pubchempy as pcp
@@ -173,10 +174,11 @@ def chemist_node(state, config: dict):
 
 
 if __name__ == "__main__":
-    os.environ["OPENAI_API_KEY"] = "YOUR_API_KEY"
+    os.environ["OPENAI_API_KEY"] = "API_KEY"
+    os.environ["TAVILY_API_KEY"] = "ADD_KEY_IF_YOU_WANT_USE_SEARCH"
 
     model = create_llm_connector(
-        "https://api.vsegpt.ru/v1;meta-llama/llama-3.1-70b-instruct"
+        "https://api.vsegpt.ru/v1;meta-llama/llama-3.1-70b-instruct", temperature = 0
     )
 
     chem_tools = [name2smiles, smiles2name, smiles2prop, generate_molecule]
@@ -193,7 +195,11 @@ if __name__ == "__main__":
             "tools_for_agents": {
                 "chemist_node": [chem_tools_rendered],
             },
+            # here can be langchain web tools (not TavilySearch)
+            # "web_tools": web_tools,
             "tools_descp": tools_rendered,
+            # if you want to use TavilySearch, you must pass key to os.environ["TAVILY_API_KEY"]
+            "web_search": True
         },
     }
     graph = GraphBuilder(conf)
@@ -201,7 +207,7 @@ if __name__ == "__main__":
     res_1 = graph.run(
         {"input": "What is the name of the molecule with the SMILES 'CCO'?"}, debug=True
     )
-    res_2 = graph.run({"input": "What can you do?"}, debug=True)
+    res_2 = graph.run({"input": "Найди в интернете - как лечат Рак Легкого в 2025 году, предоставь ссылки на источники"}, debug=True)
     res_3 = graph.run({"input": "Определи IUPAC для молекулы CCO"}, debug=True)
     res_4 = graph.run(
         {"input": "Сгенерируй какую-нибудь полезную молекулу для здоровья."}, debug=True

@@ -4,7 +4,6 @@ import time
 from typing import Dict, List, Union
 
 from langchain_core.exceptions import OutputParserException
-from langchain_core.language_models.chat_models import BaseChatModel
 from langgraph.graph import END
 from langgraph.prebuilt import create_react_agent
 from langgraph.types import Command
@@ -29,6 +28,7 @@ from protollm.agents.agent_utils.parsers import (
 from protollm.agents.agent_utils.pydantic_models import Response
 from langgraph.types import Command
 from langgraph.graph import END
+from protollm.tools.web_tools import web_tools, web_tools_rendered
 
 
 def in_translator_node(state: dict, config: dict) -> Union[Dict, Command]:
@@ -152,6 +152,7 @@ def supervisor_node(state: Dict[str, Union[str, List[str]]], config: dict) -> Co
     max_retries = config["configurable"]["max_retries"]
     scenario_agents = config["configurable"]["scenario_agents"]
     tools_for_agents = config["configurable"]["tools_for_agents"]
+    config["configurable"]["tools_for_agents"]["web_search"] = [web_tools_rendered]
 
     plan = state.get("plan")
 
@@ -224,7 +225,11 @@ def web_search_node(
     """
     llm = config["configurable"]["llm"]
     max_retries = config["configurable"]["max_retries"]
-    web_tools = config["configurable"]["web_tools"]
+    
+    if "web_tools" in config["configurable"].keys():
+        web_tools = config["configurable"]["web_tools"]
+    else:
+        from protollm.tools.web_tools import web_tools
 
     web_agent = create_react_agent(llm, web_tools or [], state_modifier=worker_prompt)
 
@@ -238,7 +243,7 @@ def web_search_node(
         try:
             agent_response = web_agent.invoke({"messages": [("user", task_formatted)]})
             state["past_steps"] = [(task, agent_response["messages"][-1].content)]
-            state["nodes_calls"] = [("web_search_node", agent_response["messages"])]
+            state["nodes_calls"] = [("web_search", agent_response["messages"])]
             return state
         except Exception as e:
             print(
