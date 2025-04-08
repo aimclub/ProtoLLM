@@ -145,7 +145,7 @@ class ChatRESTServer(BaseChatModel):
         
         messages = handle_system_prompt(messages, system_prompt)
         
-        response = self._super_invoke(messages, *args, **kwargs)
+        response = super().invoke(messages, *args, **kwargs)
         
         match response:
             case AIMessage() if ("<function=" in response.content):
@@ -157,9 +157,6 @@ class ChatRESTServer(BaseChatModel):
                 response = parse_custom_structure(self._response_format, response)
         
         return response
-    
-    def _super_invoke(self, messages, *args, **kwargs):
-        return super().invoke(messages, *args, **kwargs)
     
     def bind_tools(self, *args, **kwargs: Any) -> Runnable:
         self._tools = kwargs.get("tools", [])

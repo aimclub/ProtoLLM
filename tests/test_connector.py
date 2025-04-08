@@ -75,7 +75,7 @@ class ExampleModel(BaseModel):
 def test_self_hosted_invoke():
     conn = ChatRESTServer()
     mock_response = AIMessage(content="Hello, world!")
-    with patch.object(ChatRESTServer, '_super_invoke', return_value=mock_response):
+    with patch.object(ChatRESTServer, 'invoke', return_value=mock_response):
         result = conn.invoke("Hello")
         assert result.content == "Hello, world!"
 
