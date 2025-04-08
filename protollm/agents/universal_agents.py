@@ -241,7 +241,7 @@ def web_search_node(
 
     for attempt in range(max_retries):
         try:
-            agent_response = web_agent.invoke({"messages": [("user", task_formatted)]})
+            agent_response = web_agent.invoke({"messages": [("user", task_formatted + " You must search!")]})
             state["past_steps"] = [(task, agent_response["messages"][-1].content)]
             state["nodes_calls"] = [("web_search", agent_response["messages"])]
             return state
