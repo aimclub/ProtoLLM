@@ -48,7 +48,7 @@ model = create_llm_connector("https://api.vsegpt.ru/v1;openai/gpt-4o-mini", temp
 res = model.invoke("Tell me a joke")
 print(res.content)
 ```
-The rest of the examples you can [here](https://github.com/ITMO-NSS-team/ProtoLLM/tree/main/examples/connector_creator_usage_examples.py)
+You can find the rest of the examples [here](https://github.com/ITMO-NSS-team/ProtoLLM/tree/main/examples/connector_creator_usage_examples.py)
 
 ## New connectors
 
