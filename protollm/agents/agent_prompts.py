@@ -10,7 +10,7 @@ from protollm.agents.agent_utils.parsers import (
 )
 
 
-def build_planner_prompt(tools_rendered: str) -> ChatPromptTemplate:
+def build_planner_prompt(tools_rendered: str, last_memory: str) -> ChatPromptTemplate:
     return ChatPromptTemplate.from_messages(
         [
             (
@@ -22,7 +22,7 @@ def build_planner_prompt(tools_rendered: str) -> ChatPromptTemplate:
                 by other workers will yield 
                 the correct answer. Do not add any superfluous steps. 
                 The result of the final step should be the final answer. Make sure that each step has all 
-                the information needed - do not skip steps. Do no more than 1-5 steps.
+                the information needed - do not skip steps. Do no more than 1-5 steps (!!!).
                 You must directly insert important information into your plan. 
                 For example, if the task is: identify the SMILES representation of the molecule named 
                 <IUPAC> deuterio 3-[deuterio(1,1,3,3,4,4,4-heptadeuteriobutyl)amino]-5-
@@ -31,16 +31,17 @@ def build_planner_prompt(tools_rendered: str) -> ChatPromptTemplate:
                 amino]-5-(dideuteriosulfamoyl)-4-phenoxybenzoate to SMILES format using the name2smiles 
                 function with the given IUPAC name as input.
                 ONLY return JSON in this exact format: {{"steps": ["Step 1", "Step 2", "Step 3"]}}.
-                Don't add any introduction
-                """
-                + f"System has these tools {tools_rendered}",
+                Don't add any introduction.
+                
+                For better understanding you are provided with information about previous dialogue of the user and you:
+                """+ last_memory + f"\nSystem has these tools {tools_rendered}",
             ),
             ("placeholder", "{messages}"),
         ]
     ).partial(format_instructions=planner_parser.get_format_instructions())
 
 
-def build_replanner_prompt(tools_rendered: str) -> ChatPromptTemplate:
+def build_replanner_prompt(tools_rendered: str, last_memory: str) -> ChatPromptTemplate:
     return ChatPromptTemplate.from_template(
         """
         For the given objective, come up with a simple step by step plan how to answer 
@@ -55,7 +56,7 @@ def build_replanner_prompt(tools_rendered: str) -> ChatPromptTemplate:
         Your objective was this:
         {input}
 
-        Your original plan was this:
+        Your original plan was this (don't take too many steps! (no more than 5)):
         {plan}
 
         You have currently done the following steps:
@@ -66,8 +67,11 @@ def build_replanner_prompt(tools_rendered: str) -> ChatPromptTemplate:
         Make sure the answer is clear. Otherwise, fill out the plan. Only add steps 
         to the plan that still NEED to be done. Do not return previously 
         done steps as part of the plan.
+                        
+        For better understanding you are provided with information about previous dialogue of the user and you:
         """
-        + f" Here are tools that system has: {tools_rendered}"
+        + last_memory + 
+        f" Here are tools that system has: {tools_rendered}"
         + """
         Your output should match this JSON format, don't add any intros
         {{
@@ -82,6 +86,7 @@ def build_replanner_prompt(tools_rendered: str) -> ChatPromptTemplate:
 def build_supervisor_prompt(
     scenario_agents: list = ["web_search", "chemist", "nanoparticles", "automl"],
     tools_for_agents: dict = {"web_search": [TavilySearchResults]},
+    last_memory: str = ""
 ):
     tools_descp_for_agents = ""
     for agent, tools in tools_for_agents.items():
@@ -91,7 +96,9 @@ def build_supervisor_prompt(
         f" following workers: {scenario_agents}. Given the following user request, "
         "respond with the worker to act next. "
         'Your output must be json format: {{"next": "worker"}}'
-        "Don't write any intros." + tools_descp_for_agents
+        "Don't write any intros." + tools_descp_for_agents + """
+        For better understanding you are provided with information about previous dialogue of the user and you:
+        """ + last_memory
     )
     supervisor_prompt = ChatPromptTemplate.from_messages(
         [("system", supervisor_system_prompt), ("human", "{input}")]
@@ -100,7 +107,7 @@ def build_supervisor_prompt(
 
 
 worker_prompt = "You are a helpful assistant. You can use provided tools. \
-    If there is no appropriate tool, or you can't use one, answer yourself"
+    If there is no appropriate tool, or you can't use one, answer yourself" 
 
 translate_prompt = ChatPromptTemplate.from_template(
     """For the given input determine it's language. \
@@ -168,7 +175,11 @@ intermediate_thoughts: {intermediate_thoughts};
 )
 
 chat_prompt = ChatPromptTemplate.from_template(
-"""For the given objective, check whether it is simple enough to answer yourself. \
+"""
+Here is what the user and system previously discussed:
+{last_memory}
+
+Now, the given objective, check whether it is simple enough to answer yourself. \
 If you can answer without any help and tools and the question is simple inquery, then write your answer. If you can't do that, call next worker: planner
 If the question is related to running models or checking for presence, training, inference - call planer!
 You should't answer to a several-sentenced questions. You can only chat with user on a simle topics
@@ -177,7 +188,7 @@ You should't answer to a several-sentenced questions. You can only chat with use
 Your objective is this:
 {input}
 
-Your output should match this JSON format, don't add any intros
+Your output should match this JSON format, don't add any intros!!! It is important!
 {{
   "action": {{
     "next" | "response" : str | str
@@ -185,3 +196,4 @@ Your output should match this JSON format, don't add any intros
 }}
 """
 ).partial(format_instructions=chat_parser.get_format_instructions())
+

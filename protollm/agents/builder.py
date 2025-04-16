@@ -1,4 +1,4 @@
-from protollm.agents.agent_utils.states import PlanExecute
+from protollm.agents.agent_utils.states import PlanExecute, initialize_state
 from langgraph.graph import END, START, StateGraph
 
 from protollm.agents.universal_agents import (in_translator_node, plan_node,
@@ -92,7 +92,14 @@ class GraphBuilder:
 
     def _routing_function_supervisor(self, state):
         """Determines the next agent after Supervisor"""
+        if state.get("end", False):
+            return END
         return state["next"]
+    
+    def _routing_function_planner(self, state):
+        if state.get("response"):
+            return END
+        return "supervisor"
 
     def _build(self):
         """Build graph based on a non-dynamic agent skeleton"""
@@ -121,7 +128,11 @@ class GraphBuilder:
             self._should_end_chat,
             ["planner", "retranslator"],
         )
-        workflow.add_edge("planner", "supervisor")
+        workflow.add_conditional_edges(
+            "planner",
+            self._routing_function_planner,  
+            ["supervisor", END],
+        )
         workflow.add_conditional_edges(
             "replan_node",
             self._should_end,
@@ -134,8 +145,9 @@ class GraphBuilder:
 
         return workflow.compile()
 
-    def run(self, inputs: dict, debug: bool):
+    def run(self, inputs: dict, debug: bool, user_id: str):
         """Start streaming the input through the graph."""
+        inputs = initialize_state(user_input=inputs["input"], user_id=user_id)
         for event in self.app.stream(inputs, config=self.conf, debug=debug):
             for k, v in event.items():
                 if k != "__end__":

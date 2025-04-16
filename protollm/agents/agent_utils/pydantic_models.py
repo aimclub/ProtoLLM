@@ -39,6 +39,10 @@ class Chat(BaseModel):
         description="Action to perform. If you want to respond to user, use Response. "
         "If you need to further use tools to get the answer, use Next."
     )
+    
+    last_memory: Optional[str] = Field(
+        description="last memory of the user, if any", default=""
+    )
 
 
 class Translation(BaseModel):
