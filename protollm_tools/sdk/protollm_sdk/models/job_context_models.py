@@ -1,12 +1,31 @@
 from enum import Enum
-from typing import Literal, Union
+from typing import Literal, Union, Optional
 
 from pydantic import BaseModel, Field
+
+from protollm_sdk.models.utils import validate_image_base64, generate_job_id
 
 
 class PromptTypes(Enum):
     SINGLE_GENERATION: str = "single_generation"
     CHAT_COMPLETION: str = "chat_completion"
+
+
+class Role(Enum):
+    """
+    Roles for chat completion
+    USER - "user" for messages from the user
+    ASSISTANT - "assistant" for messages from the assistant (LLM)
+    SYSTEM - "system" for setting up the assistant's behavior`
+    """
+    USER: str = "user"
+    ASSISTANT: str = "assistant"
+    SYSTEM: str = "system"
+
+
+class ContentType(Enum):
+    TEXT: str = "text"
+    IMAGE: str = "image"
 
 
 class PromptMeta(BaseModel):
@@ -16,22 +35,39 @@ class PromptMeta(BaseModel):
     model: str | None = Field(default=None, examples=[None])
 
 
+class MessageContentUnit(BaseModel):
+    type: ContentType = Field(default=ContentType.TEXT, examples=[ContentType.TEXT, ContentType.IMAGE])
+    text: str | None = Field(default=None, examples=["Hello, world!"])
+    image: str | None = Field(default=None, description="f\"data:image/jpeg;base64,{base64_image}\"")
+
+    def model_post_init(self, __context):
+        if self.type == ContentType.TEXT:
+            assert self.text is not None, "Text content must be provided for type 'text'."
+        elif self.type == ContentType.IMAGE:
+            assert self.image is not None, "Image content must be provided for type 'image'."
+            parsing_message = validate_image_base64(self.image)
+            assert len(parsing_message) == 0, f"Image content is not valid base64: {parsing_message}"
+        else:
+            raise ValueError(f"Unsupported content type: {self.type}")
+
+
 class PromptModel(BaseModel):
-    job_id: str
+    job_id: Optional[str] = Field(default_factory=generate_job_id)
     priority: int | None = Field(default=None, examples=[None])
     meta: PromptMeta
-    content: str
+    content: str | list[MessageContentUnit]
 
 
 class ChatCompletionUnit(BaseModel):
     """A model for element of chat completion"""
-    role: str
-    content: str
+
+    role: Role = Field(default="user", examples=[Role.USER, Role.SYSTEM, Role.ASSISTANT])
+    content: str | list[MessageContentUnit]
 
 
 class ChatCompletionModel(BaseModel):
     """A model for chat completion order"""
-    job_id: str
+    job_id: Optional[str] = Field(default_factory=generate_job_id)
     priority: int | None = Field(default=None, examples=[None])
     source: str = "local"
     meta: PromptMeta
@@ -39,12 +75,10 @@ class ChatCompletionModel(BaseModel):
 
     @classmethod
     def from_prompt_model(cls, prompt_model: PromptModel) -> 'ChatCompletionModel':
-        # Создаем первое сообщение из содержимого PromptModel
         initial_message = ChatCompletionUnit(
-            role="user",  # Или другой подходящий role
+            role=Role.USER,
             content=prompt_model.content
         )
-        # Возвращаем новый экземпляр ChatCompletionModel
         return cls(
             job_id=prompt_model.job_id,
             priority=prompt_model.priority,

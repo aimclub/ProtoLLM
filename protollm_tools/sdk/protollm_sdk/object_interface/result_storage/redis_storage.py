@@ -1,5 +1,6 @@
 import logging
-from typing import Optional
+import time
+from typing import Optional, Iterable
 
 import redis
 
@@ -49,13 +50,13 @@ class RedisResultStorage(ResultStorage):
         try:
             # Initialize job result with PENDING status
             job_status = JobStatus(status=JobStatusType.PENDING, status_message="Job is created")
-            self.__save_job(job_id, job_status)
+            self.__save_job_status(job_id, job_status)
             self.logger.info(f"Job {job_id} created with pending status.")
         except Exception as ex:
             self.logger.error(f"Failed to create job {job_id}. Error: {ex}")
             raise ex
 
-    def __load_job(self, job_id: str) -> JobStatus:
+    def __load_job_status(self, job_id: str) -> JobStatus:
         """Load job result from Redis.
 
         Args:
@@ -69,7 +70,7 @@ class RedisResultStorage(ResultStorage):
             raise Exception(f"Job {job_id} not found in Redis.")
         return JobStatus.model_validate_json(data)
 
-    def __save_job(self, job_id: str, job: JobStatus) -> None:
+    def __save_job_status(self, job_id: str, job: JobStatus) -> None:
         """Save job result to Redis.
 
         Args:
@@ -85,7 +86,8 @@ class RedisResultStorage(ResultStorage):
             status: JobStatusType,
             status_message: Optional[str] = None,
             result: Optional[str] = None,
-            error: Optional[JobStatusError] = None
+            error: Optional[JobStatusError] = None,
+            is_completed: Optional[bool] = False
     ) -> None:
 
         """Update the job status.
@@ -97,13 +99,53 @@ class RedisResultStorage(ResultStorage):
             result (Optional[JobResultType]): The result of the job if completed successfully.
             error (Optional[JobStatusError]): The error if the job failed.
         """
-        job = self.__load_job(job_id)
+        job = self.__load_job_status(job_id)
         job.status = status
         job.status_message = status_message
         job.last_update = current_time()
         job.result = result
         job.error = error
-        self.__save_job(job_id, job)
+        job.is_completed = is_completed
+        self.__save_job_status(job_id, job)
+
+    def __start_subscription(self, job_id: str) -> redis.client.PubSub:
+        """Start a subscription to the job status updates.
+
+        Args:
+            job_id (str): Unique identifier for the job.
+
+        Returns:
+            redis.client.PubSub: The PubSub object for the subscription.
+        """
+        pubsub = self._redis.pubsub()
+        pubsub.subscribe(job_id)
+        return pubsub
+
+    def __stop_subscription(self, pubsub: redis.client.PubSub) -> None:
+        """Stop the subscription to the job status updates.
+
+        Args:
+            pubsub (redis.client.PubSub): The PubSub object for the subscription.
+        """
+        pubsub.unsubscribe()
+        pubsub.close()
+
+    def __wait_pubsub_message(
+            self,
+            job_id: str,
+            pubsub: redis.client.PubSub,
+            start_time: float,
+            timeout: float = 60
+    ) -> Optional[bytes]:
+        if time.monotonic() - start_time > timeout:
+            raise TimeoutError(
+                f"Timeout waiting for job {job_id} to complete ({timeout} s)."
+            )
+
+        message = pubsub.get_message(
+            ignore_subscribe_messages=True, timeout=1.0
+        )
+        return message
 
     def update_job_status(
             self,
@@ -142,7 +184,7 @@ class RedisResultStorage(ResultStorage):
         """
         try:
             status = JobStatusType.COMPLETED if error is None else JobStatusType.ERROR
-            self.__update_job_status(job_id, status, status_message, result, error)
+            self.__update_job_status(job_id, status, status_message, result, error, is_completed=True)
             self.logger.info(f"Job {job_id} completed with status {status.value}.")
         except Exception as ex:
             self.logger.error(f"Failed to complete job {job_id}. Error: {ex}")
@@ -158,7 +200,7 @@ class RedisResultStorage(ResultStorage):
             JobStatus: The job status object.
         """
         try:
-            job = self.__load_job(job_id)
+            job = self.__load_job_status(job_id)
             self.logger.info(f"Job {job_id} status retrieved: {job.status.value}.")
             return job
         except Exception as ex:
@@ -172,57 +214,76 @@ class RedisResultStorage(ResultStorage):
             job_id (str): Unique identifier for the job.
         """
         try:
+            job = self.__load_job_status(job_id)
+            job.is_completed = True
+            self.__save_job_status(job_id, job)
             self._redis.delete(job_id)
             self.logger.info(f"Job {job_id} deleted from Redis.")
         except Exception as ex:
             self.logger.error(f"Failed to delete job {job_id}. Error: {ex}")
             raise ex
 
-    async def wait_for_completion(
-            self,
-            job_id: str,
-            timeout: float = 30,
-            update_cycles: int = 5
-    ) -> JobStatus:
-        """Wait for the job to reach a terminal state (COMPLETED or ERROR).
-        Max waiting time is timeout * update_cycles seconds.
+    def subscribe(self, job_id: str, timeout: float = 60) -> Iterable[JobStatus]:
+        """Subscribe to job status updates. Break the loop when job is completed.
 
         Args:
-            job_id (str): Unique identifier for the job.
-            timeout (float): Timeout in seconds for waiting for job completion.
-            update_cycles (int): Number of cycles to check for job completion.
-        Returns:
-            JobStatus[T]: The final job result.
-        """
-        job = self.get_job_status(job_id)
-        if job.status in (JobStatusType.COMPLETED, JobStatusType.ERROR):
-            self.logger.info(f"Job {job_id} is already in terminal state: {job.status.value}.")
-            return job
+            job_id (JobStatus): The job status object.
+            timeout (float): Timeout in seconds. After that raise  TimeoutError.
 
-        current_iteration = 0
+        Returns:
+            Iterable[JobStatus]: An iterable of job status updates.
+        """
+        start = time.monotonic()
+
         try:
-            pubsub = self._redis.pubsub()
-            pubsub.subscribe(job_id)
-        except Exception as ex:
-            self.logger.error(f"Failed to subscribe to job {job_id}. Error: {ex}")
-            raise ex
+            current = self.__load_job_status(job_id)
+            if current.is_completed:
+                yield current
+                return
+        except Exception:
+            self.logger.error(f"Failed to load init job {job_id} status. Starting subscription.")
+
+        pubsub = self.__start_subscription(job_id)
 
         try:
             while True:
-                message = pubsub.get_message(ignore_subscribe_messages=False, timeout=timeout)
-                if message is not None and message['data'] == b'set':
-                    job: JobStatus = self.__load_job(job_id)
+                message = self.__wait_pubsub_message(job_id, pubsub, start, timeout)
+                if message is None:
+                    continue
 
-                    if job.status in (JobStatusType.COMPLETED, JobStatusType.ERROR):
-                        self.logger.info(f"Job {job_id} reached terminal state: {job.status.value}.")
-                        return job
-                if current_iteration >= update_cycles:
-                    raise TimeoutError()
-        except TimeoutError:
-            self.logger.info(f"Job {job_id} is still in progress after {timeout * update_cycles} seconds.")
-            raise TimeoutError(f"Job {job_id} did not complete within the timeout period.")
+                current = self.get_job_status(job_id)
+                yield current
+                if current.is_completed:
+                    return
+        finally:
+            self.__stop_subscription(pubsub)
+
+    def wait_completeness(self, job_id: str, timeout: float = 60) -> JobStatus:
+        start = time.monotonic()
+
+        try:
+            current = self.__load_job_status(job_id)
+            if current.is_completed:
+                return current
+        except Exception:
+            self.logger.error(f"Failed to load init job {job_id} status. Starting waiting result.")
+
+        pubsub = self.__start_subscription(job_id)
+
+        try:
+            while True:
+                message = self.__wait_pubsub_message(job_id, pubsub, start, timeout)
+                if message is None:
+                    continue
+
+                current = self.__load_job_status(job_id)
+                if current.is_completed:
+                    return current
+        except TimeoutError as ex:
+            self.logger.info(f"Timeout waiting for job {job_id} to complete ({timeout} s).")
+            raise ex
         except Exception as ex:
-            self.logger.error(f"Failed waiting for job {job_id} completion. Error: {ex}")
+            self.logger.error(f"Failed to wait for job {job_id} completion. Error: {ex}")
             raise ex
         finally:
-            pubsub.unsubscribe(job_id)
+            self.__stop_subscription(pubsub)

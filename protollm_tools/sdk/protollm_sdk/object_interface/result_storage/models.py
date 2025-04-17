@@ -1,5 +1,5 @@
 from enum import Enum
-from typing import TypeVar, Generic, Optional
+from typing import Optional
 
 from pydantic import BaseModel, Field
 
@@ -21,6 +21,21 @@ class JobStatusType(Enum):
     ERROR = "error"
 
 
+class JobStatusErrorType(Enum):
+    """
+    Enum for job error type
+    Possible error types:
+    ValidationError: Error in validation
+    ConnectionError: Error in connection
+    """
+    ValidationError = "ValidationError"
+    ConnectionError = "ConnectionError"
+    TimeoutError = "TimeoutError"
+    MemoryError = "MemoryError"
+    Exception = "Exception"
+
+
+
 class JobStatusError(BaseModel):
     """
     Class for error message in Redis job result
@@ -28,9 +43,8 @@ class JobStatusError(BaseModel):
         type: Type of error, e.g. "ValidationError", "ConnectionError"
         msg: Error message
     """
-    type: str
+    type: JobStatusErrorType
     msg: str
-
 
 
 class JobStatus(BaseModel):
@@ -50,5 +64,9 @@ class JobStatus(BaseModel):
     ], description="Job status")
     last_update: Optional[str] = Field(default_factory=current_time, description="Last update timestamp")
     status_message: Optional[str] = Field(default=None, description="Status message")
-    result: Optional[str] = Field(default=None, description="Result of the job, if completed successfully. Format: JSON string")
+    is_completed: bool = Field(default=False, description="Indicator of job completion")
+    result: Optional[str] = Field(
+        default=None,
+        description="Result of the job, if completed successfully. Format: JSON string"
+    )
     error: Optional[JobStatusError] = Field(default=None, description="Error message, if any")

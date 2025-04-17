@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import Optional
+from typing import Optional, Iterable
 
 from protollm_sdk.object_interface.result_storage.models import JobStatusType, JobStatusError, \
     JobStatus
@@ -50,7 +50,7 @@ class ResultStorage(ABC):
 
         Args:
             job_id (str): Unique identifier for the job.
-            result (Optional[T]): The result of the job if completed successfully.
+            result (Optional): The result of the job if completed successfully.
             error (Optional[JobStatusError]): The error if the job failed.
             status_message (Optional[str]): Optional status message.
         """
@@ -67,7 +67,7 @@ class ResultStorage(ABC):
             job_id (str): Unique identifier for the job.
 
         Returns:
-            JobStatus[T]: The current status of the job.
+            JobStatus: The current status of the job.
         """
         pass
 
@@ -84,7 +84,17 @@ class ResultStorage(ABC):
         pass
 
     @abstractmethod
-    async def wait_for_completion(
+    def subscribe(self, job_id: str, timeout: float = 60) -> Iterable[JobStatus]:
+        """Subscribe to job status updates. Break the loop when job is completed.
+
+        Args:
+            job_id (str): Unique identifier for the job.
+            timeout (float): Timeout in seconds. After that raise  TimeoutError.
+        """
+        pass
+
+    @abstractmethod
+    def wait_completeness(
             self,
             job_id: str,
             timeout: float = 60
@@ -96,6 +106,6 @@ class ResultStorage(ABC):
             timeout (float): Timeout in seconds.
 
         Returns:
-            JobStatus[T]: The final job result.
+            JobStatus: The final job result.
         """
         pass
