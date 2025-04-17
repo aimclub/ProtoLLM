@@ -37,6 +37,7 @@ from protollm.tools.web_tools import web_tools_rendered
 store = InMemoryStore(index={"embed": lambda x: [[1.0, 2.0] for _ in x], "dims": 2})
 
 
+
 def in_translator_node(state: dict, config: dict) -> Union[Dict, Command]:
     """
     Detects the input language and translates it into English if necessary.

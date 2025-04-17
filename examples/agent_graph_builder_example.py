@@ -175,6 +175,7 @@ if __name__ == "__main__":
     os.environ["OPENAI_API_KEY"] = "KEY"
     # os.environ["TAVILY_API_KEY"] = "ADD_TAVILY_KEY" # it not required, because DuckDuckGoSearch is default
 
+
     model = create_llm_connector(
         "https://api.vsegpt.ru/v1;meta-llama/llama-3.1-70b-instruct", temperature = 0
     )
