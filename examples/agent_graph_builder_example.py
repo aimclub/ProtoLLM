@@ -46,7 +46,6 @@ def name2smiles(
             smiles = compound[0].canonical_smiles
             return smiles
         except BaseException as e:
-            # logger.exception(f"'name2smiles' failed with error: {e}")
             return f"Failed to execute. Error: {repr(e)}"
     return "I've couldn't obtain smiles, the name is wrong"
 
@@ -152,7 +151,6 @@ def chemist_node(state, config: dict):
             agent_response = chem_agent.invoke({"messages": [("user", task_formatted)]})
 
             return Command(
-                goto="replan_node",
                 update={
                     "past_steps": [(task, agent_response["messages"][-1].content)],
                     "nodes_calls": [("chemist_node", agent_response["messages"])],
@@ -166,16 +164,17 @@ def chemist_node(state, config: dict):
             time.sleep(1.2**attempt)
 
     return Command(
-        goto=END,
         update={
-            "response": "I can't answer to your question right now( Perhaps there is something else that I can help? -><-"
+            "response": "I can't answer to your question right now( Perhaps there is something else that I can help?",
+            "end": True
         },
     )
 
 
 if __name__ == "__main__":
-    os.environ["OPENAI_API_KEY"] = "API_KEY"
-    os.environ["TAVILY_API_KEY"] = "ADD_TAVILY_KEY" # it not required, because DuckDuckGoSearch is default
+    os.environ["OPENAI_API_KEY"] = "KEY"
+    # os.environ["TAVILY_API_KEY"] = "ADD_TAVILY_KEY" # it not required, because DuckDuckGoSearch is default
+
 
     model = create_llm_connector(
         "https://api.vsegpt.ru/v1;meta-llama/llama-3.1-70b-instruct", temperature = 0
@@ -188,6 +187,7 @@ if __name__ == "__main__":
     conf = {
         "recursion_limit": 50,
         "configurable": {
+            "user_id": '1',
             "llm": model,
             "max_retries": 1,
             "scenario_agents": ["chemist_node"],
@@ -204,11 +204,19 @@ if __name__ == "__main__":
     }
     graph = GraphBuilder(conf)
 
-    # res_1 = graph.run(
-    #     {"input": "What is the name of the molecule with the SMILES 'CCO'?"}, debug=True
-    # )
-    res_2 = graph.run({"input": "Найди в интернете - как лечат Рак Легкого в 2025 году, предоставь ссылки на источники"}, debug=True)
-    # res_3 = graph.run({"input": "Определи IUPAC для молекулы CCO"}, debug=True)
-    # res_4 = graph.run(
-    #     {"input": "Сгенерируй какую-нибудь полезную молекулу для здоровья."}, debug=True
-    # )
+    graph.run(
+        {"input": "Что такое H2O?"}, debug=True, user_id="1"
+    )
+    graph.run(
+        {"input": "Что было ранее в переписке?"}, debug=True, user_id="1"
+    )
+    
+    graph.run({"input": "Найди в интернете - как лечат Рак Легкого"}, debug=True, user_id="1")
+    graph.run(
+        {"input": "Что было ранее в переписке?"}, debug=True, user_id="1"
+    )
+    
+    graph.run({"input": "Определи IUPAC для молекулы CCO"}, debug=True, user_id="1")
+    graph.run(
+        {"input": "Что было ранее в сообщениях?"}, debug=True, user_id="1"
+    )

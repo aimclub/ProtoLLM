@@ -7,6 +7,9 @@ from langchain_core.exceptions import OutputParserException
 from langgraph.graph import END
 from langgraph.prebuilt import create_react_agent
 from langgraph.types import Command
+from langgraph.store.memory import InMemoryStore
+from uuid import uuid4
+from datetime import datetime
 
 from protollm.agents.agent_prompts import (
     build_planner_prompt,
@@ -16,7 +19,7 @@ from protollm.agents.agent_prompts import (
     summary_prompt,
     translate_prompt,
     worker_prompt,
-    chat_prompt
+    chat_prompt,
 )
 from protollm.agents.agent_utils.parsers import (
     planner_parser,
@@ -28,7 +31,11 @@ from protollm.agents.agent_utils.parsers import (
 from protollm.agents.agent_utils.pydantic_models import Response
 from langgraph.types import Command
 from langgraph.graph import END
-from protollm.tools.web_tools import web_tools, web_tools_rendered
+from protollm.tools.web_tools import web_tools_rendered
+
+# TODO: make real embedder, not dummy
+store = InMemoryStore(index={"embed": lambda x: [[1.0, 2.0] for _ in x], "dims": 2})
+
 
 
 def in_translator_node(state: dict, config: dict) -> Union[Dict, Command]:
@@ -90,9 +97,30 @@ def re_translator_node(state: dict, config: dict) -> Union[Dict, Command]:
     """
     llm = config["configurable"]["llm"]
     max_retries = config["configurable"]["max_retries"]
+    user_id = config["configurable"].get("user_id", "anonymous")
     language = state["language"]
 
     if language == "English":
+        summary_text = f"User: {state['input']} \n Final system answer: {state.get('response', '')}"
+        # save in long-term memory
+        store.put(
+            namespace,
+            f"memory-{uuid4()}",
+            {
+                "summary": summary_text,
+                "timestamp": str(datetime.utcnow()),
+            },
+        )
+
+        # save in short-term memory
+        store.put(
+            namespace,
+            "latest-summary",
+            {
+                "summary": summary_text,
+                "timestamp": str(datetime.utcnow()),
+            },
+        )
         return state
 
     translator_agent = retranslate_prompt | llm
@@ -101,6 +129,28 @@ def re_translator_node(state: dict, config: dict) -> Union[Dict, Command]:
     for attempt in range(max_retries):
         try:
             translated = translator_agent.invoke({"input": query, "language": language})
+            summary_text = f"User: {state['input']} \n Final system answer: {state.get('response', '')}"
+            namespace = (user_id, "memory")
+
+            # save in long-term memory
+            store.put(
+                namespace,
+                f"memory-{uuid4()}",
+                {
+                    "summary": summary_text,
+                    "timestamp": str(datetime.utcnow()),
+                },
+            )
+
+            # save in short-term memory
+            store.put(
+                namespace,
+                "latest-summary",
+                {
+                    "summary": summary_text,
+                    "timestamp": str(datetime.utcnow()),
+                },
+            )
             state["response"] = translated
             return state
         except Exception as e:
@@ -157,12 +207,10 @@ def supervisor_node(state: Dict[str, Union[str, List[str]]], config: dict) -> Co
     plan = state.get("plan")
 
     if not plan and not state.get("input"):
-        return Command(
-            goto=END,
-            update={
-                "response": "I'm sorry, I couldn't understand your request. Could you please rephrase it?"
-            },
-        )
+        return {
+            "response": "I can't answer your question right now. Maybe I can assist with something else?",
+            "end": True
+        }
 
     plan_str = "\n".join(f"{i + 1}. {step}" for i, step in enumerate(plan))
     task = plan[0]
@@ -179,19 +227,17 @@ def supervisor_node(state: Dict[str, Union[str, List[str]]], config: dict) -> Co
         try:
             response = supervisor_chain.invoke({"input": [("user", task_formatted)]})
 
-            return Command(goto=response.next, update={"next": response.next})
+            return Command(update={"next": response.next})
         except Exception as e:
             print(
                 f"Supervisor error: {str(e)}. Retrying attempt ({attempt + 1}/{max_retries})"
             )
             time.sleep(2**attempt)  # Exponential backoff
 
-    return Command(
-        goto=END,
-        update={
-            "response": "I can't answer your question right now. Maybe I can assist with something else?"
-        },
-    )
+    return {
+            "response": "I can't answer your question right now. Maybe I can assist with something else?",
+            "end": True
+        }
 
 
 def web_search_node(
@@ -252,7 +298,6 @@ def web_search_node(
             time.sleep(2**attempt)  # Exponential backoff
 
     return Command(
-        goto=END,
         update={
             "response": "I can't answer your question right now. Maybe I can assist with something else?"
         },
@@ -294,8 +339,9 @@ def plan_node(
     llm = config["configurable"]["llm"]
     max_retries = config["configurable"]["max_retries"]
     tools_descp = config["configurable"]["tools_descp"]
+    last_memory = state.get("last_memory", "")
 
-    planner = build_planner_prompt(tools_descp) | llm | planner_parser
+    planner = build_planner_prompt(tools_descp, last_memory) | llm | planner_parser
     query = state["input"] if state["language"] == "English" else state["translation"]
 
     for attempt in range(max_retries):
@@ -319,10 +365,9 @@ def plan_node(
             time.sleep(2**attempt)
 
     return Command(
-        goto=END,
         update={
             "response": "I can't answer your question right now. Maybe I can assist with something else?"
-        },
+        }
     )
 
 
@@ -363,7 +408,9 @@ def replan_node(
     llm = config["configurable"]["llm"]
     max_retries = config["configurable"]["max_retries"]
     tools_descp = config["configurable"]["tools_descp"]
-    replanner = build_replanner_prompt(tools_descp) | llm | replanner_parser
+    last_memory = state.get("last_memory", "")
+    
+    replanner = build_replanner_prompt(tools_descp, last_memory) | llm | replanner_parser
 
     query = state["input"] if state["language"] == "English" else state["translation"]
 
@@ -452,6 +499,7 @@ def summary_node(
                     "intermediate_thoughts": past_steps,
                 }
             )
+            
             return {"response": output.content}
 
         except Exception as e:
@@ -508,10 +556,11 @@ def chat_node(state, config: dict):
 
     for attempt in range(max_retries):
         try:
-            output = chat_agent.invoke(input)
+            output = chat_agent.invoke({"input": input, "last_memory": state["last_memory"]})
 
             if isinstance(output.action, Response):
                 state["response"] = output.action.response
+                return state
             else:
                 state["next"] = output.action.next
             state["visualization"] = None 
@@ -520,7 +569,4 @@ def chat_node(state, config: dict):
             print(f"Chat failed with error: {str(e)}. Retrying... ({attempt+1}/{max_retries})")
             time.sleep(1.2 ** attempt)  
 
-    return Command(
-        goto='planner',
-        update={"response": None}
-    )
+    return {"response": None}
