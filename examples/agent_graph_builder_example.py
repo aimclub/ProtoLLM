@@ -46,7 +46,6 @@ def name2smiles(
             smiles = compound[0].canonical_smiles
             return smiles
         except BaseException as e:
-            # logger.exception(f"'name2smiles' failed with error: {e}")
             return f"Failed to execute. Error: {repr(e)}"
     return "I've couldn't obtain smiles, the name is wrong"
 
@@ -152,7 +151,6 @@ def chemist_node(state, config: dict):
             agent_response = chem_agent.invoke({"messages": [("user", task_formatted)]})
 
             return Command(
-                goto="replan_node",
                 update={
                     "past_steps": [(task, agent_response["messages"][-1].content)],
                     "nodes_calls": [("chemist_node", agent_response["messages"])],
@@ -166,9 +164,9 @@ def chemist_node(state, config: dict):
             time.sleep(1.2**attempt)
 
     return Command(
-        goto=END,
         update={
-            "response": "I can't answer to your question right now( Perhaps there is something else that I can help? -><-"
+            "response": "I can't answer to your question right now( Perhaps there is something else that I can help?",
+            "end": True
         },
     )
 
