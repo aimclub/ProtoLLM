@@ -9,6 +9,7 @@ logger = logging.getLogger(__name__)
 
 
 class RedisWrapper:
+    # TODO remove in 2.* version
     def __init__(self, redis_host: str, redis_port: str | int | None = None):
         self.url = f"redis://{redis_host}:{redis_port}" if redis_port else redis_host
 
