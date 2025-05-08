@@ -139,7 +139,7 @@ class RedisResultStorage(ResultStorage):
     ) -> Optional[bytes]:
         if time.monotonic() - start_time > timeout:
             raise TimeoutError(
-                f"Timeout waiting for job {job_id} to complete ({timeout} s)."
+                f"Timeout waiting for job {job_id} to complete ({timeout} s)."
             )
 
         message = pubsub.get_message(
@@ -280,7 +280,7 @@ class RedisResultStorage(ResultStorage):
                 if current.is_completed:
                     return current
         except TimeoutError as ex:
-            self.logger.info(f"Timeout waiting for job {job_id} to complete ({timeout} s).")
+            self.logger.info(f"Timeout waiting for job {job_id} to complete ({timeout} s).")
             raise ex
         except Exception as ex:
             self.logger.error(f"Failed to wait for job {job_id} completion. Error: {ex}")
