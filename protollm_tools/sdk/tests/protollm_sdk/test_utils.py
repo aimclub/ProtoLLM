@@ -2,7 +2,7 @@ import uuid
 
 from protollm_sdk.models.job_context_models import ResponseModel
 from protollm_sdk.object_interface import RedisWrapper
-from protollm_sdk.utils.reddis import get_reddis_wrapper, load_result
+from protollm_sdk.utils.redis import get_reddis_wrapper, load_result
 
 
 def test_get_reddis_wrapper():

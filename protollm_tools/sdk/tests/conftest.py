@@ -13,3 +13,19 @@ def redis_client():
     client.flushdb()              # clean start
     yield client
     client.flushdb()
+
+
+@pytest.fixture
+def redis_url():
+    """Redis URL for the tests."""
+    return "redis://localhost:6379/0"
+
+@pytest.fixture
+def rabbitmq_connection_params():
+    """RabbitMQ connection parameters."""
+    return {
+        "host": "localhost",
+        "port": 5672,
+        "login": "admin",
+        "password": "admin",
+    }

@@ -6,12 +6,15 @@ services:
     ports:
       - ${RABBIT_PORT}:5672
       - ${WEB_RABBIT_MQ}:15672
+    environment:
+      - RABBITMQ_DEFAULT_USER=${RABBIT_MQ_LOGIN}
+      - RABBITMQ_DEFAULT_PASS=${RABBIT_MQ_PASSWORD}
     env_file:
       - .env
     volumes:
       - "rabbitmq_data:/var/lib/rabbitmq"
     networks:
-      - llm_wrap_network
+      - protollm_sdk
 
   redis:
     image: "redis:alpine"
@@ -20,7 +23,7 @@ services:
     volumes:
       - redis_data:/var/lib/data
     networks:
-      - llm_wrap_network
+      - protollm_sdk
 
   celery_worker:
     build: .
@@ -28,7 +31,7 @@ services:
       - rabbitmq
       - redis
     networks:
-      - llm_wrap_network
+      - protollm_sdk
     env_file:
       - .env
     command: celery -A protollm_sdk.celery.app worker --loglevel=info
@@ -41,7 +44,7 @@ services:
       - rabbitmq
       - celery_worker
     networks:
-      - llm_wrap_network
+      - protollm_sdk
     env_file:
       - .env
     command: sh -c "sleep 20 && celery -A protollm_sdk.celery.app flower --broker=${CELERY_BROKER_URL} --port=7672"
@@ -55,21 +58,24 @@ services:
     ports:
       - ${VECTOR_PORT}:8000
     networks:
-      - llm_wrap_network
+      - protollm_sdk
 
   embedding_server:
-    image: ${EMBEDDING_IMAGE}
-    command: --model-id ${ST_MODEL} --revision ${ST_MODEL_REVISION}
+    image: ${EMBEDDING_IMAGE:-ghcr.io/huggingface/text-embeddings-inference:cpu-0.3.0}
+    command: --model-id ${EMBEDDING_NAME:-intfloat/multilingual-e5-large} --revision ${EMBEDDING_REVISION:-main}
     ports:
-      - ${EMBEDER_PORT}:80
+      - "${TEXT_EMB_PORT}:80"
     networks:
-      - llm_wrap_network
+      - protollm_sdk
+    volumes:
+      - hf_cache:/data
 
 volumes:
   rabbitmq_data:
   redis_data:
+  hf_cache:
 
 networks:
-  llm_wrap_network:
-    name: llm_wrap_network
+  protollm_sdk:
+    name: protollm_sdk
     driver: bridge

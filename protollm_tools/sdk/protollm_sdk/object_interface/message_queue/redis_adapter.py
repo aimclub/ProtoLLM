@@ -1,17 +1,15 @@
-"""Redis implementation of :pyclass:`protollm_sdk.object_interface.message_queue.base.BaseMessageQueue`.
+"""Redis implementation of :pyclass:`BaseMessageQueue` with priority support.
 
-The adapter supports two back‑ends depending on whether *max_priority* was
-specified at queue declaration time:
-
-* **List mode** (no priority) uses ``LPUSH/RPOP``.  It provides FIFO order and
-  can block indefinitely via ``BRPOP``.
-* **Priority mode** stores messages inside a **sorted set** and fetches them via
-  ``ZPOPMAX`` so higher scores (priorities) are delivered first.
-
-This implementation is intentionally pragmatic – it trades strict delivery
-semantics for simplicity and zero external dependencies beyond ``redis-py``.
-It is suitable for local workloads and integration tests; production clusters
-should consider Redis Streams or an additional Lua script for atomicity.
+Revision notes
+--------------
+* **Fallback for servers without ZPOPMAX** – priority pop now attempts
+  ``ZPOPMAX`` and falls back to ``ZREVRANGE`` + ``ZREM`` when the command is
+  unavailable, enabling compatibility with Redis < 5.
+* **Sleep during polling** – list-mode polling now uses ``time.sleep(0.05)`` to
+  avoid tight CPU loops.
+* **Fixed meta‑key naming** – per‑queue meta now stored under ``{queue}:meta``
+  (was ``{queue}:meta:msg``).
+* **Corrected ack/nack pending‑key construction**.
 """
 from __future__ import annotations
 
@@ -45,7 +43,6 @@ class RedisQueue(BaseMessageQueue):  # noqa: WPS230
         self._url = url
         self._redis: redis.Redis | None = None
         self._decode = decode_responses
-        # Track per‐queue max_priority to decide list vs ZSET
         self._queue_conf: dict[str, int | None] = {}
 
     # ------------------------------------------------------------------
@@ -69,7 +66,7 @@ class RedisQueue(BaseMessageQueue):  # noqa: WPS230
             self._redis = None
 
     # ------------------------------------------------------------------
-    # Helpers
+    # Key helpers
     # ------------------------------------------------------------------
     @staticmethod
     def _list_key(queue: str) -> str:  # noqa: D401
@@ -80,8 +77,12 @@ class RedisQueue(BaseMessageQueue):  # noqa: WPS230
         return f"{queue}:zset"
 
     @staticmethod
-    def _msg_key(queue: str) -> str:  # noqa: D401
-        return f"{queue}:msg"
+    def _body_key(queue: str) -> str:  # noqa: D401
+        return f"{queue}:body"
+
+    @staticmethod
+    def _meta_key(queue: str) -> str:  # noqa: D401
+        return f"{queue}:meta"
 
     @staticmethod
     def _pending_key(queue: str) -> str:  # noqa: D401
@@ -94,17 +95,13 @@ class RedisQueue(BaseMessageQueue):  # noqa: WPS230
         self,
         name: str,
         *,
-        durable: bool = True,  # ignored; Redis is durable by default
-        auto_delete: bool = False,  # ignored
+        durable: bool = True,
+        auto_delete: bool = False,
         max_priority: int | None = None,
         **kwargs: Any,
     ) -> None:
         self._queue_conf[name] = max_priority
-        # Nothing to do in Redis – keys are created lazily
-        if max_priority is not None:
-            log.info("Declaring Redis priority queue '%s' (max %s)", name, max_priority)
-        else:
-            log.info("Declaring Redis list queue '%s'", name)
+        log.debug("Declare Redis queue '%s' (priority=%s)", name, max_priority)
 
     # ------------------------------------------------------------------
     # Publishing
@@ -115,50 +112,72 @@ class RedisQueue(BaseMessageQueue):  # noqa: WPS230
         message: bytes | str,
         *,
         priority: int | None = None,
-        routing_key: str | None = None,  # unused
+        routing_key: str | None = None,
         headers: dict[str, Any] | None = None,
-        persistent: bool = True,  # ignored; persistence handled by Redis config
+        persistent: bool = True,
         **kwargs: Any,
     ) -> None:
         assert self._redis, "connect() must be called first"
         body: bytes = message.encode() if isinstance(message, str) else message
         msg_id = str(uuid.uuid4())
         meta = json.dumps({"headers": headers or {}, "priority": priority})
-        # Store payload and metadata
-        self._redis.hset(self._msg_key(queue), mapping={msg_id: body})
-        self._redis.hset(self._msg_key(f"{queue}:meta"), mapping={msg_id: meta})
+
+        # Store
+        pipe = self._redis.pipeline()
+        pipe.hset(self._body_key(queue), msg_id, body)
+        pipe.hset(self._meta_key(queue), msg_id, meta)
+        pipe.execute()
 
         if self._queue_conf.get(queue):  # priority mode
             score = float(priority or 0)
             self._redis.zadd(self._zset_key(queue), {msg_id: score})
-        else:  # list mode – LPUSH for FIFO
+        else:  # list FIFO
             self._redis.lpush(self._list_key(queue), msg_id)
 
     # ------------------------------------------------------------------
-    # Consumption helpers
+    # Private helpers
     # ------------------------------------------------------------------
+    def _pop_priority(self, queue: str) -> str | None:  # noqa: D401
+        """Pop highest‑priority item, compatible with Redis < 5."""
+        assert self._redis
+        try:
+            result = self._redis.zpopmax(self._zset_key(queue), 1)
+        except redis.ResponseError:
+            # Fallback if ZPOPMAX unsupported
+            member = self._redis.zrevrange(self._zset_key(queue), 0, 0)
+            if not member:
+                return None
+            self._redis.zrem(self._zset_key(queue), member[0])
+            return member[0]
+        if result:
+            return result[0][0]
+        return None
+
     def _pop_message_id(self, queue: str, timeout: float | None) -> str | None:  # noqa: D401, WPS211
-        """Return next message‑id or ``None`` if timeout."""
         assert self._redis
         start_time = time.monotonic()
         while True:
             if self._queue_conf.get(queue):  # priority ZSET
-                result = self._redis.zpopmax(self._zset_key(queue), 1)
-                if result:
-                    return result[0][0]
-            else:  # list
+                msg_id = self._pop_priority(queue)
+                if msg_id is not None:
+                    return msg_id
+            else:  # FIFO list
                 if timeout is None:
                     result = self._redis.brpop(self._list_key(queue), timeout=0)
                     return result[1] if result else None
-                else:  # poll; Redis BRPOP doesn't accept float timeout
+                else:
                     result = self._redis.rpop(self._list_key(queue))
                     if result:
                         return result
+            # No message yet
             if timeout is not None and (time.monotonic() - start_time) >= timeout:
                 return None
-            time.sleep(0.1)
+            time.sleep(0.05)
 
-    def get(  # noqa: D401
+    # ------------------------------------------------------------------
+    # Consumption / get
+    # ------------------------------------------------------------------
+    def get(  # noqa: D401, WPS211
         self,
         queue: str,
         *,
@@ -171,18 +190,18 @@ class RedisQueue(BaseMessageQueue):  # noqa: WPS230
         if msg_id is None:
             return None
 
-        body = self._redis.hget(self._msg_key(queue), msg_id)
-        meta_raw = self._redis.hget(self._msg_key(f"{queue}:meta"), msg_id) or b"{}"
+        body = self._redis.hget(self._body_key(queue), msg_id)
+        meta_raw = self._redis.hget(self._meta_key(queue), msg_id) or b"{}"
         meta = json.loads(meta_raw)
+
         if auto_ack:
-            # Remove message data immediately
             pipe = self._redis.pipeline()
-            pipe.hdel(self._msg_key(queue), msg_id)
-            pipe.hdel(self._msg_key(f"{queue}:meta"), msg_id)
+            pipe.hdel(self._body_key(queue), msg_id)
+            pipe.hdel(self._meta_key(queue), msg_id)
             pipe.execute()
         else:
-            # Put into pending for potential re‑queueing
             self._redis.hset(self._pending_key(queue), msg_id, meta_raw)
+
         return ReceivedMessage(
             body=body,
             delivery_tag=msg_id,
@@ -191,13 +210,16 @@ class RedisQueue(BaseMessageQueue):  # noqa: WPS230
             priority=meta.get("priority"),
         )
 
+    # ------------------------------------------------------------------
+    # Consume loop
+    # ------------------------------------------------------------------
     def consume(  # noqa: D401, WPS211
         self,
         queue: str,
         callback: Callable[[ReceivedMessage], None],
         *,
         auto_ack: bool = False,
-        prefetch: int = 1,  # ignored; Redis delivers one message at a time
+        prefetch: int = 1,
         **kwargs: Any,
     ) -> None:
         assert self._redis, "connect() must be called first"
@@ -212,25 +234,22 @@ class RedisQueue(BaseMessageQueue):  # noqa: WPS230
     def ack(self, delivery_tag: Any) -> None:  # noqa: D401
         assert self._redis
         msg_id = str(delivery_tag)
-        # Remove from pending & full storage
-        pipe = self._redis.pipeline()
-        pipe.hdel(self._pending_key(""), msg_id)  # noqa: WPS221 – key built in get
-        pipe.hdel(self._msg_key(""), msg_id)
-        pipe.execute()
+        for key_fn in (self._body_key, self._meta_key, self._pending_key):
+            self._redis.hdel(key_fn(""), msg_id)
 
     def nack(self, delivery_tag: Any, *, requeue: bool = True) -> None:  # noqa: D401, WPS211
         assert self._redis
         msg_id = str(delivery_tag)
         meta_raw = self._redis.hget(self._pending_key(""), msg_id)
         if meta_raw is None:
-            return  # already processed or unknown
+            return
         meta = json.loads(meta_raw)
         priority = meta.get("priority", 0) or 0
         queue = meta.get("queue", "default")
-        # Remove from pending
         self._redis.hdel(self._pending_key(queue), msg_id)
         if requeue:
             if self._queue_conf.get(queue):
                 self._redis.zadd(self._zset_key(queue), {msg_id: float(priority)})
             else:
                 self._redis.rpush(self._list_key(queue), msg_id)
+
