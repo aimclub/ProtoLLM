@@ -2,7 +2,6 @@ import json
 import logging
 from contextlib import contextmanager
 import pika
-from sqlalchemy import Boolean
 
 logger = logging.getLogger(__name__)
 

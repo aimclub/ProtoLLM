@@ -27,6 +27,12 @@ class Config:
 
     celery_queue_name = os.environ.get("CELERY_QUEUE_NAME", "celery")
 
+    queue_backend = os.environ.get("QUEUE_BACKEND", "redis") # redis or rabbitmq
+
+    def __post_init__(self):
+        if self.queue_backend not in ["redis", "rabbitmq"]:
+            raise ValueError("QUEUE_BACKEND must be either 'redis' or 'rabbitmq'")
+
     @classmethod
     def reload_invocation_type(cls):
         cls.job_invocation_type = os.environ.get("JOB_INVOCATION_TYPE", "worker")
