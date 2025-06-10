@@ -1,0 +1,2 @@
+class BaseBLLService(ABC):
+    pass
