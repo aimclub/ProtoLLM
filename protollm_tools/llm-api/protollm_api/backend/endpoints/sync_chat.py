@@ -1,27 +1,18 @@
-import logging
 from fastapi import APIRouter
-from protollm_api.backend.broker import send_task, get_result
+from protollm_sdk.models.job_context_models import ResponseModel, ChatCompletionTransactionModel, PromptModel, \
+    ChatCompletionModel, PromptTypes
+from protollm_sdk.object_interface import RedisWrapper, RabbitMQWrapper
+
+from protollm_api.backend.broker import send_task, logger, get_result
 from protollm_api.config import Config
-from protollm_sdk.models.job_context_models import (
-    PromptModel, ResponseModel, ChatCompletionModel,
-    PromptTransactionModel, ChatCompletionTransactionModel,
-    PromptTypes
-)
-from protollm_sdk.object_interface.redis_wrapper import RedisWrapper
-from protollm_sdk.object_interface.rabbit_mq_wrapper import RabbitMQWrapper
 
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
 
-def get_router(config: Config) -> APIRouter:
+def get_sync_chat_router(config: Config, redis_db: RedisWrapper, rabbitmq: RabbitMQWrapper) -> APIRouter:
     router = APIRouter(
         prefix="",
         tags=["root"],
         responses={404: {"description": "Not found"}},
     )
-
-    redis_db = RedisWrapper(config.redis_host, config.redis_port)
-    rabbitmq = RabbitMQWrapper(config.rabbit_host, config.rabbit_port, config.rabbit_login, config.rabbit_password)
 
     @router.post('/generate', response_model=ResponseModel)
     async def generate(prompt_data: PromptModel, queue_name: str = config.queue_name):
