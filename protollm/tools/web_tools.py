@@ -12,4 +12,4 @@ if os.getenv('TAVILY_API_KEY') is not None:
 else:
     web_tools = [DuckDuckGoSearchResults()]
     
-web_tools_rendered = render_text_description(web_tools)
+web_tools_rendered = render_text_description(web_tools).replace('duckduckgo_results_json', 'DuckDuckGoSearchResults')
