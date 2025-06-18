@@ -20,21 +20,23 @@ def build_planner_prompt(tools_rendered: str, last_memory: str) -> ChatPromptTem
                 the question. You can't answer yourself. Don't write any answers, only parts of the plan \
                 This plan should involve individual tasks, that if executed correctly 
                 by other workers will yield 
-                the correct answer. Do not add any superfluous steps. 
+                the correct answer. Do not add any superfluous steps. Don't make things up!!! Don't plan to process a dataset unless the user asks for it.
                 The result of the final step should be the final answer. Make sure that each step has all 
-                the information needed - do not skip steps. Do no more than 1-5 steps (!!!).
+                the information needed - do not skip steps. Do no more than 1-3 steps (!!!).
                 You must directly insert important information into your plan. 
-                For example, if the task is: identify the SMILES representation of the molecule named 
-                <IUPAC> deuterio 3-[deuterio(1,1,3,3,4,4,4-heptadeuteriobutyl)amino]-5-
-                (dideuteriosulfamoyl)-4-phenoxybenzoate </IUPAC>
-                Your plan is: Convert the IUPAC name of the deuterio 3-[deuterio(1,1,3,3,4,4,4-heptadeuteriobutyl)
-                amino]-5-(dideuteriosulfamoyl)-4-phenoxybenzoate to SMILES format using the name2smiles 
-                function with the given IUPAC name as input.
+                For example, if the task is: Prepare a dataset for training from a file so that the properties where docking score < -1 remain. 
+                Run training of the generative model, name the case "docking".
+                Your plan is: ["Prepare a dataset for training from a file so that the properties where docking score < -1 remain.", 
+                Run training of the generative model, name the case "docking"]
+                For example: Launch prediction using ml-model for IC50 value for molecule Fc1cc(F)c2ccc(Oc3cncc4nnc(-c5ccc(OC(F)F)cc5)n34)cc2c1. 
+                Your plan is: Launch inferenct using automl agent to predict IC50 value for Fc1cc(F)c2ccc(Oc3cncc4nnc(-c5ccc(OC(F)F)cc5)n34)cc2c1. 
+                For example: Run training of the generative model on the data '/Users/alina/Desktop/ITMO/ChemCoScientist/data_dir_for_coder/chembl_ic50_data.xlsx', name the case Docking.
+                Your plan is: Run training by automl agent on the data '/Users/alina/Desktop/ITMO/ChemCoScientist/data_dir_for_coder/chembl_ic50_data.xlsx', name the case Docking.
                 ONLY return JSON in this exact format: {{"steps": ["Step 1", "Step 2", "Step 3"]}}.
                 Don't add any introduction.
                 
                 For better understanding you are provided with information about previous dialogue of the user and you:
-                """+ last_memory + f"\nSystem has these tools {tools_rendered}",
+                """+ last_memory + f"\nSystem has these tools and agents {tools_rendered}",
             ),
             ("placeholder", "{messages}"),
         ]
@@ -49,9 +51,9 @@ def build_replanner_prompt(tools_rendered: str, last_memory: str) -> ChatPromptT
         This plan should involve individual tasks, that if executed correctly by other workers 
         will yield the correct answer. Do not add any superfluous steps. \
         You can't refer to results of previous steps. Instead you must directly insert
-        such results in your plan. If you see step number more than 15, you should generate final response \
+        such results in your plan. If you see step number more than 10, you should generate final response \
         The result of the final step should be the final answer. Make sure that each 
-        step has all the information needed - do not skip steps. Do no more than 3-5 steps.
+        step has all the information needed - do not skip steps. Do no more than 3 steps.
 
         Your objective was this:
         {input}
