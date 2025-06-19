@@ -22,7 +22,7 @@ def build_planner_prompt(tools_rendered: str, last_memory: str, n_steps: int = 3
                 by other workers will yield 
                 the correct answer. Do not add any superfluous steps. Don't make things up!!! Don't plan to process a dataset unless the user asks for it.
                 The result of the final step should be the final answer. Make sure that each step has all 
-                the information needed - do not skip steps. Do no more than """ + n_steps + """.
+                the information needed - do not skip steps. Do no more than """ + str(n_steps) + """.
                 You must directly insert important information into your plan. 
                 For example, if the task is: Prepare a dataset for training from a file so that the properties where docking score < -1 remain. 
                 Run training of the generative model, name the case "docking".
@@ -51,13 +51,13 @@ def build_replanner_prompt(tools_rendered: str, last_memory: str, n_steps: int =
         This plan should involve individual tasks, that if executed correctly by other workers 
         will yield the correct answer. Do not add any superfluous steps. \
         You can't refer to results of previous steps. Instead you must directly insert
-        such results in your plan. If you see step number more than """ + n_steps + """, you should generate final response \
+        such results in your plan. If you see step number more than """ + str(n_steps) + """, you should generate final response \
         The result of the final step should be the final answer. 
 
         Your objective was this:
         {input}
 
-        Your original plan was this (don't take too many steps! (no more than """ + n_steps + """)):
+        Your original plan was this (don't take too many steps! (no more than """ + str(n_steps) + """)):
         {plan}
 
         You have currently done the following steps:
