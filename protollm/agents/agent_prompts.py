@@ -10,7 +10,7 @@ from protollm.agents.agent_utils.parsers import (
 )
 
 
-def build_planner_prompt(tools_rendered: str, last_memory: str) -> ChatPromptTemplate:
+def build_planner_prompt(tools_rendered: str, last_memory: str, n_steps: int = 3) -> ChatPromptTemplate:
     return ChatPromptTemplate.from_messages(
         [
             (
@@ -22,7 +22,7 @@ def build_planner_prompt(tools_rendered: str, last_memory: str) -> ChatPromptTem
                 by other workers will yield 
                 the correct answer. Do not add any superfluous steps. Don't make things up!!! Don't plan to process a dataset unless the user asks for it.
                 The result of the final step should be the final answer. Make sure that each step has all 
-                the information needed - do not skip steps. Do no more than 1-3 steps (!!!).
+                the information needed - do not skip steps. Do no more than """ + n_steps + """.
                 You must directly insert important information into your plan. 
                 For example, if the task is: Prepare a dataset for training from a file so that the properties where docking score < -1 remain. 
                 Run training of the generative model, name the case "docking".
@@ -43,22 +43,21 @@ def build_planner_prompt(tools_rendered: str, last_memory: str) -> ChatPromptTem
     ).partial(format_instructions=planner_parser.get_format_instructions())
 
 
-def build_replanner_prompt(tools_rendered: str, last_memory: str) -> ChatPromptTemplate:
+def build_replanner_prompt(tools_rendered: str, last_memory: str, n_steps: int = 3) -> ChatPromptTemplate:
     return ChatPromptTemplate.from_template(
         """
-        For the given objective, come up with a simple step by step plan how to answer 
+        or the given objective, come up with a simple step by step plan how to answer 
         the question. You can't answer yourself \
         This plan should involve individual tasks, that if executed correctly by other workers 
         will yield the correct answer. Do not add any superfluous steps. \
         You can't refer to results of previous steps. Instead you must directly insert
-        such results in your plan. If you see step number more than 10, you should generate final response \
-        The result of the final step should be the final answer. Make sure that each 
-        step has all the information needed - do not skip steps. Do no more than 3 steps.
+        such results in your plan. If you see step number more than """ + n_steps + """, you should generate final response \
+        The result of the final step should be the final answer. 
 
         Your objective was this:
         {input}
 
-        Your original plan was this (don't take too many steps! (no more than 5)):
+        Your original plan was this (don't take too many steps! (no more than """ + n_steps + """)):
         {plan}
 
         You have currently done the following steps:
@@ -66,9 +65,12 @@ def build_replanner_prompt(tools_rendered: str, last_memory: str) -> ChatPromptT
 
         Update your plan accordingly. If no more steps are needed and you can return to 
         the user, then respond with final response, which answers the objective.
-        Make sure the answer is clear. Otherwise, fill out the plan. Only add steps 
+        Only add steps 
         to the plan that still NEED to be done. Do not return previously 
         done steps as part of the plan.
+        If the answer to the user's question is already contained in the response, return the answer to the user. 
+        Don't over-plan.
+
                         
         For better understanding you are provided with information about previous dialogue of the user and you:
         """
@@ -98,7 +100,8 @@ def build_supervisor_prompt(
         f" following workers: {scenario_agents}. Given the following user request, "
         "respond with the worker to act next. "
         'Your output must be json format: {{"next": "worker"}}'
-        "Don't write any intros." + tools_descp_for_agents + """
+        "Don't write any intros." + tools_descp_for_agents + 
+        """
         For better understanding you are provided with information about previous dialogue of the user and you:
         """ + last_memory
     )
