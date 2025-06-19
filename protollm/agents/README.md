@@ -1,3 +1,7 @@
+# GraphBuilder
+
+A tool for building an agent system based on a universal agents core.
+
 ## 🧪 Example of config for GraphBuilder
 
 ```python
@@ -17,21 +21,16 @@ conf = {
 
         # list with string-names of scenario agents
         "scenario_agents": [
-            "chemist_node",
-            "nanoparticle_node",
-            "ml_dl_agent",
-            "dataset_builder_agent",
-            "coder_agent",
+            "agent_1",
+            "agent_2",
+            ...
         ],
 
         # nodes for scenario agents
         # must be implemented by analogy as universal and agents
         "scenario_agent_funcs": {
-            "chemist_node": chemist_node,
-            "nanoparticle_node": nanoparticle_node,
-            "ml_dl_agent": ml_dl_agent,
-            "dataset_builder_agent": dataset_builder_agent,
-            "coder_agent": coder_agent,
+            "agent_1": agent1_node,
+            ...
         },
 
         # descripton for agents tools - if using langchain @tool
@@ -39,11 +38,8 @@ conf = {
         "tools_for_agents": {
             # here can be description of langchain web tools (not TavilySearch)
             # "web_serach": [web_tools_rendered],
-            "chemist_node": [chem_tools_rendered],
-            "nanoparticle_node": [nano_tools_rendered],
-            "dataset_builder_agent": [dataset_builder_agent_description],
-            "coder_agent": [coder_agent_description],
-            "ml_dl_agent": [automl_agent_description],
+            "agent_1": [description_for_agent_tools],
+            ...
         },
 
         # full descripton for agents tools
@@ -63,35 +59,14 @@ conf = {
                 "ds_dir": "./data_dir_for_coder",
             },
 
-            "coder_agent": {
-                "model_name": "deepseek/deepseek-chat-0324-alt-structured",
-                "url": "https://api.vsegpt.ru/v1",
-                "api_key": "OPENAI_API_KEY",
-                #  Change on your dir if another!
-                "ds_dir": "./data_dir_for_coder",
-            },
-
-            "ml_dl_agent": {
-                "model_name": "deepseek/deepseek-chat-0324-alt-structured",
-                "url": "https://api.vsegpt.ru/v1",
-                "api_key": "OPENAI_API_KEY"q,
-                #  Change on your dir if another!
-                "ds_dir": "./data_dir_for_coder",
-            },
+            ...
         },
 
         # These prompts will be added as hints in ProtoLLM
         # must be compiled for each system independently
         "prompts": {
-            "planner": "Before you start training models, plan to check your data for garbage using a dataset_builder_agent",
-            "chat": """You are a chemical agent system. You can do the following:
-                    - train generative models (generate SMILES molecules), train predictive models (predict properties)
-                    - prepare a dataset for training
-                    - download data from chemical databases: ChemBL, BindingDB
-                    - perform calculations with chemical python libraries
-                    - solve problems of nanomaterial synthesis
-                    - analyze chemical articles
-                    """
+            "planner": "...",
+            "chat": """Here description about you system"""
         },
     },
 }
