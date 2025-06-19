@@ -342,9 +342,10 @@ def plan_node(
     max_retries = config["configurable"]["max_retries"]
     tools_descp = config["configurable"]["tools_descp"]
     agents_descp = config["configurable"]["agents_descp"]
+    adds_prompt = config["configurable"]["prompts"]["planner"]
     last_memory = state.get("last_memory", "")
 
-    planner = build_planner_prompt(tools_descp + agents_descp, last_memory) | llm | planner_parser
+    planner = build_planner_prompt(tools_descp + agents_descp, last_memory, additional_hints_for_scenario_agents=adds_prompt) | llm | planner_parser
     query = state["input"] if state["language"] == "English" else state["translation"]
 
     for attempt in range(max_retries):

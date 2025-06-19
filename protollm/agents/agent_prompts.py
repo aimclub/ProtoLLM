@@ -10,7 +10,7 @@ from protollm.agents.agent_utils.parsers import (
 )
 
 
-def build_planner_prompt(tools_rendered: str, last_memory: str, n_steps: int = 3) -> ChatPromptTemplate:
+def build_planner_prompt(tools_rendered: str, last_memory: str, n_steps: int = 3, additional_hints_for_scenario_agents: str = '') -> ChatPromptTemplate:
     return ChatPromptTemplate.from_messages(
         [
             (
@@ -24,6 +24,7 @@ def build_planner_prompt(tools_rendered: str, last_memory: str, n_steps: int = 3
                 The result of the final step should be the final answer. Make sure that each step has all 
                 the information needed - do not skip steps. Do no more than """ + str(n_steps) + """.
                 You must directly insert important information into your plan. 
+                
                 For example, if the task is: Prepare a dataset for training from a file so that the properties where docking score < -1 remain. 
                 Run training of the generative model, name the case "docking".
                 Your plan is: ["Prepare a dataset for training from a file so that the properties where docking score < -1 remain.", 
@@ -32,10 +33,13 @@ def build_planner_prompt(tools_rendered: str, last_memory: str, n_steps: int = 3
                 Your plan is: Launch inferenct using automl agent to predict IC50 value for Fc1cc(F)c2ccc(Oc3cncc4nnc(-c5ccc(OC(F)F)cc5)n34)cc2c1. 
                 For example: Run training of the generative model on the data '/Users/alina/Desktop/ITMO/ChemCoScientist/data_dir_for_coder/chembl_ic50_data.xlsx', name the case Docking.
                 Your plan is: Run training by automl agent on the data '/Users/alina/Desktop/ITMO/ChemCoScientist/data_dir_for_coder/chembl_ic50_data.xlsx', name the case Docking.
+                
                 ONLY return JSON in this exact format: {{"steps": ["Step 1", "Step 2", "Step 3"]}}.
                 Don't add any introduction. Don't add model training to your plan unless you're specifically asked to do so.
                 
-                
+                Additional hints:
+                """ + additional_hints_for_scenario_agents +
+                """
                 For better understanding you are provided with information about previous dialogue of the user and you:
                 """+ last_memory + f"\nSystem has these tools and agents {tools_rendered}",
             ),
