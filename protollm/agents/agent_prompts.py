@@ -33,7 +33,8 @@ def build_planner_prompt(tools_rendered: str, last_memory: str, n_steps: int = 3
                 For example: Run training of the generative model on the data '/Users/alina/Desktop/ITMO/ChemCoScientist/data_dir_for_coder/chembl_ic50_data.xlsx', name the case Docking.
                 Your plan is: Run training by automl agent on the data '/Users/alina/Desktop/ITMO/ChemCoScientist/data_dir_for_coder/chembl_ic50_data.xlsx', name the case Docking.
                 ONLY return JSON in this exact format: {{"steps": ["Step 1", "Step 2", "Step 3"]}}.
-                Don't add any introduction.
+                Don't add any introduction. Don't add model training to your plan unless you're specifically asked to do so.
+                
                 
                 For better understanding you are provided with information about previous dialogue of the user and you:
                 """+ last_memory + f"\nSystem has these tools and agents {tools_rendered}",
@@ -70,6 +71,7 @@ def build_replanner_prompt(tools_rendered: str, last_memory: str, n_steps: int =
         done steps as part of the plan.
         If the answer to the user's question is already contained in the response, return the answer to the user. 
         Don't over-plan.
+        Don't add model training to your plan unless you're specifically asked to do so.
 
                         
         For better understanding you are provided with information about previous dialogue of the user and you:
