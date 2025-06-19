@@ -52,14 +52,14 @@ class GraphBuilder:
         Returns
         -------
         str
-            Returns "retranslator" if a response exists, otherwise "planner".
+            Returns "summary" if a response exists, otherwise "planner".
 
         Notes
         -----
         - This function helps decide whether further processing is needed.
         """
         if "response" in state and state["response"]:
-            return "retranslator"
+            return "summary"
         else:
             return "planner"
 
@@ -104,8 +104,6 @@ class GraphBuilder:
     def _build(self):
         """Build graph based on a non-dynamic agent skeleton"""
         workflow = StateGraph(PlanExecute)
-        workflow.add_node("intranslator", in_translator_node)
-        workflow.add_node("retranslator", re_translator_node)
         workflow.add_node("chat", chat_node)
         workflow.add_node("planner", plan_node)
         workflow.add_node("supervisor", supervisor_node)
@@ -120,13 +118,12 @@ class GraphBuilder:
             workflow.add_node(agent_name, node)
             workflow.add_edge(agent_name, "replan_node")
 
-        workflow.add_edge(START, "intranslator")
-        workflow.add_edge("intranslator", "chat")
+        workflow.add_edge(START, "chat")
 
         workflow.add_conditional_edges(
             "chat",
             self._should_end_chat,
-            ["planner", "retranslator"],
+            ["planner", "summary"],
         )
         workflow.add_conditional_edges(
             "planner",
@@ -138,10 +135,9 @@ class GraphBuilder:
             self._should_end,
             ["supervisor", "summary"],
         )
-        workflow.add_edge("summary", "retranslator")
+        workflow.add_edge("summary", END)
 
         workflow.add_conditional_edges("supervisor", self._routing_function_supervisor)
-        workflow.add_edge("retranslator", END)
 
         return workflow.compile()
 

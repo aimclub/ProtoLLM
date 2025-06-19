@@ -318,7 +318,6 @@ def plan_node(
         The current execution state, expected to contain:
             - "input" (str): The user's original input request.
             - "language" (str): Detected language of the input.
-            - "translation" (str, optional): The translated input if the language is not English.
     config : dict
         Configuration dictionary containing:
             - 'llm' (BaseChatModel): An instance of the language model used to generate the plan.
@@ -341,12 +340,11 @@ def plan_node(
     llm = config["configurable"]["llm"]
     max_retries = config["configurable"]["max_retries"]
     tools_descp = config["configurable"]["tools_descp"]
-    agents_descp = config["configurable"]["agents_descp"]
     adds_prompt = config["configurable"]["prompts"]["planner"]
     last_memory = state.get("last_memory", "")
 
-    planner = build_planner_prompt(tools_descp + agents_descp, last_memory, additional_hints_for_scenario_agents=adds_prompt) | llm | planner_parser
-    query = state["input"] if state["language"] == "English" else state["translation"]
+    planner = build_planner_prompt(tools_descp, last_memory, additional_hints_for_scenario_agents=adds_prompt) | llm | planner_parser
+    query = state["input"]
 
     for attempt in range(max_retries):
         try:
@@ -387,7 +385,6 @@ def replan_node(
         The current execution state, expected to contain:
             - "input" (str): The user's request or query.
             - "language" (str): Detected language of the input.
-            - "translation" (str, optional): Translated input if not in English.
             - "plan" (list of str): The current plan consisting of step descriptions.
             - "past_steps" (list of tuples): Previously executed steps and their responses.
     config : dict
@@ -412,12 +409,11 @@ def replan_node(
     llm = config["configurable"]["llm"]
     max_retries = config["configurable"]["max_retries"]
     tools_descp = config["configurable"]["tools_descp"]
-    agents_descp = config["configurable"]["agents_descp"]
     last_memory = state.get("last_memory", "")
     
-    replanner = build_replanner_prompt(tools_descp + agents_descp, last_memory) | llm | replanner_parser
+    replanner = build_replanner_prompt(tools_descp, last_memory) | llm | replanner_parser
 
-    query = state["input"] if state["language"] == "English" else state["translation"]
+    query = state["input"]
 
     for attempt in range(max_retries):
         try:
@@ -465,7 +461,7 @@ def summary_node(
     Parameters
     ----------
     state : dict
-        Contains keys 'response', 'input', 'past_steps', and optionally 'translation'.
+        Contains keys 'response', 'input', 'past_steps'
     config : dict
         Configuration dictionary containing:
             - 'llm' (BaseChatModel): An instance of the language model used for generating summaries.
@@ -486,11 +482,7 @@ def summary_node(
     max_retries = config["configurable"]["max_retries"]
 
     system_response = state["response"]
-    query = (
-        state["input"]
-        if state.get("language", "English") == "English"
-        else state["translation"]
-    )
+    query = state["input"]
     past_steps = state["past_steps"]
 
     summary_agent = summary_prompt | llm
@@ -532,7 +524,6 @@ def chat_node(state, config: dict):
     ----------
     state : dict | TypedDict
         The current execution state, containing "input" (the user message) and 
-        optionally "translation" if the language is not English.
     config : dict
         Configuration dictionary containing a "configurable" sub-dictionary with the LLM model 
         under the key "model".
@@ -551,17 +542,16 @@ def chat_node(state, config: dict):
 
     Notes
     -----
-    - If the user's language is not English, it processes the translated text instead.
     - Resets visualization state on new responses.
     """
     llm = config["configurable"]["llm"]
     chat_agent = chat_prompt | llm | chat_parser    
-    input = state["input"] if state.get('language', 'English') == 'English' else state['translation']
+    input = state["input"]
     max_retries = 1
 
     for attempt in range(max_retries):
         try:
-            output = chat_agent.invoke({"input": input, "last_memory": state["last_memory"]})
+            output = chat_agent.invoke({"input": input, "last_memory": state["last_memory"], "additional_hints_for_scenario_agents": config["configurable"]["prompts"]["chat"]})
 
             if isinstance(output.action, Response):
                 state["response"] = output.action.response
