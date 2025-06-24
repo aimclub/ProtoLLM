@@ -16,6 +16,7 @@ class PlanExecute(TypedDict):
     automl_results: str
     nodes_calls: Annotated[List[Tuple], operator.add]
     last_memory: str
+    metadata: dict
 
     
 def load_summary(user_id: str) -> str:
@@ -38,4 +39,5 @@ def initialize_state(user_input: str, user_id: str) -> PlanExecute:
         "automl_results": "",
         "nodes_calls": [],
         "last_memory": memory,
+        "metadata": {}
     }
