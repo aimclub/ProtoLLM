@@ -119,6 +119,16 @@ def create_llm_connector(model_url: str, *args: Any, **kwargs: Any) -> CustomCha
         base_url, model_name = model_url.split(";")
         api_key = os.getenv("VSE_GPT_KEY")
         return CustomChatOpenAI(model_name=model_name, base_url=base_url, api_key=api_key, *args, **kwargs)
+    elif "groq.com" in model_url:
+        base_url, model_name = model_url.split(";")
+        api_key = os.getenv("OPENAI_API_KEY")  
+        return ChatOpenAI(
+            model_name=model_name,
+            base_url=base_url,
+            api_key=api_key,
+            *args,
+            **kwargs
+        )
     elif "gigachat" in model_url:
         model_name = model_url.split(";")[1]
         access_token = get_access_token()
