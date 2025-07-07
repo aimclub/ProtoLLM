@@ -140,16 +140,12 @@ class GraphBuilder:
 
         return workflow.compile()
 
-    def run(self, inputs: dict, debug: bool, user_id: str):
+    def stream(self, inputs: dict, user_id: str = '1'):
         """Start streaming the input through the graph."""
         inputs = initialize_state(user_input=inputs["input"], user_id=user_id)
-        for event in self.app.stream(inputs, config=self.conf, debug=debug):
+        for event in self.app.stream(inputs, config=self.conf):
             for k, v in event.items():
-                if k != "__end__":
-                    print("===AGENT===")
-                    print(k)
-                    print("===========")
-                    print(v)
+                yield (v)
         try:
             print("\n\nFINALLY ANSWER: ", v["response"].content)
         except:
