@@ -349,12 +349,13 @@ def summary_node(
     """
     llm = config["configurable"]["llm"]
     max_retries = config["configurable"]["max_retries"]
+    adds_prompt = config["configurable"]["prompts"]["summary"]
 
     system_response = state["response"]
     query = state["input"]
     past_steps = state["past_steps"]
 
-    summary_agent = summary_prompt | llm
+    summary_agent = summary_prompt + '\n' + adds_prompt | llm
 
     for attempt in range(max_retries):
         try:
