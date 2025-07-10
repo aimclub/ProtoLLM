@@ -313,7 +313,15 @@ def test_structured_output_dict_out_of_the_box(custom_chat_openai_with_fc_and_so
 def test_vsegpt_connector(monkeypatch):
     model_url = "https://api.vsegpt.ru/v1;meta-llama/llama-3.1-70b-instruct"
     test_api_key = "test_vsegpt_key"
-    monkeypatch.setenv("VSE_GPT_KEY", test_api_key)
+    monkeypatch.setenv("LLM_SERVICE_KEY", test_api_key)
+    connector = create_llm_connector(model_url)
+    assert isinstance(connector, CustomChatOpenAI)
+
+
+def test_openrouter_connector(monkeypatch):
+    model_url = "https://api.openrouter.ai/v1;meta-llama/llama-3.1-70b-instruct"
+    test_api_key = "test_openrouter_key"
+    monkeypatch.setenv("LLM_SERVICE_KEY", test_api_key)
     connector = create_llm_connector(model_url)
     assert isinstance(connector, CustomChatOpenAI)
 

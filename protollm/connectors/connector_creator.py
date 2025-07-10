@@ -18,7 +18,7 @@ from protollm.connectors.utils import (get_access_token,
                                        parse_function_calls,
                                        parse_custom_structure,
                                        handle_system_prompt)
-from protollm.definitions import CONFIG_PATH
+from protollm.definitions import CONFIG_PATH, LLM_SERVICES
 
 
 load_dotenv(CONFIG_PATH)
@@ -115,9 +115,9 @@ def create_llm_connector(model_url: str, *args: Any, **kwargs: Any) -> CustomCha
         The ChatModel object from 'langchain' that can be used to make requests to the LLM service,
         use tools, get structured output.
     """
-    if "vsegpt" in model_url:
+    if any(service in model_url for service in LLM_SERVICES):
         base_url, model_name = model_url.split(";")
-        api_key = os.getenv("VSE_GPT_KEY")
+        api_key = os.getenv("LLM_SERVICE_KEY")
         return CustomChatOpenAI(model_name=model_name, base_url=base_url, api_key=api_key, *args, **kwargs)
     elif "gigachat" in model_url:
         model_name = model_url.split(";")[1]
