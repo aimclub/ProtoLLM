@@ -57,6 +57,8 @@ The repository includes the following directories:
 * All *unit and integration tests* can be observed in the `test <https://github.com/ITMO-NSS-team/ProtoLLM/tree/main/test>`__ directory;
 * The sources of the documentation are in the `docs <https://github.com/ITMO-NSS-team/ProtoLLM/tree/main/docs>`__ directory.
 
+Packages `protollm-api <https://github.com/aimclub/protollm-api>`__ and `protollm-sdk <https://github.com/aimclub/protollm-sdk>`__ are available in external repositories.
+
 Installation
 ============
 
@@ -66,8 +68,7 @@ Installation
 
   $ pip install protollm
 
-A standard installation of ProtoLLM includes the main package with dependencies and
-`protollm-sdk <https://github.com/ITMO-NSS-team/ProtoLLM/tree/main/protollm_tools/sdk>`__ from ``protollm_tools``
+A standard installation of ProtoLLM includes the main package with dependencies.
 
 - Installation with extras:
 
@@ -77,7 +78,6 @@ A standard installation of ProtoLLM includes the main package with dependencies 
 
 When installing with ``api-tools`` extras,
 `protollm-worker <https://github.com/ITMO-NSS-team/ProtoLLM/tree/main/protollm_tools/llm-worker>`__
-and protollm-api `protollm-api <https://github.com/ITMO-NSS-team/ProtoLLM/tree/main/protollm_tools/llm-api>`__
 are additionally installed
 
 - Modules with tools can be installed separately:
@@ -86,9 +86,6 @@ are additionally installed
 
   $ pip install protollm-worker
 
-  $ pip install protollm-api
-
-  $ pip install protollm-sdk
 
 Contribution Guide
 ==================
