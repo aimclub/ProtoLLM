@@ -41,7 +41,7 @@ Proto LLM features
    Evolutionary optimisation to increase the diversity of examples; Integration with Label Studio;
 
 - Providing interoperability with various LLM providers:
-   Support for native models (GigaChat, YandexGPT, vsegpt, etc.).
+   Support for native models (GigaChat, YandexGPT, vsegpt, openrouter, etc.).
    Interaction with open-source models deployed locally.
 
 Project Structure

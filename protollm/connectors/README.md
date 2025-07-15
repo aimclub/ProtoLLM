@@ -14,18 +14,21 @@ It is also important to note that additional certifications are required to use 
 install them can be found [here](https://developers.sber.ru/docs/ru/gigachat/certificates).
 
 ## Supported providers/LLM hosting services:
-1. https://api.vsepgt.ru/v1
-   - VSE_GPT_KEY env variable
+1. https://openrouter.ai/
+   - LLM_SERVICE_KEY env variable
+   - example for an argument for a function: `https://api.openrouter.ai/v1;meta-llama/llama-3.1-70b-instruct`
+2. https://api.vsepgt.ru/v1
+   - LLM_SERVICE_KEY env variable
    - example of an argument for a function: `https://api.vsegpt.ru/v1;openai/gpt-4o-mini`
-2. https://api.openai.com/v1
+3. https://api.openai.com/v1
    - OPENAI_KEY env variable
    - example of an argument for a function: `https://api.openai.com/v1;gpt-4o-mini`
-3. https://gigachat.devices.sberbank.ru/api/v1
+4. https://gigachat.devices.sberbank.ru/api/v1
    - AUTHORIZATION_KEY env variable, which can be obtained from your personal account
    - example of an argument for a function: `https://gigachat.devices.sberbank.ru/api/v1/chat/completions;GigaChat-Pro`
-4. Ollama (no API key required)
+5. Ollama (no API key required)
    - example of an argument for a function: `ollama;http://localhost:11434;llama3.2`
-5. Self-hosted LLM (under FastAPI, no API key required)
+6. Self-hosted LLM (under FastAPI, no API key required)
    - example of an argument for a function: `self_hosted;http://99.99.99.99:9999;example_model`
 
 Before use, make sure that your config file has the necessary API key or set it in the environment yourself.
