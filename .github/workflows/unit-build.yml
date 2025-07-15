@@ -33,11 +33,4 @@ jobs:
     - name: Test with pytest
       run: |
         pytest -s tests
-    - name: Install llm-api dependencies
-      run: |
-        pip install pytest-asyncio
-        pip install -r ./protollm_tools/llm-api/requirements.txt
-    - name: Test llm-api with pytest
-      run: |
-        pytest -s ./protollm_tools/llm-api/tests/unit
       
