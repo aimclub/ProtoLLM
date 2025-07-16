@@ -45,9 +45,6 @@
 Модули с инструментами могут быть установлены отдельно:
 
 .. code-block::
-
-  $ pip install protollm-worker
-
   $ pip install protollm-api
 
   $ pip install protollm-sdk

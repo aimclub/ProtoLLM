@@ -70,21 +70,14 @@ Installation
 
 A standard installation of ProtoLLM includes the main package with dependencies.
 
-- Installation with extras:
-
-.. code-block::
-
-  $ pip install protollm[api-tools]
-
-When installing with ``api-tools`` extras,
-`protollm-worker <https://github.com/ITMO-NSS-team/ProtoLLM/tree/main/protollm_tools/llm-worker>`__
-are additionally installed
 
 - Modules with tools can be installed separately:
 
 .. code-block::
 
-  $ pip install protollm-worker
+  $ pip install protollm-api
+
+  $ pip install protollm-sdk
 
 
 Contribution Guide

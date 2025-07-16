@@ -64,12 +64,6 @@ dependencies = [
 Homepage = "https://github.com/aimclub/ProtoLLM"
 Issues = "https://github.com/aimclub/ProtoLLM/issues"
 
-[project.optional-dependencies]
-api-tools = [
-    "protollm-api>=1.0.5,<2.0.0",
-    "protollm-worker>=1.0.5,<2.0.0"
-]
-
 [tool.poetry.group.dev.dependencies]
 pytest = "^8.2.2"
 pytest-asyncio = "^0.24.0"
