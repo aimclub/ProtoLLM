@@ -1,33 +1,55 @@
-from typing import List, Optional, Union
+from typing import Dict, List, Optional, Union
 
 from pydantic import BaseModel, Field
+from typing_extensions import TypedDict
 
 
 class Response(BaseModel):
-    """Response to user."""
+    """Final response to the user."""
 
     response: str
 
 
 class Plan(BaseModel):
-    """Plan to follow in future"""
+    """Plan consisting of steps. Each step is a list of tasks.
 
-    steps: List[str] = Field(
-        description="different steps to follow, should be in sorted order"
+    - Single-task step means sequential execution.
+    - Multi-task step means parallel execution.
+    """
+
+    steps: List[List[str]] = Field(
+        ...,
+        description="List of steps. Each step is a list of tasks. One task = sequential, multiple = parallel.",
+        example=[
+            ["Prepare data"],
+            ["Train model"],
+            ["Predict for molecule1", "Predict for molecule2"],
+        ],
     )
 
 
-class Act(BaseModel):
-    """Action to perform."""
+class ReplanAction(BaseModel):
+    """Action returned by replanner — either a final response or an updated plan."""
 
-    action: Union[Response, Plan] = Field(
-        description="Action to perform. If you want to respond to user, use Response. "
-        "If you need to further use tools to get the answer, use Plan."
+    action: str = Field(..., description="Either 'response' or 'steps'")
+    response: Optional[str] = Field(
+        None, description="Final user-facing response if action = 'response'"
+    )
+    steps: Optional[List[List[str]]] = Field(
+        None,
+        description="Updated plan steps if action = 'steps'",
+        example=[["Train model"], ["Predict for molecule1", "Predict for molecule2"]],
     )
 
 
 class Worker(BaseModel):
-    """Worker to call in future"""
+    """Workers to call in the next step"""
+
+    next: List[str] = Field(description="List of next workers to call")
+
+
+class WorkerСhat(BaseModel):
+    """Workers to call in the next step"""
 
     next: str = Field(description="Next worker to call")
 
@@ -35,22 +57,11 @@ class Worker(BaseModel):
 class Chat(BaseModel):
     """Action to perform"""
 
-    action: Union[Response, Worker] = Field(
+    action: Union[Response, WorkerСhat] = Field(
         description="Action to perform. If you want to respond to user, use Response. "
         "If you need to further use tools to get the answer, use Next."
     )
-    
+
     last_memory: Optional[str] = Field(
         description="last memory of the user, if any", default=""
-    )
-
-
-class Translation(BaseModel):
-    """Action to perform"""
-
-    language: Optional[str] = Field(
-        description="language to translate", default="English"
-    )
-    translation: Optional[str] = Field(
-        default=None, description="translation from English"
     )

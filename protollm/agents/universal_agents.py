@@ -1,40 +1,99 @@
+import copy
 import json
-import re
 import time
 from typing import Dict, List, Union
 
+from langchain.schema import OutputParserException
 from langchain_core.exceptions import OutputParserException
-from langgraph.graph import END
+from langgraph.graph import END, START, StateGraph
 from langgraph.prebuilt import create_react_agent
-from langgraph.types import Command
 from langgraph.store.memory import InMemoryStore
-from uuid import uuid4
-from datetime import datetime
-
-from protollm.agents.agent_prompts import (
-    build_planner_prompt,
-    build_replanner_prompt,
-    build_supervisor_prompt,
-    retranslate_prompt,
-    summary_prompt,
-    translate_prompt,
-    worker_prompt,
-    chat_prompt,
-)
-from protollm.agents.agent_utils.parsers import (
-    planner_parser,
-    replanner_parser,
-    supervisor_parser,
-    translator_parser,
-    chat_parser
-)
-from protollm.agents.agent_utils.pydantic_models import Response
 from langgraph.types import Command
-from langgraph.graph import END
+
+from protollm.agents.agent_prompts import (build_planner_prompt,
+                                           build_replanner_prompt,
+                                           build_supervisor_prompt,
+                                           chat_prompt, summary_prompt,
+                                           worker_prompt)
+from protollm.agents.agent_utils.parsers import (chat_parser, planner_parser,
+                                                 replanner_parser,
+                                                 supervisor_parser)
+from protollm.agents.agent_utils.pydantic_models import (Plan, ReplanAction,
+                                                         Response)
 from protollm.tools.web_tools import web_tools_rendered
 
 # TODO: make real embedder, not dummy
 store = InMemoryStore(index={"embed": lambda x: [[1.0, 2.0] for _ in x], "dims": 2})
+
+
+def subgraph_start_node(state, config):
+    print("Start node")
+    return state
+
+
+def subgraph_end_node(state, config):
+    return state
+
+
+def web_search_node(
+    state: Dict[str, Union[str, List[str]]], config: dict
+) -> Union[Dict, Command]:
+    """
+    Executes a web search task using a language model (LLM) and predefined web tools.
+
+    Parameters
+    ----------
+    state : dict
+        Dictionary representing the current execution state, expected to contain:
+            - "plan" (List[str]): A list of steps to be executed by the agent.
+    config : dict
+        Configuration dictionary containing:
+            - 'llm' (BaseChatModel): An instance of the language model used for reasoning and task execution.
+            - 'max_retries' (int): The maximum number of retry attempts if the web search fails.
+            - 'web_tools' (List[BaseTool]): A list of predefined web tools to be used by the agent (can be empty).
+
+    Returns
+    -------
+    Command
+        An object that contains either the next step for execution or an error response if retries are exhausted.
+
+    Notes
+    -----
+    - If web tools are not provided, the function creates an agent without them.
+    - The function attempts to perform the task from the first step of the plan.
+    - Retries are handled with exponential backoff on failure.
+    - If all attempts fail, returns a fallback response.
+    """
+    llm = config["configurable"]["llm"]
+    max_retries = config["configurable"]["max_retries"]
+
+    if "web_tools" in config["configurable"].keys():
+        web_tools = config["configurable"]["web_tools"]
+    else:
+        from protollm.tools.web_tools import web_tools
+
+    web_agent = create_react_agent(llm, web_tools or [], state_modifier=worker_prompt)
+    task = state["plan"][0]
+
+    for attempt in range(max_retries):
+        try:
+            agent_response = web_agent.invoke(
+                {"messages": [("user", task + " You must search!")]}
+            )
+            state["past_steps"] = [(task, agent_response["messages"][-1].content)]
+            state["nodes_calls"] = [("web_search", agent_response["messages"])]
+            return state
+        except Exception as e:
+            print(
+                f"Web search failed with error: {str(e)}. Retrying... ({attempt + 1}/{max_retries})"
+            )
+            time.sleep(2**attempt)  # Exponential backoff
+
+    return Command(
+        update={
+            "response": "I can't answer your question right now. Maybe I can assist with something else?"
+        },
+    )
 
 
 def supervisor_node(state: Dict[str, Union[str, List[str]]], config: dict) -> Command:
@@ -74,7 +133,7 @@ def supervisor_node(state: Dict[str, Union[str, List[str]]], config: dict) -> Co
     max_retries = config["configurable"]["max_retries"]
     scenario_agents = config["configurable"]["scenario_agents"]
     tools_for_agents = config["configurable"]["tools_for_agents"]
-    
+
     config["configurable"]["tools_for_agents"]["web_search"] = [web_tools_rendered]
 
     plan = state.get("plan")
@@ -82,7 +141,7 @@ def supervisor_node(state: Dict[str, Union[str, List[str]]], config: dict) -> Co
     if not plan and not state.get("input"):
         return {
             "response": "I can't answer your question right now. Maybe I can assist with something else?",
-            "end": True
+            "end": True,
         }
 
     plan_str = "\n".join(f"{i + 1}. {step}" for i, step in enumerate(plan))
@@ -98,108 +157,91 @@ def supervisor_node(state: Dict[str, Union[str, List[str]]], config: dict) -> Co
 
     for attempt in range(max_retries):
         try:
-            response = supervisor_chain.invoke({"input": [("user", task_formatted)]})
+            from protollm.agents.agent_utils.states import PlanExecute
 
-            return Command(update={"next": response.next})
+            response = supervisor_chain.invoke({"input": [("user", task_formatted)]})
+            subgraph = StateGraph(PlanExecute)
+            subgraph.add_node("subgraph_start_node", subgraph_start_node)
+            subgraph.add_node("subgraph_end_node", subgraph_end_node)
+            subgraph.add_edge(START, "subgraph_start_node")
+            added_nodes = []
+
+            for i, node_name in enumerate(response.next):
+                # get task for current agent from plan
+                task_for_agent = None
+                if isinstance(task, list) and i < len(task):
+                    task_for_agent = task[i]
+                else:
+                    task_for_agent = task
+
+                if node_name in added_nodes:
+                    import random
+
+                    node_name_new = node_name + str(random.randint(1000, 10000))
+                    node_copy = copy.deepcopy(
+                        config["configurable"]["scenario_agent_funcs"][node_name]
+                    )
+
+                    # Wrap the agent function to add needed task to state
+                    def wrapped_agent_func(s, func=node_copy, task=task_for_agent):
+                        "Wrappe"
+                        s = s.copy()
+                        s["task"] = task
+                        return func(s, config)
+
+                    subgraph.add_node(node_name_new, wrapped_agent_func)
+                    subgraph.add_edge("subgraph_start_node", node_name_new)
+                    subgraph.add_edge(node_name_new, "subgraph_end_node")
+                else:
+                    agent_func = config["configurable"]["scenario_agent_funcs"][
+                        node_name
+                    ]
+
+                    def wrapped_agent_func(s, func=agent_func, task=task_for_agent):
+                        s = s.copy()
+                        s["task"] = task
+                        return func(s, config)
+
+                    subgraph.add_node(node_name, wrapped_agent_func)
+                    subgraph.add_edge("subgraph_start_node", node_name)
+                    subgraph.add_edge(node_name, "subgraph_end_node")
+
+                added_nodes.append(node_name)
+            subgraph.add_edge("subgraph_end_node", END)
+            subgraph = subgraph.compile()
+
+            res = subgraph.invoke(state, config)
+            return res
+
         except Exception as e:
             print(
                 f"Supervisor error: {str(e)}. Retrying attempt ({attempt + 1}/{max_retries})"
             )
             time.sleep(2**attempt)  # Exponential backoff
-    state["response"] = "I can't answer your question right now. Maybe I can assist with something else?"
+
+    state["response"] = (
+        "I can't answer your question right now. Maybe I can assist with something else?"
+    )
     state["end"] = True
     return state
 
 
-def web_search_node(
-    state: Dict[str, Union[str, List[str]]], config: dict
-) -> Union[Dict, Command]:
-    """
-    Executes a web search task using a language model (LLM) and predefined web tools.
+def format_plan(plan: List[Dict[str, List[str]]]) -> str:
+    """Make plan for correctly displaying in replanner prompt"""
+    if not plan:
+        return "No plan"
 
-    Parameters
-    ----------
-    state : dict
-        Dictionary representing the current execution state, expected to contain:
-            - "plan" (List[str]): A list of steps to be executed by the agent.
-    config : dict
-        Configuration dictionary containing:
-            - 'llm' (BaseChatModel): An instance of the language model used for reasoning and task execution.
-            - 'max_retries' (int): The maximum number of retry attempts if the web search fails.
-            - 'web_tools' (List[BaseTool]): A list of predefined web tools to be used by the agent (can be empty).
-
-    Returns
-    -------
-    Command
-        An object that contains either the next step for execution or an error response if retries are exhausted.
-
-    Notes
-    -----
-    - If web tools are not provided, the function creates an agent without them.
-    - The function attempts to perform the task from the first step of the plan.
-    - Retries are handled with exponential backoff on failure.
-    - If all attempts fail, returns a fallback response.
-    """
-    llm = config["configurable"]["llm"]
-    max_retries = config["configurable"]["max_retries"]
-    
-    if "web_tools" in config["configurable"].keys():
-        web_tools = config["configurable"]["web_tools"]
-    else:
-        from protollm.tools.web_tools import web_tools
-
-    web_agent = create_react_agent(llm, web_tools or [], state_modifier=worker_prompt)
-    task = state["plan"][0]
-
-    for attempt in range(max_retries):
-        try:
-            agent_response = web_agent.invoke({"messages": [("user", task + " You must search!")]})
-            state["past_steps"] = [(task, agent_response["messages"][-1].content)]
-            state["nodes_calls"] = [("web_search", agent_response["messages"])]
-            return state
-        except Exception as e:
-            print(
-                f"Web search failed with error: {str(e)}. Retrying... ({attempt + 1}/{max_retries})"
-            )
-            time.sleep(2**attempt)  # Exponential backoff
-
-    return Command(
-        update={
-            "response": "I can't answer your question right now. Maybe I can assist with something else?"
-        },
-    )
+    result = ""
+    for i, k in enumerate(plan):
+        result += f"Step № {i + 1}: " + str(k)
+    return result
 
 
 def plan_node(
-    state: Dict[str, Union[str, List[str]]], config: dict
-) -> Union[Dict[str, List[str]], Command]:
+    state: Dict[str, Union[str, List[Dict]]], config: dict
+) -> Union[Dict[str, List[Dict]], Command]:
     """
     Generates an execution plan using a language model (LLM) based on the provided input.
-
-    Parameters
-    ----------
-    state : dict
-        The current execution state, expected to contain:
-            - "input" (str): The user's original input request.
-            - "language" (str): Detected language of the input.
-    config : dict
-        Configuration dictionary containing:
-            - 'llm' (BaseChatModel): An instance of the language model used to generate the plan.
-            - 'max_retries' (int): Maximum number of retry attempts in case of failures.
-            - 'tools_descp' (str): A description of available tools, included in the prompt to guide plan creation.
-
-    Returns
-    -------
-    dict
-        A dictionary with the generated plan under the key "plan".
-    Command
-        A fallback response if planning fails after all retries.
-
-    Notes
-    -----
-    - Uses planner_prompt, llm, and planner_parser to create a structured execution plan.
-    - Handles JSON parsing errors and attempts to recover partial outputs.
-    - Applies exponential backoff between retries.
     """
     llm = config["configurable"]["llm"]
     max_retries = config["configurable"]["max_retries"]
@@ -207,26 +249,39 @@ def plan_node(
     adds_prompt = config["configurable"]["prompts"]["planner"]
     last_memory = state.get("last_memory", "")
 
-    planner = build_planner_prompt(tools_descp, last_memory, additional_hints_for_scenario_agents=adds_prompt) | llm | planner_parser
+    planner = (
+        build_planner_prompt(tools_descp, last_memory, additional_hints=adds_prompt)
+        | llm
+        | planner_parser
+    )
+
     query = state["input"]
 
     for attempt in range(max_retries):
         try:
-            plan = planner.invoke({"messages": [("user", query)]})
+            plan = planner.invoke({"input": query})
             state["plan"] = plan.steps
             return state
 
         except OutputParserException as e:
-            match = re.search(r'\{\s*"steps"\s*:\s*\[.*?\]\s*\}', str(e), re.DOTALL)
-            if match:
-                try:
-                    structured_output = json.loads(match.group(0))
-                    state["plan"] = structured_output["steps"]
+            # try to extract error
+            try:
+                error_str = str(e)
+                start_idx = error_str.find('{"steps"')
+                end_idx = error_str.rfind("}") + 1
+
+                if start_idx != -1 and end_idx != -1:
+                    json_str = error_str[start_idx:end_idx]
+                    partial_output = json.loads(json_str)
+
+                    # Make plan from succces part of response
+                    plan = Plan(steps=partial_output["steps"])
+                    state["plan"] = plan.steps
                     return state
-                except json.JSONDecodeError as json_err:
-                    print(
-                        f"Planner JSON parse error: {json_err}. Retry ({attempt + 1}/{max_retries})"
-                    )
+            except:
+                print(
+                    f"Failed to recover from parser error. Retry ({attempt + 1}/{max_retries})"
+                )
 
         except Exception as e:
             print(f"Planner failed: {e}. Retry ({attempt + 1}/{max_retries})")
@@ -240,74 +295,61 @@ def plan_node(
 
 
 def replan_node(
-    state: Dict[str, Union[str, List[str]]], config: dict
-) -> Union[Dict[str, Union[List[str], str]], Command]:
+    state: Dict[str, Union[str, List[Dict]]], config: dict
+) -> Union[Dict[str, Union[List[Dict], str]], Command]:
     """
     Refines or adjusts an existing execution plan based on previous steps and current state.
-
-    Parameters
-    ----------
-    state : dict
-        The current execution state, expected to contain:
-            - "input" (str): The user's request or query.
-            - "language" (str): Detected language of the input.
-            - "plan" (list of str): The current plan consisting of step descriptions.
-            - "past_steps" (list of tuples): Previously executed steps and their responses.
-    config : dict
-        Configuration dictionary containing:
-            - 'llm' (BaseChatModel): The language model used for replanning.
-            - 'max_retries' (int): Number of retries if execution fails.
-            - 'tools_descp' (dict): Description of tools available to assist in replanning.
-
-    Returns
-    -------
-    dict
-        A dictionary with either an updated plan under "plan" or a direct response under "response".
-    Command
-        A fallback response if replanning fails after all retries.
-
-    Notes
-    -----
-    - Uses replanner_prompt, llm, and replanner_parser to adjust plans.
-    - Handles parsing errors and extracts structured JSON if needed.
-    - Applies exponential backoff between retries.
     """
     llm = config["configurable"]["llm"]
     max_retries = config["configurable"]["max_retries"]
     tools_descp = config["configurable"]["tools_descp"]
     last_memory = state.get("last_memory", "")
-    
-    replanner = build_replanner_prompt(tools_descp, last_memory) | llm | replanner_parser
+
+    replanner = (
+        build_replanner_prompt(tools_descp, last_memory) | llm | replanner_parser
+    )
 
     query = state["input"]
+    current_plan = state.get("plan", [])
+    past_steps = set(state.get("past_steps", []))
 
     for attempt in range(max_retries):
         try:
+            formatted_plan = format_plan(current_plan)
+            formatted_past = str([i for i in set(past_steps)])
+
             output = replanner.invoke(
-                {
-                    "input": query,
-                    "plan": state["plan"],
-                    "past_steps": state["past_steps"],
-                }
+                {"input": query, "plan": formatted_plan, "past_steps": formatted_past}
             )
 
-            if hasattr(output.action, "response"):
-                state["response"] = output.action.response
+            if output.action == "response":
+                state["response"] = output.response
                 return state
-            state["plan"] = output.action.steps
-            return state
+            else:
+                state["plan"] = output.steps or []
+                return state
 
         except OutputParserException as e:
-            match = re.search(r'\{\s*"steps"\s*:\s*\[.*?\]\s*\}', str(e), re.DOTALL)
-            if match:
-                try:
-                    structured_output = json.loads(match.group(0))
-                    state["plan"] = structured_output["steps"]
+            try:
+                error_str = str(e)
+                start_idx = error_str.find('{"action"')
+                end_idx = error_str.rfind("}") + 1
+
+                if start_idx != -1 and end_idx != -1:
+                    json_str = error_str[start_idx:end_idx]
+                    partial_output = json.loads(json_str)
+
+                    action = ReplanAction(**partial_output)
+
+                    if action.action == "response":
+                        state["response"] = action.response
+                    else:
+                        state["plan"] = action.steps or []
                     return state
-                except json.JSONDecodeError as json_err:
-                    print(
-                        f"Replanner JSON parse error: {json_err}. Retry ({attempt + 1}/{max_retries})"
-                    )
+            except:
+                print(
+                    f"Failed to recover from parser error. Retry ({attempt + 1}/{max_retries})"
+                )
 
         except Exception as e:
             print(f"Replanner failed: {e}. Retry ({attempt + 1}/{max_retries})")
@@ -316,7 +358,7 @@ def replan_node(
     return Command(
         goto=END,
         update={
-            "response": "I can't answer your question right now. Maybe I can assist with something else?"
+            "response": "I'm having trouble processing your request. Could you try asking differently?"
         },
     )
 
@@ -355,7 +397,7 @@ def summary_node(
     query = state["input"]
     past_steps = state["past_steps"]
 
-    summary_agent = summary_prompt + '\n' + adds_prompt | llm
+    summary_agent = summary_prompt + "\n" + adds_prompt | llm
 
     for attempt in range(max_retries):
         try:
@@ -380,22 +422,22 @@ def summary_node(
         update={
             "response": "I can't answer your question right now. Maybe I can assist with something else?"
         },
-    )  
-    
-    
+    )
+
+
 def chat_node(state, config: dict):
     """
-    Processes user input through a chat agent and returns an appropriate response 
-    or next action. This agent decides whether it can handle the user query itself. 
+    Processes user input through a chat agent and returns an appropriate response
+    or next action. This agent decides whether it can handle the user query itself.
     If yes, responds with the {"response": agent_answer}.
     Otherwise, calls main agentic system.
 
     Parameters
     ----------
     state : dict | TypedDict
-        The current execution state, containing "input" (the user message) and 
+        The current execution state, containing "input" (the user message) and
     config : dict
-        Configuration dictionary containing a "configurable" sub-dictionary with the LLM model 
+        Configuration dictionary containing a "configurable" sub-dictionary with the LLM model
         under the key "model".
 
     Returns
@@ -415,152 +457,34 @@ def chat_node(state, config: dict):
     - Resets visualization state on new responses.
     """
     llm = config["configurable"]["llm"]
-    chat_agent = chat_prompt | llm | chat_parser    
+    chat_agent = chat_prompt | llm | chat_parser
     input = state["input"]
     max_retries = 1
 
     for attempt in range(max_retries):
         try:
-            output = chat_agent.invoke({"input": input, "last_memory": state["last_memory"], "additional_hints_for_scenario_agents": config["configurable"]["prompts"]["chat"]})
+            output = chat_agent.invoke(
+                {
+                    "input": input,
+                    "last_memory": state["last_memory"],
+                    "additional_hints_for_scenario_agents": config["configurable"][
+                        "prompts"
+                    ]["chat"],
+                }
+            )
 
             if isinstance(output.action, Response):
                 state["response"] = output.action.response
                 return state
             else:
                 state["next"] = output.action.next
-            state["visualization"] = None 
-            
+            state["visualization"] = None
+
         except Exception as e:  # Handle OpenAI API errors
-            print(f"Chat failed with error: {str(e)}. Retrying... ({attempt+1}/{max_retries})")
-            time.sleep(1.2 ** attempt)  
+            print(
+                f"Chat failed with error: {str(e)}. Retrying... ({attempt+1}/{max_retries})"
+            )
+            time.sleep(1.2**attempt)
 
     state["response"] = None
     return state
-
-
-def in_translator_node(state: dict, config: dict) -> Union[Dict, Command]:
-    """
-    Detects the input language and translates it into English if necessary.
-
-    Args:
-        state (dict): The current execution state containing an 'input' key.
-        config (dict): Configuration dictionary containing:
-            - 'llm' (BaseChatModel): An instance of a language model used for translation.
-            - 'max_retries' (int): The maximum number of attempts to retry translation in case of errors.
-    Returns:
-        dict: Updated state with 'language' and optionally 'translation' fields.
-    """
-
-    llm = config["configurable"]["llm"]
-    max_retries = config["configurable"]["max_retries"]
-
-    translator_agent = translate_prompt | llm | translator_parser
-    query = state.get("input", "")
-
-    for attempt in range(max_retries):
-        try:
-            output = translator_agent.invoke(query)
-            state["language"] = output.language
-            if output.language != "English":
-                state["translation"] = output.translation
-            return state
-        except Exception as e:
-            print(f"Translator error: {str(e)} (Attempt {attempt + 1}/{max_retries})")
-            if "api key" in str(e).lower():
-                state["response"] = "Invalid API key."
-                return state
-            if "404" in str(e):
-                state["response"] = "LLM service unavailable. Check proxy settings."
-                return state
-            time.sleep(1.2**attempt)
-
-    return Command(
-        goto=END,
-        update={"response": "Translation service failed after multiple attempts."},
-    )
-
-
-def re_translator_node(state: dict, config: dict) -> Union[Dict, Command]:
-    """
-    Translates a system-generated response back into the user's language.
-
-    Args:
-        state (dict): Current execution state containing:
-            - 'response' (str): The system-generated response in English.
-            - 'language' (str): The user's original language code or name.
-        config (dict): Configuration dictionary containing:
-            - 'llm' (BaseChatModel): An instance of a language model used for back-translation.
-            - 'max_retries' (int): The maximum number of retry attempts in case of errors.
-
-    Returns:
-        Command: Command object to update state or end execution.
-    """
-    llm = config["configurable"]["llm"]
-    max_retries = config["configurable"]["max_retries"]
-    user_id = config["configurable"].get("user_id", "anonymous")
-    language = state["language"]
-    namespace = (user_id, "memory")
-
-    if language == "English":
-        summary_text = f"User: {state['input']} \n Final system answer: {state.get('response', '')}"
-        # save in long-term memory
-        store.put(
-            namespace,
-            f"memory-{uuid4()}",
-            {
-                "summary": summary_text,
-                "timestamp": str(datetime.utcnow()),
-            },
-        )
-
-        # save in short-term memory
-        store.put(
-            namespace,
-            "latest-summary",
-            {
-                "summary": summary_text,
-                "timestamp": str(datetime.utcnow()),
-            },
-        )
-        return state
-
-    translator_agent = retranslate_prompt | llm
-    query = state.get("response", "")
-
-    for attempt in range(max_retries):
-        try:
-            translated = translator_agent.invoke({"input": query, "language": language})
-            summary_text = f"User: {state['input']} \n Final system answer: {state.get('response', '')}"
-            namespace = (user_id, "memory")
-
-            # save in long-term memory
-            store.put(
-                namespace,
-                f"memory-{uuid4()}",
-                {
-                    "summary": summary_text,
-                    "timestamp": str(datetime.utcnow()),
-                },
-            )
-
-            # save in short-term memory
-            store.put(
-                namespace,
-                "latest-summary",
-                {
-                    "summary": summary_text,
-                    "timestamp": str(datetime.utcnow()),
-                },
-            )
-            state["response"] = translated
-            return state
-        except Exception as e:
-            print(
-                f"Retranslation error: {str(e)} (Attempt {attempt + 1}/{max_retries})"
-            )
-            time.sleep(1.2**attempt)
-
-    return Command(
-        goto=END,
-        update={"response": "Unable to translate response after multiple attempts."},
-    )

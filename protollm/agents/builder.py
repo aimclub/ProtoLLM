@@ -1,14 +1,15 @@
-from protollm.agents.agent_utils.states import PlanExecute, initialize_state
 from langgraph.graph import END, START, StateGraph
 
-from protollm.agents.universal_agents import (plan_node, replan_node,
-                                              summary_node, supervisor_node,
-                                              chat_node, web_search_node)
+from protollm.agents.agent_utils.states import PlanExecute, initialize_state
+from protollm.agents.universal_agents import (chat_node, plan_node,
+                                              replan_node, summary_node,
+                                              supervisor_node, web_search_node)
+
 
 class GraphBuilder:
-    """Builds a graph based on the basic structure of universal agents. 
+    """Builds a graph based on the basic structure of universal agents.
     Need to add your own scenario agents via 'conf'.
-    
+
      Args:
         conf (dict): Configuration dictionary with the following structure:
             - recursion_limit (int): Maximum recursion depth for processing.
@@ -35,6 +36,7 @@ class GraphBuilder:
             }
         }
     """
+
     def __init__(self, conf: dict):
         self.conf = conf
         self.app = self._build()
@@ -93,8 +95,8 @@ class GraphBuilder:
         """Determines the next agent after Supervisor"""
         if state.get("end", False):
             return END
-        return state["next"]
-    
+        return "replan_node"
+
     def _routing_function_planner(self, state):
         if state.get("response"):
             return END
@@ -108,12 +110,14 @@ class GraphBuilder:
         workflow.add_node("supervisor", supervisor_node)
         workflow.add_node("replan_node", replan_node)
         workflow.add_node("summary", summary_node)
-        
+
         if self.conf["configurable"]["web_search"]:
             workflow.add_node("web_search", web_search_node)
             workflow.add_edge("web_search", "replan_node")
-            
-        for agent_name, node in self.conf["configurable"]["scenario_agent_funcs"].items():
+
+        for agent_name, node in self.conf["configurable"][
+            "scenario_agent_funcs"
+        ].items():
             workflow.add_node(agent_name, node)
             workflow.add_edge(agent_name, "replan_node")
 
@@ -126,7 +130,7 @@ class GraphBuilder:
         )
         workflow.add_conditional_edges(
             "planner",
-            self._routing_function_planner,  
+            self._routing_function_planner,
             ["supervisor", END],
         )
         workflow.add_conditional_edges(
@@ -140,7 +144,7 @@ class GraphBuilder:
 
         return workflow.compile()
 
-    def stream(self, inputs: dict, user_id: str = '1'):
+    def stream(self, inputs: dict, user_id: str = "1"):
         """Start streaming the input through the graph."""
         inputs = initialize_state(user_input=inputs["input"], user_id=user_id)
         for event in self.app.stream(inputs, config=self.conf):
@@ -150,5 +154,3 @@ class GraphBuilder:
             print("\n\nFINALLY ANSWER: ", v["response"].content)
         except:
             print("\n\nFINALLY ANSWER: ", v["response"])
-    
-    

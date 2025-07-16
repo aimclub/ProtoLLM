@@ -1,16 +1,10 @@
 import logging
-from typing import List, Optional, Any, Dict
+from typing import Any, Dict, List, Optional
 
 import requests
 from langchain.chat_models.base import BaseChatModel
-from langchain.schema import (
-    BaseMessage,
-    AIMessage,
-    HumanMessage,
-    SystemMessage,
-    ChatResult,
-    ChatGeneration,
-)
+from langchain.schema import (AIMessage, BaseMessage, ChatGeneration,
+                              ChatResult, HumanMessage, SystemMessage)
 from pydantic import PrivateAttr
 
 
@@ -36,7 +30,7 @@ class Llama31ChatModel(BaseChatModel):
     @property
     def _llm_type(self) -> str:
         return "llama31"
-    
+
     def _prepare_headers(self) -> Dict[str, str]:
         return {
             "Authorization": f"Bearer {self.api_key}",
@@ -47,16 +41,19 @@ class Llama31ChatModel(BaseChatModel):
         role_map = {
             HumanMessage: "user",
             AIMessage: "assistant",
-            SystemMessage: "system"
+            SystemMessage: "system",
         }
-        
-        return [{"role": role_map.get(type(message), "user"), "content": message.content} for message in messages]
+
+        return [
+            {"role": role_map.get(type(message), "user"), "content": message.content}
+            for message in messages
+        ]
 
     def _prepare_payload(
         self,
         context: List[Dict[str, str]],
         stop: Optional[List[str]] = None,
-        **kwargs: Any
+        **kwargs: Any,
     ) -> Dict[str, Any]:
         payload = {
             "model": self.model,
