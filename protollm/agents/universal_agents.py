@@ -2,7 +2,7 @@ import copy
 import json
 import time
 from typing import Dict, List, Union
-
+import random
 from langchain.schema import OutputParserException
 from langchain_core.exceptions import OutputParserException
 from langgraph.graph import END, START, StateGraph
@@ -303,15 +303,21 @@ def replan_node(
     llm = config["configurable"]["llm"]
     max_retries = config["configurable"]["max_retries"]
     tools_descp = config["configurable"]["tools_descp"]
+    try:
+        adds_prompt = config["configurable"]["prompts"]["replanner"]
+    except:
+        adds_prompt = ""
     last_memory = state.get("last_memory", "")
 
     replanner = (
-        build_replanner_prompt(tools_descp, last_memory) | llm | replanner_parser
+        build_replanner_prompt(tools_descp, last_memory, adds_prompt) | llm | replanner_parser
     )
 
     query = state["input"]
     current_plan = state.get("plan", [])
     past_steps = set(state.get("past_steps", []))
+    
+    # state['past_steps'] = set(state.get("past_steps", []))
 
     for attempt in range(max_retries):
         try:

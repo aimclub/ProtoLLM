@@ -57,7 +57,7 @@ def build_planner_prompt(
 
 
 def build_replanner_prompt(
-    tools_rendered: str, last_memory: str, n_steps: int = 3
+    tools_rendered: str, last_memory: str, n_steps: int = 3, adds_prompt: str = ""
 ) -> ChatPromptTemplate:
     return ChatPromptTemplate.from_template(
         """
@@ -103,6 +103,7 @@ def build_replanner_prompt(
     Context:
     Previous memory: {last_memory}
     Available tools: {tools_rendered}
+    Additional hints: {adds_prompt}
 
     {format_instructions}
     """
@@ -110,6 +111,7 @@ def build_replanner_prompt(
         n_steps=str(n_steps),
         last_memory=last_memory,
         tools_rendered=tools_rendered,
+        adds_prompt=adds_prompt,
         format_instructions=replanner_parser.get_format_instructions(),
     )
 
