@@ -1,6 +1,7 @@
 # GraphBuilder
 
 A tool for building an agent system based on a universal agents core.
+<img width="6606" height="5106" alt="parallel" src="https://github.com/user-attachments/assets/0a8f7903-5121-488c-9612-0874437b5452" />
 
 ## 🧪 Example of config for GraphBuilder
 
