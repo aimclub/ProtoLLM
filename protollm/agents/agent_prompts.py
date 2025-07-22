@@ -140,9 +140,11 @@ def build_supervisor_prompt(
         "Output MUST be in JSON format with the key 'next' containing a list of workers.\n"
         "The number of workers MUST match the number of tasks in the current step.\n\n"
         "Example outputs:\n"
+        '{{"next": ["a_worker", "b_worker", "c_worker"]}}\n'
         '{{"next": ["web_search", "chemist"]}}\n'
         '{{"next": ["automl"]}}\n'
         '{{"next": []}}\n\n'
+        "You must follow the format!!! Always return json!\n"
         "Previous conversation context:\n"
         f"{last_memory}\n\n"
         "User request: {input}"
