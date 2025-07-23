@@ -306,11 +306,11 @@ def replan_node(
     try:
         adds_prompt = config["configurable"]["prompts"]["replanner"]
     except:
-        adds_prompt = ""
+        adds_prompt = None
     last_memory = state.get("last_memory", "")
 
     replanner = (
-        build_replanner_prompt(tools_descp, last_memory, adds_prompt) | llm | replanner_parser
+        build_replanner_prompt(tools_descp, last_memory, additional_hint=adds_prompt) | llm | replanner_parser
     )
 
     query = state["input"]

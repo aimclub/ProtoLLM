@@ -8,19 +8,21 @@ from protollm.agents.agent_utils.parsers import (chat_parser, planner_parser,
 
 
 def build_planner_prompt(
-    tools_rendered: str, last_memory: str, n_steps: int = 3, additional_hints: str = ""
+    tools_rendered: str, last_memory: str, n_steps: int = 5, additional_hints = None, 
+    problem_statement=None, rules=None, desc_restrictions=None, examples=None
 ) -> ChatPromptTemplate:
-    template = """
-        For the given objective, create a step-by-step plan. Each step should contain:
+    problem_statement = problem_statement or """
+    For the given objective, create a step-by-step plan. Each step should contain:
         - just one task in step: tasks that must be executed in order
         - 2 and more tasks in step: tasks that can be executed simultaneously
-
-        Rules:
+    """
+    rules = rules or """
         1. Use just one task in step for dependent tasks
         2. Use 2 and more tasks in step for independent tasks
         3. Each step should contain at least one task
-
-        Example:
+    """
+    desc_restrictions = desc_restrictions or f"The number of steps should be no more than {n_steps}"
+    examples = examples or """   
         Request: "Prepare data, train model, then predict for molecule1 and molecule2"
         Response: {{
             "steps": [
@@ -36,7 +38,18 @@ def build_planner_prompt(
             "steps": [
                 ['Generate 5 molecules related to MEK1 using ml_dl_agent', 'Generate 3 molecules using the GSK model with ml_dl_agent']
             ]
-        }}
+        }}"""
+    
+    template = """
+        {problem_statement}
+
+        Rules:
+        {rules}
+        
+        {desc_restrictions}
+
+        Examples:
+        {examples}
 
         Available tools: {tools_rendered}
         Previous context: {last_memory}
@@ -49,6 +62,10 @@ def build_planner_prompt(
     return ChatPromptTemplate.from_messages(
         [("system", template), ("human", "{input}")]
     ).partial(
+        problem_statement=problem_statement,
+        rules=rules,
+        desc_restrictions=desc_restrictions,
+        examples=examples,
         tools_rendered=tools_rendered,
         last_memory=last_memory,
         additional_hints=additional_hints,
@@ -57,21 +74,11 @@ def build_planner_prompt(
 
 
 def build_replanner_prompt(
-    tools_rendered: str, last_memory: str, n_steps: int = 3, adds_prompt: str = ""
+    tools_rendered: str, last_memory: str, n_steps: int = 3,
+    problem_statement = None, rules =None, examples = None, additional_hint = None
 ) -> ChatPromptTemplate:
-    return ChatPromptTemplate.from_template(
-        """
-    You are a replanning expert. Your job is to adjust the original step-by-step plan based on completed tasks.
-
-    Objective: {input}
-
-    Original plan:
-    {plan}
-
-    Completed steps (remove these from plan):
-    {past_steps}
-
-    Update the plan according to the following rules:
+    problem_statement = problem_statement or """You are a replanning expert. Your job is to adjust the original step-by-step plan based on completed tasks."""
+    rules = rules or """
     1. Remove completed tasks from the plan.
     2. Add new steps only if required.
     3. If all tasks are completed, return a final response.
@@ -79,10 +86,8 @@ def build_replanner_prompt(
     5. Maintain the step format:
         - Each step is a list of tasks
         - Use a single task per step for sequential execution
-        - Use multiple tasks per step for parallel execution
-
-    Examples:
-
+        - Use multiple tasks per step for parallel execution"""
+    examples = examples or """
     1. Final response (your answer):
     {{
         "action": "response",
@@ -97,21 +102,41 @@ def build_replanner_prompt(
             ["Predict for molecule1", "Predict for molecule2"]
         ]
     }}
+    """
+    additional_hint = additional_hint or "You must return only JSON!!! No text before!"
+    return ChatPromptTemplate.from_template(
+        """
+    {problem_statement}
+    
+    Objective: {input}
 
-    You must return only JSON!!! No text before!
+    Original plan:
+    {plan}
+
+    Completed steps (remove these from plan):
+    {past_steps}
+
+    Update the plan according to the following rules:
+    {rules}
+    
+    Examples:
+
+    {examples}
 
     Context:
     Previous memory: {last_memory}
     Available tools: {tools_rendered}
-    Additional hints: {adds_prompt}
+    Additional hints: {additional_hint}
 
     {format_instructions}
     """
     ).partial(
-        n_steps=str(n_steps),
+        problem_statement=problem_statement,
+        rules=rules,
         last_memory=last_memory,
+        examples=examples,
+        additional_hint=additional_hint,
         tools_rendered=tools_rendered,
-        adds_prompt=adds_prompt,
         format_instructions=replanner_parser.get_format_instructions(),
     )
 
