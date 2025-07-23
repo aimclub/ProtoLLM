@@ -1,5 +1,4 @@
 from langchain.prompts import ChatPromptTemplate
-from langchain_community.tools.tavily_search import TavilySearchResults
 from langchain_core.prompts import ChatPromptTemplate
 
 from protollm.agents.agent_utils.parsers import (chat_parser, planner_parser,
@@ -74,7 +73,7 @@ def build_planner_prompt(
 
 
 def build_replanner_prompt(
-    tools_rendered: str, last_memory: str, n_steps: int = 3,
+    tools_rendered: str, last_memory: str, 
     problem_statement = None, rules =None, examples = None, additional_hint = None
 ) -> ChatPromptTemplate:
     problem_statement = problem_statement or """You are a replanning expert. Your job is to adjust the original step-by-step plan based on completed tasks."""
@@ -82,7 +81,7 @@ def build_replanner_prompt(
     1. Remove completed tasks from the plan.
     2. Add new steps only if required.
     3. If all tasks are completed, return a final response.
-    4. Limit the total number of steps to {n_steps}.
+    4. Limit the total number of steps to 4.
     5. Maintain the step format:
         - Each step is a list of tasks
         - Use a single task per step for sequential execution

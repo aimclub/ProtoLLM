@@ -2,7 +2,7 @@ import copy
 import json
 import time
 from typing import Dict, List, Union
-import random
+
 from langchain.schema import OutputParserException
 from langchain_core.exceptions import OutputParserException
 from langgraph.graph import END, START, StateGraph
@@ -10,10 +10,11 @@ from langgraph.prebuilt import create_react_agent
 from langgraph.store.memory import InMemoryStore
 from langgraph.types import Command
 
-from protollm.agents.agent_prompts import (build_planner_prompt,
+from protollm.agents.agent_prompts import (build_chat_prompt,
+                                           build_planner_prompt,
                                            build_replanner_prompt,
+                                           build_summary_prompt,
                                            build_supervisor_prompt,
-                                           chat_prompt, summary_prompt,
                                            worker_prompt)
 from protollm.agents.agent_utils.parsers import (chat_parser, planner_parser,
                                                  replanner_parser,
@@ -134,6 +135,21 @@ def supervisor_node(state: Dict[str, Union[str, List[str]]], config: dict) -> Co
     scenario_agents = config["configurable"]["scenario_agents"]
     tools_for_agents = config["configurable"]["tools_for_agents"]
 
+    problem_statement = config["configurable"]["prompts"]["supervisor"][
+        "problem_statement"
+    ]
+    problem_statement_continue = config["configurable"]["prompts"]["supervisor"][
+        "problem_statement_continue"
+    ]
+    rules = config["configurable"]["prompts"]["supervisor"]["rules"]
+    examples = config["configurable"]["prompts"]["supervisor"]["examples"]
+    additional_rules = config["configurable"]["prompts"]["supervisor"][
+        "additional_rules"
+    ]
+    enhancemen_significance = config["configurable"]["prompts"]["supervisor"][
+        "enhancemen_significance"
+    ]
+
     config["configurable"]["tools_for_agents"]["web_search"] = [web_tools_rendered]
 
     plan = state.get("plan")
@@ -150,7 +166,16 @@ def supervisor_node(state: Dict[str, Union[str, List[str]]], config: dict) -> Co
     {plan_str}\n\nYou are tasked with executing: {task}."""
 
     supervisor_chain = (
-        build_supervisor_prompt(scenario_agents, tools_for_agents)
+        build_supervisor_prompt(
+            scenario_agents,
+            tools_for_agents,
+            problem_statement=problem_statement,
+            problem_statement_continue=problem_statement_continue,
+            rules=rules,
+            examples=examples,
+            additional_rules=additional_rules,
+            enhancemen_significance=enhancemen_significance,
+        )
         | llm
         | supervisor_parser
     )
@@ -219,9 +244,9 @@ def supervisor_node(state: Dict[str, Union[str, List[str]]], config: dict) -> Co
             )
             time.sleep(2**attempt)  # Exponential backoff
 
-    state["response"] = (
-        "I can't answer your question right now. Maybe I can assist with something else?"
-    )
+    state[
+        "response"
+    ] = "I can't answer your question right now. Maybe I can assist with something else?"
     state["end"] = True
     return state
 
@@ -246,11 +271,29 @@ def plan_node(
     llm = config["configurable"]["llm"]
     max_retries = config["configurable"]["max_retries"]
     tools_descp = config["configurable"]["tools_descp"]
-    adds_prompt = config["configurable"]["prompts"]["planner"]
+
+    problem_statement = config["configurable"]["prompts"]["planner"][
+        "problem_statement"
+    ]
+    adds_prompt = config["configurable"]["prompts"]["planner"]["additional_hints"]
+    rules = config["configurable"]["prompts"]["planner"]["rules"]
+    examples = config["configurable"]["prompts"]["planner"]["examples"]
+    desc_restrictions = config["configurable"]["prompts"]["planner"][
+        "desc_restrictions"
+    ]
+
     last_memory = state.get("last_memory", "")
 
     planner = (
-        build_planner_prompt(tools_descp, last_memory, additional_hints=adds_prompt)
+        build_planner_prompt(
+            tools_descp,
+            last_memory,
+            additional_hints=adds_prompt,
+            problem_statement=problem_statement,
+            rules=rules,
+            examples=examples,
+            desc_restrictions=desc_restrictions,
+        )
         | llm
         | planner_parser
     )
@@ -303,20 +346,33 @@ def replan_node(
     llm = config["configurable"]["llm"]
     max_retries = config["configurable"]["max_retries"]
     tools_descp = config["configurable"]["tools_descp"]
-    try:
-        adds_prompt = config["configurable"]["prompts"]["replanner"]
-    except:
-        adds_prompt = None
+
+    problem_statement = config["configurable"]["prompts"]["replanner"][
+        "problem_statement"
+    ]
+    adds_prompt = config["configurable"]["prompts"]["replanner"]["additional_hints"]
+    rules = config["configurable"]["prompts"]["replanner"]["rules"]
+    examples = config["configurable"]["prompts"]["replanner"]["examples"]
+
     last_memory = state.get("last_memory", "")
 
     replanner = (
-        build_replanner_prompt(tools_descp, last_memory, additional_hint=adds_prompt) | llm | replanner_parser
+        build_replanner_prompt(
+            tools_descp,
+            last_memory,
+            additional_hint=adds_prompt,
+            problem_statement=problem_statement,
+            rules=rules,
+            examples=examples,
+        )
+        | llm
+        | replanner_parser
     )
 
     query = state["input"]
     current_plan = state.get("plan", [])
     past_steps = set(state.get("past_steps", []))
-    
+
     # state['past_steps'] = set(state.get("past_steps", []))
 
     for attempt in range(max_retries):
@@ -397,13 +453,20 @@ def summary_node(
     """
     llm = config["configurable"]["llm"]
     max_retries = config["configurable"]["max_retries"]
-    adds_prompt = config["configurable"]["prompts"]["summary"]
+
+    problem_statement = config["configurable"]["prompts"]["summary"][
+        "problem_statement"
+    ]
+    additional_hints = config["configurable"]["prompts"]["summary"]["additional_hints"]
+    rules = config["configurable"]["prompts"]["summary"]["rules"]
 
     system_response = state["response"]
     query = state["input"]
     past_steps = state["past_steps"]
 
-    summary_agent = summary_prompt + "\n" + adds_prompt | llm
+    summary_agent = (
+        build_summary_prompt(additional_hints, problem_statement, rules) | llm
+    )
 
     for attempt in range(max_retries):
         try:
@@ -463,7 +526,12 @@ def chat_node(state, config: dict):
     - Resets visualization state on new responses.
     """
     llm = config["configurable"]["llm"]
-    chat_agent = chat_prompt | llm | chat_parser
+    problem_statement = config["configurable"]["prompts"]["chat"]["problem_statement"]
+    additional_hints = config["configurable"]["prompts"]["chat"]["additional_hints"]
+
+    chat_agent = (
+        build_chat_prompt(problem_statement, additional_hints) | llm | chat_parser
+    )
     input = state["input"]
     max_retries = 1
 
