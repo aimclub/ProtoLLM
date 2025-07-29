@@ -1,9 +1,9 @@
 import copy
 import json
 import time
-from typing import Dict, List, Union
 
-from langchain.schema import OutputParserException
+from typing import Annotated, Dict, List, Union
+
 from langchain_core.exceptions import OutputParserException
 from langgraph.graph import END, START, StateGraph
 from langgraph.prebuilt import create_react_agent
@@ -21,6 +21,7 @@ from protollm.agents.agent_utils.parsers import (chat_parser, planner_parser,
                                                  supervisor_parser)
 from protollm.agents.agent_utils.pydantic_models import (Plan, ReplanAction,
                                                          Response)
+
 from protollm.tools.web_tools import web_tools_rendered
 
 # TODO: make real embedder, not dummy
@@ -28,7 +29,7 @@ store = InMemoryStore(index={"embed": lambda x: [[1.0, 2.0] for _ in x], "dims":
 
 
 def subgraph_start_node(state, config):
-    print("Start node")
+    print("Start subgraph with SCENARIO agents")
     return state
 
 
@@ -37,8 +38,8 @@ def subgraph_end_node(state, config):
 
 
 def web_search_node(
-    state: Dict[str, Union[str, List[str]]], config: dict
-) -> Union[Dict, Command]:
+    state: dict, config: dict
+) :
     """
     Executes a web search task using a language model (LLM) and predefined web tools.
 
@@ -52,13 +53,12 @@ def web_search_node(
             - 'llm' (BaseChatModel): An instance of the language model used for reasoning and task execution.
             - 'max_retries' (int): The maximum number of retry attempts if the web search fails.
             - 'web_tools' (List[BaseTool]): A list of predefined web tools to be used by the agent (can be empty).
-
     Returns
     -------
-    Command
+    Command 
         An object that contains either the next step for execution or an error response if retries are exhausted.
-
-    Notes
+ 
+    Notes 
     -----
     - If web tools are not provided, the function creates an agent without them.
     - The function attempts to perform the task from the first step of the plan.
@@ -73,28 +73,40 @@ def web_search_node(
     else:
         from protollm.tools.web_tools import web_tools
 
-    web_agent = create_react_agent(llm, web_tools or [], state_modifier=worker_prompt)
-    task = state["plan"][0]
+    web_agent = create_react_agent(llm, web_tools or [], prompt=worker_prompt)
+    task = state["task"]
 
     for attempt in range(max_retries):
         try:
             agent_response = web_agent.invoke(
                 {"messages": [("user", task + " You must search!")]}
             )
-            state["past_steps"] = [(task, agent_response["messages"][-1].content)]
-            state["nodes_calls"] = [("web_search", agent_response["messages"])]
-            return state
+            for i, m in enumerate(agent_response["messages"]):
+                if m.content == []:
+                    agent_response["messages"][i].content = ""
+            return Command(
+                update={
+                    "past_steps": Annotated[set, "or_"](
+                        {(task, agent_response["messages"][-1].content)}
+                    ),
+                    "nodes_calls": Annotated[set, "or_"](
+                        {
+                            (
+                                "web_search",
+                                tuple(
+                                    (m.type, m.content)
+                                    for m in agent_response["messages"]
+                                ),
+                            )
+                        }
+                    ),
+                }
+            )
         except Exception as e:
             print(
-                f"Web search failed with error: {str(e)}. Retrying... ({attempt + 1}/{max_retries})"
+                f"Web Search failed: {str(e)}. Retrying ({attempt+1}/{max_retries})"
             )
-            time.sleep(2**attempt)  # Exponential backoff
-
-    return Command(
-        update={
-            "response": "I can't answer your question right now. Maybe I can assist with something else?"
-        },
-    )
+            time.sleep(1.2**attempt)
 
 
 def supervisor_node(state: Dict[str, Union[str, List[str]]], config: dict) -> Command:
@@ -189,7 +201,7 @@ def supervisor_node(state: Dict[str, Union[str, List[str]]], config: dict) -> Co
             subgraph.add_node("subgraph_start_node", subgraph_start_node)
             subgraph.add_node("subgraph_end_node", subgraph_end_node)
             subgraph.add_edge(START, "subgraph_start_node")
-            added_nodes = []
+            added_nodes = []                
 
             for i, node_name in enumerate(response.next):
                 # get task for current agent from plan
@@ -389,6 +401,7 @@ def replan_node(
                 return state
             else:
                 state["plan"] = output.steps or []
+                state["next"] = 'supervisor'
                 return state
 
         except OutputParserException as e:
