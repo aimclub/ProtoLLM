@@ -39,7 +39,9 @@ def subgraph_end_node(state, config):
     return state
 
 
-def web_search_node(state: dict, config: dict):
+def web_search_node(
+    state: dict, config: dict
+) :
     """
     Executes a web search task using a language model (LLM) and predefined web tools.
 
@@ -53,13 +55,12 @@ def web_search_node(state: dict, config: dict):
             - 'llm' (BaseChatModel): An instance of the language model used for reasoning and task execution.
             - 'max_retries' (int): The maximum number of retry attempts if the web search fails.
             - 'web_tools' (List[BaseTool]): A list of predefined web tools to be used by the agent (can be empty).
-
     Returns
     -------
-    Command
+    Command 
         An object that contains either the next step for execution or an error response if retries are exhausted.
-
-    Notes
+ 
+    Notes 
     -----
     - If web tools are not provided, the function creates an agent without them.
     - The function attempts to perform the task from the first step of the plan.
@@ -82,6 +83,9 @@ def web_search_node(state: dict, config: dict):
             agent_response = web_agent.invoke(
                 {"messages": [("user", task + " You must search!")]}
             )
+            for i, m in enumerate(agent_response["messages"]):
+                if m.content == []:
+                    agent_response["messages"][i].content = ""
             return Command(
                 update={
                     "past_steps": Annotated[set, "or_"](
@@ -101,7 +105,9 @@ def web_search_node(state: dict, config: dict):
                 }
             )
         except Exception as e:
-            print(f"Web Search failed: {str(e)}. Retrying ({attempt+1}/{max_retries})")
+            print(
+                f"Web Search failed: {str(e)}. Retrying ({attempt+1}/{max_retries})"
+            )
             time.sleep(1.2**attempt)
 
 
