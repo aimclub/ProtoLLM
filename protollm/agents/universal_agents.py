@@ -31,7 +31,7 @@ store = InMemoryStore(index={"embed": lambda x: [[1.0, 2.0] for _ in x], "dims":
 
 
 def subgraph_start_node(state, config):
-    print("Start node")
+    print("Start subgraph with SCENARIO agents")
     return state
 
 
@@ -179,7 +179,7 @@ def supervisor_node(state: Dict[str, Union[str, List[str]]], config: dict) -> Co
             subgraph.add_node("subgraph_start_node", subgraph_start_node)
             subgraph.add_node("subgraph_end_node", subgraph_end_node)
             subgraph.add_edge(START, "subgraph_start_node")
-            added_nodes = []
+            added_nodes = []                
 
             for i, node_name in enumerate(response.next):
                 # get task for current agent from plan
