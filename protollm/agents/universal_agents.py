@@ -344,6 +344,7 @@ def replan_node(
                 return state
             else:
                 state["plan"] = output.steps or []
+                state["next"] = 'supervisor'
                 return state
 
         except OutputParserException as e:
