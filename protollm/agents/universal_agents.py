@@ -1,25 +1,29 @@
 import copy
 import json
 import time
-from typing import Dict, List, Union
-import random
-from langchain.schema import OutputParserException
+from typing import Annotated, Dict, List, Union
+
 from langchain_core.exceptions import OutputParserException
 from langgraph.graph import END, START, StateGraph
 from langgraph.prebuilt import create_react_agent
 from langgraph.store.memory import InMemoryStore
 from langgraph.types import Command
 
-from protollm.agents.agent_prompts import (build_planner_prompt,
-                                           build_replanner_prompt,
-                                           build_supervisor_prompt,
-                                           chat_prompt, summary_prompt,
-                                           worker_prompt)
-from protollm.agents.agent_utils.parsers import (chat_parser, planner_parser,
-                                                 replanner_parser,
-                                                 supervisor_parser)
-from protollm.agents.agent_utils.pydantic_models import (Plan, ReplanAction,
-                                                         Response)
+from protollm.agents.agent_prompts import (
+    build_planner_prompt,
+    build_replanner_prompt,
+    build_supervisor_prompt,
+    chat_prompt,
+    summary_prompt,
+    worker_prompt,
+)
+from protollm.agents.agent_utils.parsers import (
+    chat_parser,
+    planner_parser,
+    replanner_parser,
+    supervisor_parser,
+)
+from protollm.agents.agent_utils.pydantic_models import Plan, ReplanAction, Response
 from protollm.tools.web_tools import web_tools_rendered
 
 # TODO: make real embedder, not dummy
@@ -35,9 +39,7 @@ def subgraph_end_node(state, config):
     return state
 
 
-def web_search_node(
-    state: Dict[str, Union[str, List[str]]], config: dict
-) -> Union[Dict, Command]:
+def web_search_node(state: dict, config: dict):
     """
     Executes a web search task using a language model (LLM) and predefined web tools.
 
@@ -72,28 +74,35 @@ def web_search_node(
     else:
         from protollm.tools.web_tools import web_tools
 
-    web_agent = create_react_agent(llm, web_tools or [], state_modifier=worker_prompt)
-    task = state["plan"][0]
+    web_agent = create_react_agent(llm, web_tools or [], prompt=worker_prompt)
+    task = state["task"]
 
     for attempt in range(max_retries):
         try:
             agent_response = web_agent.invoke(
                 {"messages": [("user", task + " You must search!")]}
             )
-            state["past_steps"] = [(task, agent_response["messages"][-1].content)]
-            state["nodes_calls"] = [("web_search", agent_response["messages"])]
-            return state
-        except Exception as e:
-            print(
-                f"Web search failed with error: {str(e)}. Retrying... ({attempt + 1}/{max_retries})"
+            return Command(
+                update={
+                    "past_steps": Annotated[set, "or_"](
+                        {(task, agent_response["messages"][-1].content)}
+                    ),
+                    "nodes_calls": Annotated[set, "or_"](
+                        {
+                            (
+                                "web_search",
+                                tuple(
+                                    (m.type, m.content)
+                                    for m in agent_response["messages"]
+                                ),
+                            )
+                        }
+                    ),
+                }
             )
-            time.sleep(2**attempt)  # Exponential backoff
-
-    return Command(
-        update={
-            "response": "I can't answer your question right now. Maybe I can assist with something else?"
-        },
-    )
+        except Exception as e:
+            print(f"Web Search failed: {str(e)}. Retrying ({attempt+1}/{max_retries})")
+            time.sleep(1.2**attempt)
 
 
 def supervisor_node(state: Dict[str, Union[str, List[str]]], config: dict) -> Command:
@@ -219,9 +228,9 @@ def supervisor_node(state: Dict[str, Union[str, List[str]]], config: dict) -> Co
             )
             time.sleep(2**attempt)  # Exponential backoff
 
-    state["response"] = (
-        "I can't answer your question right now. Maybe I can assist with something else?"
-    )
+    state[
+        "response"
+    ] = "I can't answer your question right now. Maybe I can assist with something else?"
     state["end"] = True
     return state
 
@@ -310,13 +319,15 @@ def replan_node(
     last_memory = state.get("last_memory", "")
 
     replanner = (
-        build_replanner_prompt(tools_descp, last_memory, adds_prompt) | llm | replanner_parser
+        build_replanner_prompt(tools_descp, last_memory, adds_prompt)
+        | llm
+        | replanner_parser
     )
 
     query = state["input"]
     current_plan = state.get("plan", [])
     past_steps = set(state.get("past_steps", []))
-    
+
     # state['past_steps'] = set(state.get("past_steps", []))
 
     for attempt in range(max_retries):
