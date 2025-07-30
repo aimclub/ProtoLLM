@@ -40,7 +40,7 @@ def playground_scenario_node(state, config: dict) -> Command:
                     "nodes_calls": Annotated[set, "or_"](
                         {
                             (
-                                "chemist_node",
+                                "playground_scenario_node",
                                 tuple(
                                     (m.type, m.content)
                                     for m in agent_response["messages"]
@@ -52,5 +52,5 @@ def playground_scenario_node(state, config: dict) -> Command:
             )
 
         except Exception as e:
-            print(f"Chemist failed: {str(e)}. Retrying ({attempt+1}/{max_retries})")
+            print(f"Playground scenario node failed: {str(e)}. Retrying ({attempt+1}/{max_retries})")
             time.sleep(1.2**attempt)
