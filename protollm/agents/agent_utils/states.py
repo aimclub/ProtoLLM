@@ -1,6 +1,7 @@
 import operator
-from typing import Annotated, List, Tuple, Set
 from pathlib import Path
+from typing import Annotated, List, Set, Tuple
+
 from typing_extensions import TypedDict
 
 
@@ -8,7 +9,7 @@ class PlanExecute(TypedDict):
     input: str
     plan: List[str]
 
-    past_steps: Annotated[Set[Tuple[str, str]], operator.or_]  
+    past_steps: Annotated[Set[Tuple[str, str]], operator.or_]
     nodes_calls: Annotated[Set[Tuple[str, tuple]], operator.or_]
 
     next: str

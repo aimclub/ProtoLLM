@@ -64,4 +64,3 @@ class Chat(BaseModel):
     last_memory: Optional[str] = Field(
         description="last memory of the user, if any", default=""
     )
- 

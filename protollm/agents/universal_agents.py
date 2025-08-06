@@ -1,7 +1,6 @@
 import copy
 import json
 import time
-
 from typing import Annotated, Dict, List, Union
 
 from langchain_core.exceptions import OutputParserException
@@ -15,17 +14,15 @@ from protollm.agents.agent_prompts import (build_chat_prompt,
                                            build_replanner_prompt,
                                            build_summary_prompt,
                                            build_supervisor_prompt,
-                                           worker_prompt,
-                                           build_vision_prompt)
-from protollm.agents.agent_utils.prompt_utils import convert_to_base64, prompt_func
+                                           build_vision_prompt, worker_prompt)
 from protollm.agents.agent_utils.parsers import (chat_parser, planner_parser,
                                                  replanner_parser,
                                                  supervisor_parser)
+from protollm.agents.agent_utils.prompt_utils import (convert_to_base64,
+                                                      prompt_func)
 from protollm.agents.agent_utils.pydantic_models import (Plan, ReplanAction,
                                                          Response)
-
 from protollm.tools.web_tools import web_tools_rendered
-
 
 # TODO: make real embedder, not dummy
 store = InMemoryStore(index={"embed": lambda x: [[1.0, 2.0] for _ in x], "dims": 2})
@@ -40,9 +37,7 @@ def subgraph_end_node(state, config):
     return state
 
 
-def web_search_node(
-    state: dict, config: dict
-) :
+def web_search_node(state: dict, config: dict):
     """
     Executes a web search task using a language model (LLM) and predefined web tools.
 
@@ -58,10 +53,10 @@ def web_search_node(
             - 'web_tools' (List[BaseTool]): A list of predefined web tools to be used by the agent (can be empty).
     Returns
     -------
-    Command 
+    Command
         An object that contains either the next step for execution or an error response if retries are exhausted.
- 
-    Notes 
+
+    Notes
     -----
     - If web tools are not provided, the function creates an agent without them.
     - The function attempts to perform the task from the first step of the plan.
@@ -106,9 +101,7 @@ def web_search_node(
                 }
             )
         except Exception as e:
-            print(
-                f"Web Search failed: {str(e)}. Retrying ({attempt+1}/{max_retries})"
-            )
+            print(f"Web Search failed: {str(e)}. Retrying ({attempt+1}/{max_retries})")
             time.sleep(1.2**attempt)
 
 
@@ -204,8 +197,8 @@ def supervisor_node(state: Dict[str, Union[str, List[str]]], config: dict) -> Co
             subgraph.add_node("subgraph_start_node", subgraph_start_node)
             subgraph.add_node("subgraph_end_node", subgraph_end_node)
             subgraph.add_edge(START, "subgraph_start_node")
-            added_nodes = []    
-            
+            added_nodes = []
+
             if response.next == []:
                 return state
 
@@ -288,7 +281,7 @@ def plan_node(
     Handles both text and image inputs.
     """
     image_path = state.get("attached_img", "")
-    
+
     llm = config["configurable"]["llm"]
     max_retries = config["configurable"]["max_retries"]
     tools_descp = config["configurable"]["tools_descp"]
@@ -311,15 +304,17 @@ def plan_node(
         img_context = convert_to_base64(image_path)
         messages = [
             build_vision_prompt(),
-            prompt_func({
-                "text": f"USER QUESTION: describe the image",
-                "image": [img_context],
-            }),
+            prompt_func(
+                {
+                    "text": f"USER QUESTION: describe the image",
+                    "image": [img_context],
+                }
+            ),
         ]
         image_description = llm.invoke(messages).content
     else:
         image_description = None
-        
+
     planner = (
         build_planner_prompt(
             tools_descp,
@@ -329,7 +324,7 @@ def plan_node(
             rules=rules,
             examples=examples,
             desc_restrictions=desc_restrictions,
-            image_description=image_description
+            image_description=image_description,
         )
         | llm
         | planner_parser
@@ -338,9 +333,9 @@ def plan_node(
     query = state["input"]
 
     for attempt in range(max_retries):
-        try: 
+        try:
             plan = planner.invoke({"input": query})
-                
+
             state["plan"] = plan.steps
             return state
 
@@ -425,7 +420,7 @@ def replan_node(
                 return state
             else:
                 state["plan"] = output.steps or []
-                state["next"] = 'supervisor'
+                state["next"] = "supervisor"
                 return state
 
         except OutputParserException as e:
@@ -535,17 +530,19 @@ def chat_node(state, config: dict):
     problem_statement = config["configurable"]["prompts"]["chat"]["problem_statement"]
     additional_hints = config["configurable"]["prompts"]["chat"]["additional_hints"]
     max_retries = config["configurable"]["max_retries"]
-    
+
     input_text = state.get("input", "")
     image_path = state.get("attached_img")
-    
+
     # if is not empty string
     if len(image_path) > 1:
         llm = config["configurable"].get("visual_model")
         img_context = convert_to_base64(image_path)
 
         messages = [
-            build_chat_prompt(problem_statement, additional_hints, last_memory=state['last_memory']),
+            build_chat_prompt(
+                problem_statement, additional_hints, last_memory=state["last_memory"]
+            ),
             prompt_func(
                 {
                     "text": f"USER QUESTION: {input_text}\n",
@@ -556,14 +553,12 @@ def chat_node(state, config: dict):
     else:
         llm = config["configurable"].get("llm")
         messages = [
-            build_chat_prompt(problem_statement, additional_hints, last_memory=state['last_memory']),
-            prompt_func(
-                {
-                    "text": f"USER QUESTION: {input_text}\n"
-                }
+            build_chat_prompt(
+                problem_statement, additional_hints, last_memory=state["last_memory"]
             ),
+            prompt_func({"text": f"USER QUESTION: {input_text}\n"}),
         ]
-        
+
     for attempt in range(max_retries):
         try:
             output = chat_parser.parse(llm.invoke(messages).content)
@@ -575,8 +570,8 @@ def chat_node(state, config: dict):
                 state["next"] = output.action.next
                 state["visualization"] = None
                 return state
-        
-        except Exception as e:  
+
+        except Exception as e:
             print(
                 f"Chat failed with error: {str(e)}. Retrying... ({attempt+1}/{max_retries})"
             )

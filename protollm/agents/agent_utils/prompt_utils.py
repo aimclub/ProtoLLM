@@ -1,5 +1,6 @@
 import base64
 from io import BytesIO
+
 from langchain_core.messages import HumanMessage
 from PIL import Image
 
