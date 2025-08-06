@@ -15,7 +15,9 @@ from protollm.agents.agent_prompts import (build_chat_prompt,
                                            build_replanner_prompt,
                                            build_summary_prompt,
                                            build_supervisor_prompt,
-                                           worker_prompt)
+                                           worker_prompt,
+                                           build_vision_prompt)
+from protollm.agents.agent_utils.prompt_utils import convert_to_base64, prompt_func
 from protollm.agents.agent_utils.parsers import (chat_parser, planner_parser,
                                                  replanner_parser,
                                                  supervisor_parser)
@@ -23,6 +25,7 @@ from protollm.agents.agent_utils.pydantic_models import (Plan, ReplanAction,
                                                          Response)
 
 from protollm.tools.web_tools import web_tools_rendered
+
 
 # TODO: make real embedder, not dummy
 store = InMemoryStore(index={"embed": lambda x: [[1.0, 2.0] for _ in x], "dims": 2})
@@ -201,7 +204,10 @@ def supervisor_node(state: Dict[str, Union[str, List[str]]], config: dict) -> Co
             subgraph.add_node("subgraph_start_node", subgraph_start_node)
             subgraph.add_node("subgraph_end_node", subgraph_end_node)
             subgraph.add_edge(START, "subgraph_start_node")
-            added_nodes = []                
+            added_nodes = []    
+            
+            if response.next == []:
+                return state
 
             for i, node_name in enumerate(response.next):
                 # get task for current agent from plan
@@ -279,7 +285,10 @@ def plan_node(
 ) -> Union[Dict[str, List[Dict]], Command]:
     """
     Generates an execution plan using a language model (LLM) based on the provided input.
+    Handles both text and image inputs.
     """
+    image_path = state.get("attached_img", "")
+    
     llm = config["configurable"]["llm"]
     max_retries = config["configurable"]["max_retries"]
     tools_descp = config["configurable"]["tools_descp"]
@@ -296,6 +305,21 @@ def plan_node(
 
     last_memory = state.get("last_memory", "")
 
+    # prepare input with optional image
+    if len(image_path) > 1:
+        llm = config["configurable"].get("visual_model", config["configurable"]["llm"])
+        img_context = convert_to_base64(image_path)
+        messages = [
+            build_vision_prompt(),
+            prompt_func({
+                "text": f"USER QUESTION: describe the image",
+                "image": [img_context],
+            }),
+        ]
+        image_description = llm.invoke(messages).content
+    else:
+        image_description = None
+        
     planner = (
         build_planner_prompt(
             tools_descp,
@@ -305,6 +329,7 @@ def plan_node(
             rules=rules,
             examples=examples,
             desc_restrictions=desc_restrictions,
+            image_description=image_description
         )
         | llm
         | planner_parser
@@ -313,8 +338,9 @@ def plan_node(
     query = state["input"]
 
     for attempt in range(max_retries):
-        try:
+        try: 
             plan = planner.invoke({"input": query})
+                
             state["plan"] = plan.steps
             return state
 
@@ -329,7 +355,7 @@ def plan_node(
                     json_str = error_str[start_idx:end_idx]
                     partial_output = json.loads(json_str)
 
-                    # Make plan from succces part of response
+                    # make plan from succces part of response
                     plan = Plan(steps=partial_output["steps"])
                     state["plan"] = plan.steps
                     return state
@@ -384,8 +410,6 @@ def replan_node(
     query = state["input"]
     current_plan = state.get("plan", [])
     past_steps = set(state.get("past_steps", []))
-
-    # state['past_steps'] = set(state.get("past_steps", []))
 
     for attempt in range(max_retries):
         try:
@@ -508,70 +532,54 @@ def summary_node(
 
 
 def chat_node(state, config: dict):
-    """
-    Processes user input through a chat agent and returns an appropriate response
-    or next action. This agent decides whether it can handle the user query itself.
-    If yes, responds with the {"response": agent_answer}.
-    Otherwise, calls main agentic system.
-
-    Parameters
-    ----------
-    state : dict | TypedDict
-        The current execution state, containing "input" (the user message) and
-    config : dict
-        Configuration dictionary containing a "configurable" sub-dictionary with the LLM model
-        under the key "model".
-
-    Returns
-    -------
-    dict
-        If the response is a direct reply, returns {"response": message, "visualization": None}.
-        If the response requires an action, returns {"next": action, "visualization": None}.
-        If retries are exhausted, transitions to the planner with an empty response.
-
-    Raises
-    ------
-    Exception
-        Handles errors related to API failures, implementing exponential backoff (`2 ** attempt`).
-
-    Notes
-    -----
-    - Resets visualization state on new responses.
-    """
-    llm = config["configurable"]["llm"]
     problem_statement = config["configurable"]["prompts"]["chat"]["problem_statement"]
     additional_hints = config["configurable"]["prompts"]["chat"]["additional_hints"]
+    max_retries = config["configurable"]["max_retries"]
+    
+    input_text = state.get("input", "")
+    image_path = state.get("attached_img")
+    
+    # if is not empty string
+    if len(image_path) > 1:
+        llm = config["configurable"].get("visual_model")
+        img_context = convert_to_base64(image_path)
 
-    chat_agent = (
-        build_chat_prompt(problem_statement, additional_hints) | llm | chat_parser
-    )
-    input = state["input"]
-    max_retries = 1
-
+        messages = [
+            build_chat_prompt(problem_statement, additional_hints, last_memory=state['last_memory']),
+            prompt_func(
+                {
+                    "text": f"USER QUESTION: {input_text}\n",
+                    "image": [img_context],
+                }
+            ),
+        ]
+    else:
+        llm = config["configurable"].get("llm")
+        messages = [
+            build_chat_prompt(problem_statement, additional_hints, last_memory=state['last_memory']),
+            prompt_func(
+                {
+                    "text": f"USER QUESTION: {input_text}\n"
+                }
+            ),
+        ]
+        
     for attempt in range(max_retries):
         try:
-            output = chat_agent.invoke(
-                {
-                    "input": input,
-                    "last_memory": state["last_memory"],
-                    "additional_hints_for_scenario_agents": config["configurable"][
-                        "prompts"
-                    ]["chat"],
-                }
-            )
+            output = chat_parser.parse(llm.invoke(messages).content)
 
             if isinstance(output.action, Response):
                 state["response"] = output.action.response
                 return state
             else:
                 state["next"] = output.action.next
-            state["visualization"] = None
-
-        except Exception as e:  # Handle OpenAI API errors
+                state["visualization"] = None
+                return state
+        
+        except Exception as e:  
             print(
                 f"Chat failed with error: {str(e)}. Retrying... ({attempt+1}/{max_retries})"
             )
             time.sleep(1.2**attempt)
-
     state["response"] = None
     return state

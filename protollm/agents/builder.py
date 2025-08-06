@@ -111,10 +111,6 @@ class GraphBuilder:
         workflow.add_node("replan_node", replan_node)
         workflow.add_node("summary", summary_node)
 
-        if self.conf["configurable"]["web_search"]:
-            workflow.add_node("web_search", web_search_node)
-            workflow.add_edge("web_search", "replan_node")
-
         for agent_name, node in self.conf["configurable"][
             "scenario_agent_funcs"
         ].items():
@@ -144,10 +140,11 @@ class GraphBuilder:
 
         return workflow.compile()
 
-    def stream(self, inputs: dict, user_id: str = "1"):
+    def stream(self, inputs: dict, image_path: str = "", user_id: str = "1"):
         """Start streaming the input through the graph."""
-        inputs = initialize_state(user_input=inputs["input"], user_id=user_id)
-        for event in self.app.stream(inputs, config=self.conf):
+        state = initialize_state(user_input=inputs["input"], user_id=user_id)
+        state["attached_img"] = image_path
+        for event in self.app.stream(state, config=self.conf):
             for k, v in event.items():
                 yield (v)
         try:

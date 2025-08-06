@@ -1,6 +1,6 @@
 import operator
 from typing import Annotated, List, Tuple, Set
-
+from pathlib import Path
 from typing_extensions import TypedDict
 
 
@@ -8,7 +8,7 @@ class PlanExecute(TypedDict):
     input: str
     plan: List[str]
 
-    past_steps: Annotated[Set[Tuple[str, str]], operator.or_]  # Объединение множеств
+    past_steps: Annotated[Set[Tuple[str, str]], operator.or_]  
     nodes_calls: Annotated[Set[Tuple[str, tuple]], operator.or_]
 
     next: str
@@ -21,6 +21,7 @@ class PlanExecute(TypedDict):
     metadata: Annotated[dict, operator.or_]
 
     parallel_tasks: dict
+    attached_img: Path
 
 
 def load_summary(user_id: str) -> str:
@@ -45,5 +46,6 @@ def initialize_state(user_input: str, user_id: str) -> PlanExecute:
         "translation": "",
         "automl_results": "",
         "last_memory": memory,
+        "attached_img": "",
         "metadata": {},
     }

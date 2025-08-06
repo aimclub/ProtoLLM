@@ -1,15 +1,16 @@
-from langchain.prompts import ChatPromptTemplate
+
 from langchain_core.prompts import ChatPromptTemplate
+from langchain_core.messages import SystemMessage
 
 from protollm.agents.agent_utils.parsers import (chat_parser, planner_parser,
                                                  replanner_parser,
                                                  supervisor_parser)
-
-
+        
 def build_planner_prompt(
     tools_rendered: str, last_memory: str, n_steps: int = 5, additional_hints = None, 
-    problem_statement=None, rules=None, desc_restrictions=None, examples=None
+    problem_statement=None, rules=None, desc_restrictions=None, examples=None, image_description=None
 ) -> ChatPromptTemplate:
+    image_description = image_description or "No attached."
     problem_statement = problem_statement or """
     For the given objective, create a step-by-step plan. Each step should contain:
         - just one task in step: tasks that must be executed in order
@@ -53,7 +54,7 @@ def build_planner_prompt(
         Available tools: {tools_rendered}
         Previous context: {last_memory}
         Additional hints: {additional_hints}
-
+        Decripton of attached image: {image_description}
         User request: {input}
 
         {format_instructions}
@@ -68,8 +69,10 @@ def build_planner_prompt(
         tools_rendered=tools_rendered,
         last_memory=last_memory,
         additional_hints=additional_hints,
+        image_description=image_description,
         format_instructions=planner_parser.get_format_instructions(),
     )
+
 
 
 def build_replanner_prompt(
@@ -208,7 +211,6 @@ def build_summary_prompt(additional_hints = "", problem_statement = None, rules=
             """{problem_statement}
         {rules}
 
-
         Your objective is this:
         User query: {query};
         System_response: {system_response};
@@ -217,36 +219,83 @@ def build_summary_prompt(additional_hints = "", problem_statement = None, rules=
         ).partial(problem_statement=problem_statement, rules=rules)
     return summary_prompt
 
-def build_chat_prompt(problem_statement = None, additional_hints_for_scenario_agents = None):
+def build_vision_prompt(problem_statement=None):
+    problem_statement = problem_statement or """
+Analyze this image exhaustively following this structured framework. Prioritize precision, objectivity, and completeness in your description.
+
+1. Core Content
+Primary subject(s):
+Identify and describe all dominant objects/entities (e.g., "A 35-year-old Caucasian woman wearing a red wool coat").
+Specify exact counts, spatial arrangements, and relative sizes (e.g., "Three golden retrievers positioned in a triangle formation around a fire hydrant").
+
+Actions/Events:
+Describe observable activities (e.g., "A child is blowing bubbles while running toward a swing set").
+Note implied narratives (e.g., "A half-eaten cake suggests an interrupted celebration").
+
+2. Visual Elements
+Composition:
+Rule of thirds, symmetry, or leading lines.
+Depth indicators (foreground/midground/background layers).
+
+Colors & Lighting:
+Hex codes or precise color names (e.g., "Pantone 19-4052 Classic Blue").
+Light direction and quality (e.g., "Harsh overhead sunlight casting 45-degree shadows").
+
+Text & Symbols:
+Transcribe all text verbatim (e.g., "Sign reads 'CAUTION: Wet Floor' in bold Helvetica").
+Decode symbols/logos (e.g., "Nike Swoosh logo on left shoe").
+
+3. Contextual Analysis
+Temporal/Geographical Cues:
+Time indicators (e.g., "Deciduous trees with autumn foliage suggest mid-October").
+Architectural styles or license plates for location inference.
+
+Cultural/Subcultural Markers:
+Fashion trends, religious symbols, or subculture signifiers (e.g., "Patch on jacket depicts the anarchy symbol").
+
+4. Technical Observations
+Image Quality:
+Resolution artifacts, noise levels, or blur gradients.
+Suspected editing traces (e.g., "Clone stamp artifacts near the subject’s elbow").
+
+Perspective & Optics:
+Focal length estimation (e.g., "Wide-angle distortion evident in curved horizon").
+Depth of field (e.g., "f/2.8 bokeh effect isolating the subject").
+
+5. Anomalies & Uncertainties
+Flag ambiguities explicitly:
+"Unidentifiable object in upper-right corner (possibly a drone or bird).
+Shadow under the table suggests a hidden object not visible in frame.Э
+
+Start answer with 'In the picture I see...'
+"""
+    return SystemMessage(content=problem_statement)
+
+
+def build_chat_prompt(problem_statement=None, additional_hints=None, last_memory=None) -> SystemMessage:
     problem_statement = problem_statement or """
     Now, the given objective, check whether it is simple enough to answer yourself. \
-    If you can answer without any help and tools and the question is simple inquery, then write your answer. If you can't do that, call next worker: planner
-    If the question is related to running models or checking for presence, training, inference - call planer!
-    You should't answer to a several-sentenced questions. You can only chat with user on a simle topics.
+    If you can answer without any help and tools and the question is simple inquiry, then write your answer. \
+    If you can't do that, call next worker: planner. \
+    You should't answer to a several-sentenced questions. You can only chat with user on simple topics.
     """
-
-    chat_prompt = ChatPromptTemplate.from_template(
-        """
+    
+    system = f"""
     Here is what the user and system previously discussed:
     {last_memory}
 
     {problem_statement}
 
     If a user asks about your capabilities, tell him something from this:
-    {additional_hints_for_scenario_agents}
-
-    Your objective is this:
-    {input}
-
-    Your output should match this JSON format, don't add any intros!!! It is important!
+    {additional_hints}
+    
+    Your output should match this dict format, don't add any intros!!! It is important!
     {{
     "action": {{
         "next" | "response" : str | str
     }}
-    }}
+    }}\n\n
+    {chat_parser.get_format_instructions()}
     """
-    ).partial(problem_statement=problem_statement,
-              additional_hints_for_scenario_agents=additional_hints_for_scenario_agents,
-              format_instructions=chat_parser.get_format_instructions()
-              )
-    return chat_prompt
+
+    return SystemMessage(content=system)
