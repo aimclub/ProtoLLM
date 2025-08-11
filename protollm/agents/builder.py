@@ -147,6 +147,7 @@ class GraphBuilder:
         else:
             state = initialize_state(user_input=inputs["input"], user_id=user_id)
             state["attached_img"] = image_path
+
         for event in self.app.stream(state, config=self.conf):
             for k, v in event.items():
                 yield (v)
