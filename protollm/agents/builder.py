@@ -143,10 +143,10 @@ class GraphBuilder:
     def stream(self, inputs: dict, image_path: str = "", user_id: str = "1"):
         """Start streaming the input through the graph."""
         if 'attached_img' in inputs.keys():
-            state = inputs
-        else:
-            state = initialize_state(user_input=inputs["input"], user_id=user_id)
-            state["attached_img"] = image_path
+            image_path = inputs['attached_img']
+        
+        state = initialize_state(user_input=inputs["input"], user_id=user_id)
+        state["attached_img"] = image_path
 
         for event in self.app.stream(state, config=self.conf):
             for k, v in event.items():
