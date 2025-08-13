@@ -1,6 +1,6 @@
 [project]
 name = "ProtoLLM"
-version = "0.1.4"
+version = "0.1.5"
 description = "A library with which to prototype LLM-based applications quickly and easily."
 requires-python = ">=3.10,<4.0"
 authors = [
