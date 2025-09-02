@@ -88,6 +88,8 @@ class GraphBuilder:
         """
         if "response" in state and state["response"]:
             return "summary"
+        elif state['plan'] == []:
+            return "summary"
         else:
             return "supervisor"
 
