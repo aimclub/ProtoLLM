@@ -5,7 +5,7 @@ from langchain_core.language_models.chat_models import BaseChatModel
 from pydantic import BaseModel
 from openai._types import NOT_GIVEN
 
-from ..connectors import create_llm_connector
+from ..connectors import create_llm_connector, get_allowed_providers
 
 
 class DeepEvalConnector(DeepEvalBaseLLM):
@@ -30,7 +30,10 @@ class DeepEvalConnector(DeepEvalBaseLLM):
     @staticmethod
     def load_model() -> BaseChatModel:
         """Returns LangChain's ChatModel for requests"""
-        return create_llm_connector(os.getenv("DEEPEVAL_LLM_URL", "test_model"))
+        return create_llm_connector(
+            os.getenv("DEEPEVAL_LLM_URL", "test_model"),
+            extra_body={"provider": {"only": get_allowed_providers()}}
+        )
 
     def generate(
             self,

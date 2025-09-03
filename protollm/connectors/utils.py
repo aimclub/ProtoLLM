@@ -214,3 +214,10 @@ def handle_system_prompt(msgs, sys_prompt):
                 idx = next((index for index, obj in enumerate(msgs) if isinstance(obj, SystemMessage)), 0)
                 msgs[idx].content += "\n\n" + sys_prompt
     return msgs
+
+
+def get_allowed_providers() -> list | None:
+    if allowed_providers := os.getenv("ALLOWED_PROVIDERS"):
+        return json.loads(allowed_providers)
+    else:
+        return None

@@ -43,6 +43,12 @@ It is also possible to pass additional parameters for the model.  Available para
 - `top_p` (not available for self-hosted models)
 - `max_tokens`
 
+A separate parameter is extra_body, which is accepted by some services (for example, to specify allowed providers). Since the metrics module uses a method for creating models, you can specify a variable with allowed providers in the configuration to ensure smooth operation, since not all providers work the same in all regions.
+For example:
+```codeblock
+ALLOWED_PROVIDERS='["google-vertex", "azure"]'
+```
+
 Example of how to use the function:
 ```codeblock
 from protollm.connectors.connector_creator import create_llm_connector
