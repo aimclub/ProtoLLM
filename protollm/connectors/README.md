@@ -43,7 +43,7 @@ It is also possible to pass additional parameters for the model.  Available para
 - `top_p` (not available for self-hosted models)
 - `max_tokens`
 
-A separate parameter is extra_body, which is accepted by some services (for example, to specify allowed providers). Since the metrics module uses a method for creating models, you can specify a variable with allowed providers in the configuration to ensure smooth operation, since not all providers work the same in all regions.
+There is a separate parameter, extra_body, which some services use to specify permitted providers. Since not all providers from a given service are available in every region, this parameter allows you to define the providers accessible in your region.
 For example:
 ```codeblock
 ALLOWED_PROVIDERS='["google-vertex", "azure"]'
