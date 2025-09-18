@@ -335,8 +335,9 @@ def plan_node(
     for attempt in range(max_retries):
         try:
             plan = planner.invoke({"input": query})
-            print('PLAN: \n' + str(plan.steps))
+
             state["plan"] = plan.steps
+            print('PLAN: \n' + str(plan.steps))
             return state
 
         except OutputParserException as e:
@@ -353,6 +354,7 @@ def plan_node(
                     # make plan from succces part of response
                     plan = Plan(steps=partial_output["steps"])
                     state["plan"] = plan.steps
+                    print('PLAN: \n' + str(plan.steps))
                     return state
             except:
                 print(
@@ -376,7 +378,6 @@ def replan_node(
     """
     Refines or adjusts an existing execution plan based on previous steps and current state.
     """
-    print('Run RE-PLANNER')
     llm = config["configurable"]["llm"]
     max_retries = config["configurable"]["max_retries"]
     tools_descp = config["configurable"]["tools_descp"]
@@ -409,17 +410,19 @@ def replan_node(
 
     for attempt in range(max_retries):
         try:
-            formatted_plan = str(current_plan)
+            formatted_plan = format_plan(current_plan)
             formatted_past = str([i for i in set(past_steps)])
 
             output = replanner.invoke(
                 {"input": query, "plan": formatted_plan, "past_steps": formatted_past}
             )
+
             if output.action == "response":
-                state["response"] = output.response
+                state["response"] = formatted_past
                 return state
             else:
-                print('PLAN from RePlanner: \n' +str(output.steps or []))
+                print('\n\nLast steps (RePlanner see): \n' + formatted_past + '\n')
+                print('\n\nPLAN from RePlanner: \n' +str(output.steps or []) + '\n\n')
 
                 state["plan"] = output.steps or []
                 state["next"] = "supervisor"
