@@ -418,7 +418,7 @@ def replan_node(
             )
 
             if output.action == "response":
-                state["response"] = formatted_past
+                state["response"] = output.response
                 return state
             else:
                 print('\n\nLast steps (RePlanner see): \n' + formatted_past + '\n')
