@@ -4,7 +4,7 @@ from pydantic import Field
 
 from langchain_community.vectorstores import VectorStore
 
-from protollm_agents.sdk.base import BaseVectorStore 
+from .base import BaseVectorStore 
 
 
 class ChromaVectorStore(BaseVectorStore):

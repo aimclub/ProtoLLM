@@ -6,7 +6,7 @@ from langchain_openai import ChatOpenAI
 from abc import ABC, abstractmethod
 from transformers import AutoTokenizer
 
-from protollm_agents.sdk.base import BaseRunnableModel
+from .base import BaseRunnableModel
 
 
 class BaseOpenAIModel(BaseRunnableModel, ABC):
