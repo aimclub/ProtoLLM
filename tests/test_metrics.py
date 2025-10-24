@@ -40,16 +40,16 @@ def test_correctness_metric():
         actual_output="It depends, some might consider the cat, while others might argue the dog.",
         expected_output="The cat."
     )
-    
+
     with (
         patch.object(
             correctness_metric, "_generate_evaluation_steps", return_value=["first step", "second step"]
         ),
         patch.object(
-            correctness_metric,"evaluate", return_value=(1.0, "all good")
+            correctness_metric,"_evaluate", return_value=(1.0, "all good")
         ) as mocked_evaluate,
     ):
         correctness_metric.measure(test_case)
-        mocked_evaluate.assert_called_with(test_case)
+        mocked_evaluate.assert_called_once_with(test_case, _additional_context=None)
         assert isinstance(correctness_metric.score, float)
         assert isinstance(correctness_metric.reason, str)
