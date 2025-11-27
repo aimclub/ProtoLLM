@@ -109,19 +109,16 @@ def insert_documents(collection: Chroma, docs: Iterable[Document]):
 
     :raises KeyError: if there is no key 'source' in the documents' metadata from 'collection' or 'docs'
     """
-    first_element = next(docs)
+    docs = list(docs)
+    if not docs:
+        return
+    first_element = docs[0]
     if 'source' not in first_element.metadata.keys():
         raise KeyError('There is no file name, called <source>, in document metadata')
-
     existing_docs_name = set(get_all_docs_name(collection))
-    new_docs_name = set([str(doc.metadata['source'].split('\\')[-1]) for doc in docs] +
-                        [str(first_element.metadata['source'].split('\\')[-1])])
+    new_docs_name = set([str(doc.metadata['source'].split('\\')[-1]) for doc in docs])
     docs_name_for_insert = new_docs_name.difference(existing_docs_name)
-    if first_element.metadata['source'].split('\\')[-1] in docs_name_for_insert:
-        docs_for_insert = [first_element]
-    else:
-        docs_for_insert = []
-    docs_for_insert += [doc for doc in docs if doc.metadata['source'].split('\\')[-1] in docs_name_for_insert]
+    docs_for_insert = [doc for doc in docs if doc.metadata['source'].split('\\')[-1] in docs_name_for_insert]
     if docs_for_insert:
         collection.add_documents(docs_for_insert)
 
