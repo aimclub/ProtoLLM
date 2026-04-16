@@ -134,6 +134,9 @@ def create_llm_connector(model_url: str, *args: Any, **kwargs: Any) -> CustomCha
         return ChatRESTServer(model=url_and_name[2], base_url=url_and_name[1], *args, **kwargs)
     elif model_url == "test_model":
         return CustomChatOpenAI(model_name=model_url, api_key="test")
+    elif "api.deepseek.com/v1" in model_url or "api.deepseek.com" in model_url:
+        base_url, model_name = model_url.split(";", 1)
+        return ChatOpenAI(base_url=base_url, model=model_name, api_key=os.getenv("OPENAI_KEY"), *args, **kwargs)
     else:
         raise ValueError("Unsupported provider URL")
     # Possible to add another LangChain compatible connector

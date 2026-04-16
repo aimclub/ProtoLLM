@@ -50,6 +50,9 @@ def test_correctness_metric():
         ) as mocked_evaluate,
     ):
         correctness_metric.measure(test_case)
-        mocked_evaluate.assert_called_once_with(test_case, _additional_context=None)
+        mocked_evaluate.assert_called_once()
+        args, kwargs = mocked_evaluate.call_args
+        assert args[0] == test_case
+        assert kwargs.get("_additional_context") is None
         assert isinstance(correctness_metric.score, float)
         assert isinstance(correctness_metric.reason, str)
