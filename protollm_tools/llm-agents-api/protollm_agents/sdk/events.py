@@ -2,7 +2,7 @@ import enum
 
 from pydantic import Field
 
-from protollm_agents.sdk.base import Event
+from .base import Event
 
 
 class EventType(str, enum.Enum):

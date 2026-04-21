@@ -3,10 +3,10 @@ from typing import AsyncGenerator
 
 from langchain_openai import ChatOpenAI
 
-from protollm_agents.sdk.base import AgentAnswer, BaseAgent, Event
-from protollm_agents.sdk.context import Context
-from protollm_agents.sdk.pipelines.router_pipeline import RouterPipeline
-from protollm_agents.sdk.pipelines.ensemble_router_pipeline import EnsembleRouterPipeline
+from .base import AgentAnswer, BaseAgent, Event
+from .context import Context
+from .pipelines.router_pipeline import RouterPipeline
+from .pipelines.ensemble_router_pipeline import EnsembleRouterPipeline
 
 
 class StreamingAgent(BaseAgent, ABC):

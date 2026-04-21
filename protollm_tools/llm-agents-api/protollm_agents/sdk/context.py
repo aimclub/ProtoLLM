@@ -1,8 +1,8 @@
 from dataclasses import dataclass, field
 
 from langchain_core.tools import Tool
-from protollm_agents.sdk.base import ModelType, VectorStoreType, AgentType
-from protollm_agents.sdk.models import TokenizerModel, CompletionModel, ChatModel, MultimodalModel, EmbeddingAPIModel
+from .base import ModelType, VectorStoreType, AgentType
+from .models import TokenizerModel, CompletionModel, ChatModel, MultimodalModel, EmbeddingAPIModel
 
 @dataclass
 class Context:

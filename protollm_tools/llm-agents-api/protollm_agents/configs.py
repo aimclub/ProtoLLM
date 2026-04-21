@@ -1,9 +1,9 @@
 from typing import Literal
 import logging
-from protollm_agents.sdk.models import EmbeddingAPIModel, CompletionModel, MultimodalModel, TokenizerModel, ChatModel
+from .sdk.models import EmbeddingAPIModel, CompletionModel, MultimodalModel, TokenizerModel, ChatModel
 from pydantic import BaseModel, Field, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
-from protollm_agents.sdk.vector_stores import ChromaVectorStore
+from .sdk.vector_stores import ChromaVectorStore
 
 logger = logging.getLogger(__name__)
 

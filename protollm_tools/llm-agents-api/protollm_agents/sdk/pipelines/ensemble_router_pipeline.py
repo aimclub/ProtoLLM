@@ -16,8 +16,8 @@ from langchain_core.tools import StructuredTool
 from langchain_openai import ChatOpenAI
 from langchain_core.messages import BaseMessage, HumanMessage, ToolMessage, AIMessage, SystemMessage
 
-from protollm_agents.sdk.base import Event
-from protollm_agents.sdk.events import TextEvent, ErrorEvent, MultiDictEvent
+from ..base import Event
+from ..events import TextEvent, ErrorEvent, MultiDictEvent
 
 
 logger = logging.getLogger(__name__)

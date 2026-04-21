@@ -68,17 +68,19 @@ class RetrievingPipeline:
         return self
 
     def get_retrieved_docs(self, query: str) -> list[Document]:
-        if any([self._retrievers is None, self._collection_names is None]):
+        if self._retrievers is None or self._collection_names is None:
             raise ValueError('Either retrievers or collection_names must not be None')
 
         if len(self._retrievers) == len(self._collection_names):
             _query = query
             docs = self._retrievers[0].retrieve_top(self._collection_names[0], _query)
-            for i in range(1, len(self._retrievers)):
-                filter = {'uuid': {'$in': [doc.metadata['uuid'] for doc in docs]}}
-                docs_next = self._retrievers[i].retrieve_top(self._collection_names[i], _query, filter)
-                docs = docs_next
-        else:
-            raise Exception('The length of retrievers and collection_names must match')
+            if docs is None:
+                return []
+        for i in range(1, len(self._retrievers)):
+            filter = {'uuid': {'$in': [doc.metadata['uuid'] for doc in docs]}}
+            docs_next = self._retrievers[i].retrieve_top(self._collection_names[i], _query, filter)
+            if docs_next is None:
+                return []
+            docs = docs_next
 
         return docs
